@@ -27,8 +27,8 @@
   var T_STOP = 1.20;   /* Wagen steht                          */
   var T_OPEN = 1.60;   /* Tür ist auf                          */
   var T_OUT = 2.10;    /* steht neben dem Wagen, Seitenansicht  */
-  var T_TURN = 2.90;   /* dreht sich Richtung Eingang           */
-  var T_BACK = 3.25;   /* Drehung fertig, Rückansicht           */
+  var T_TURN = 3.25;   /* dreht sich Richtung Eingang           */
+  var T_BACK = 3.60;   /* Drehung fertig, Rückansicht           */
   var T_ARRIVE = 4.45; /* am Eingang                            */
   var T_GONE = 4.75;   /* im Studio verschwunden                */
   var DURATION = 5.00;
@@ -460,8 +460,8 @@
      Rückansicht zeigt, wie breit er gebaut ist. */
   var NEAR = 171;
   var X_OUT = 86;      /* steht neben dem Wagen         */
-  var X_TURN = 140;    /* dreht sich hier um            */
-  var X_PIVOT = 148;   /* Ende der Drehung              */
+  var X_TURN = 152;    /* dreht sich hier um            */
+  var X_PIVOT = 160;   /* Ende der Drehung              */
   var X_DOOR = 258;    /* verschwindet im Eingang       */
   var SCALE = 1.06;
 
