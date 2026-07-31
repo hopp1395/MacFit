@@ -18,10 +18,29 @@
 
     wireEvents();
 
+    /* Sicherheitsnetz gegen vergessene Speicherpunkte und Browser, die beim
+       Schließen kein pagehide liefern. */
+    MF.game.state.startAutosave(15);
+
     if (!s.seenIntro) {
       s.seenIntro = true;
       MF.game.state.saveNow();
       MF.ui.report.showIntro();
+    }
+
+    /* Wenn der Browser keine Website-Daten zulässt, muss der Spieler das
+       wissen, bevor er eine Stunde Fortschritt verliert. */
+    if (!MF.core.storage.isAvailable()) {
+      MF.ui.modal.open({
+        title: 'Fortschritt kann nicht gespeichert werden',
+        subtitle: 'Dieser Browser lässt keine Website-Daten zu.',
+        body: MF.core.util.el('p', {
+          text: 'Das passiert im privaten Modus oder wenn Website-Daten blockiert sind. '
+              + 'Du kannst normal spielen, aber beim Schließen des Tabs ist alles weg. '
+              + 'In einem normalen Fenster wird automatisch gespeichert.'
+        }),
+        actions: [{ label: 'Verstanden', tone: 'primary' }]
+      });
     }
 
     document.body.classList.add('is-ready');

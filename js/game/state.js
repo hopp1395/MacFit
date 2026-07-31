@@ -5,6 +5,7 @@
 
   var current = null;
   var saveTimer = null;
+  var autosaveTimer = null;
 
   function createNewState() {
     var muscles = {};
@@ -40,7 +41,7 @@
         peakMass: 0
       },
       history: [],           /* [{ day, mass }] — letzte 40 Tage */
-      settings: { haptics: true },
+      settings: { haptics: true, muscle: 'brust', weight: 1 },
       seenIntro: false,
       lastReport: null
     };
@@ -104,7 +105,18 @@
       window.clearTimeout(saveTimer);
       saveTimer = null;
     }
-    MF.core.storage.save(current);
+    return MF.core.storage.save(current);
+  }
+
+  /* Sicherheitsnetz: regelmäßig nachsehen, ob sich etwas geändert hat.
+     storage.save() schreibt nur bei echten Änderungen, ein Leerlauf kostet
+     also nichts. Fängt vergessene Speicherpunkte und Browser ab, die beim
+     Schließen kein pagehide mehr liefern (kommt auf iOS vor). */
+  function startAutosave(seconds) {
+    if (autosaveTimer) window.clearInterval(autosaveTimer);
+    autosaveTimer = window.setInterval(function () {
+      if (current) MF.core.storage.save(current);
+    }, (seconds || 15) * 1000);
   }
 
   MF.game.state = {
@@ -114,6 +126,7 @@
     set: set,
     muscle: muscle,
     saveSoon: saveSoon,
-    saveNow: saveNow
+    saveNow: saveNow,
+    startAutosave: startAutosave
   };
 })(window.MacFit);

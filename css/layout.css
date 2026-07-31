@@ -33,7 +33,6 @@
   font-weight: 800;
   font-size: 19px;
   letter-spacing: -.5px;
-  margin-right: auto;
 }
 
 .hud__logo { color: var(--text); }
@@ -50,6 +49,26 @@
   font-weight: 700;
   color: var(--good);
   font-variant-numeric: tabular-nums;
+}
+
+/* Speicher-Punkt: leuchtet kurz auf, wenn geschrieben wurde. */
+.hud__save {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+  margin-right: auto;
+  transition: background .2s, box-shadow .2s;
+}
+
+.hud__save.is-on {
+  background: var(--good);
+  box-shadow: 0 0 6px rgba(62, 207, 122, .8);
+}
+
+.hud__save.is-error {
+  background: var(--bad);
+  box-shadow: 0 0 6px rgba(255, 84, 112, .8);
 }
 
 /* Fitness-Index — immer im Blick. */

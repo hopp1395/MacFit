@@ -22,7 +22,11 @@
       el('span.hud__fit-value', { id: 'hud-fit-value', text: '0' })
     ]);
     var money = el('div.hud__money', { id: 'hud-money', text: '0 €' });
+    var save = el('div.hud__save', {
+      id: 'hud-save', title: 'Spielstand wird automatisch gespeichert'
+    });
     top.appendChild(brand);
+    top.appendChild(save);
     top.appendChild(day);
     top.appendChild(fit);
     top.appendChild(money);
@@ -86,5 +90,32 @@
     nodes.energyLabel.textContent = Math.round(s.energy) + ' / ' + max;
   }
 
-  MF.ui.hud = { render: render };
+  /* Der Punkt blinkt kurz auf, wenn geschrieben wurde — sonst weiß niemand,
+     dass automatisch gespeichert wird. Bleibt rot, wenn es nicht geht. */
+  var flashTimer = null;
+
+  function flashSave(ok) {
+    var node = util.byId('hud-save');
+    if (!node) return;
+
+    if (!ok) {
+      node.className = 'hud__save is-error';
+      node.setAttribute('title', 'Spielstand kann nicht gespeichert werden');
+      return;
+    }
+
+    node.className = 'hud__save is-on';
+    node.setAttribute('title', 'Spielstand gespeichert');
+    if (flashTimer) window.clearTimeout(flashTimer);
+    flashTimer = window.setTimeout(function () {
+      flashTimer = null;
+      var n = util.byId('hud-save');
+      if (n && n.className.indexOf('is-error') < 0) n.className = 'hud__save';
+    }, 900);
+  }
+
+  MF.core.events.on('save:done', function () { flashSave(true); });
+  MF.core.events.on('save:failed', function () { flashSave(false); });
+
+  MF.ui.hud = { render: render, flashSave: flashSave };
 })(window.MacFit);

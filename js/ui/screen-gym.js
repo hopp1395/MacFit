@@ -10,10 +10,19 @@
   var util = MF.core.util;
   var el = util.el;
 
-  var filter = 'brust';
-  var weightIndex = 1;
-
   function state() { return MF.game.state.get(); }
+
+  /* Auswahl und Intensität gehören in den Spielstand — sonst steht man nach
+     dem Neuladen wieder bei Brust und "Normal". */
+  function filterId() { return state().settings.muscle || 'brust'; }
+  function weightIdx() {
+    var w = state().settings.weight;
+    return typeof w === 'number' ? w : 1;
+  }
+  function remember(key, value) {
+    state().settings[key] = value;
+    MF.game.state.saveSoon();
+  }
 
   /* Schwierigkeit als Punkte — grob aus Tempo und Zonenbreite. */
   function difficultyDots(ex) {
@@ -39,7 +48,7 @@
         return MF.game.training.isUnlocked(ex);
       }).length;
 
-      var tile = el('button.mtile' + (filter === m.id ? '.is-active' : ''), { type: 'button' }, [
+      var tile = el('button.mtile' + (filterId() === m.id ? '.is-active' : ''), { type: 'button' }, [
         el('span.mtile__name', { text: m.name }),
         el('span.mtile__sub', { text: available + ' Gerät' + (available === 1 ? '' : 'e') }),
         el('span.mtile__bar', null, [
@@ -50,7 +59,7 @@
       if (m.id === weakest.id) tile.classList.add('is-weak');
 
       util.onTap(tile, function () {
-        filter = m.id;
+        remember('muscle', m.id);
         MF.ui.router.refresh('gym');
       });
       grid.appendChild(tile);
@@ -64,8 +73,8 @@
   function exerciseRow(ex) {
     var s = state();
     var unlocked = MF.game.training.isUnlocked(ex);
-    var check = MF.game.training.canTrain(ex, weightIndex);
-    var cost = MF.game.training.energyCost(ex, weightIndex);
+    var check = MF.game.training.canTrain(ex, weightIdx());
+    var cost = MF.game.training.energyCost(ex, weightIdx());
 
     var row = el('button.exrow', { type: 'button' });
     if (!unlocked) row.classList.add('is-locked');
@@ -97,14 +106,14 @@
         MF.ui.toast.show(check.reason, 'warn');
         return;
       }
-      MF.ui.router.go('session', { exerciseId: ex.id, weightIndex: weightIndex });
+      MF.ui.router.go('session', { exerciseId: ex.id, weightIndex: weightIdx() });
     });
 
     return row;
   }
 
   function exerciseList() {
-    var list = MF.data.exercises.byMuscle(filter).slice();
+    var list = MF.data.exercises.byMuscle(filterId()).slice();
     list.sort(function (a, b) {
       var ua = MF.game.training.isUnlocked(a) ? 0 : 1;
       var ub = MF.game.training.isUnlocked(b) ? 0 : 1;
@@ -122,11 +131,11 @@
   function intensityControl() {
     var wrap = el('div.segmented.segmented--compact', { id: 'gym-intensity' });
     MF.game.training.WEIGHTS.forEach(function (w, i) {
-      var btn = el('button.segmented__btn' + (i === weightIndex ? '.is-active' : ''), {
+      var btn = el('button.segmented__btn' + (i === weightIdx() ? '.is-active' : ''), {
         type: 'button', text: w.name
       });
       util.onTap(btn, function () {
-        weightIndex = i;
+        remember('weight', i);
         MF.ui.router.refresh('gym');
       });
       wrap.appendChild(btn);
@@ -160,8 +169,8 @@
 
   function render(container) {
     util.clear(container);
-    var muscle = MF.data.muscles.get(filter);
-    var data = state().muscles[filter];
+    var muscle = MF.data.muscles.get(filterId());
+    var data = state().muscles[filterId()];
 
     /* Blick in die Halle — nur wenn genug Platz da ist. Auf kurzen Displays
        hat die Geräteauswahl Vorrang; dann wird auch nichts gezeichnet. */
@@ -194,5 +203,5 @@
   });
 
   /* Der Satz-Screen braucht die zuletzt gewählte Intensität. */
-  MF.ui.gym = { weight: function () { return weightIndex; } };
+  MF.ui.gym = { weight: weightIdx };
 })(window.MacFit);

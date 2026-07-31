@@ -248,6 +248,36 @@
     });
     panel.appendChild(hapticBtn);
 
+    /* Klartext zum Speicherstand — der Punkt im HUD allein sagt zu wenig. */
+    var st = MF.core.storage.status();
+    var saveBox = el('div.savebox' + (st.available ? '' : '.savebox--bad'));
+    saveBox.appendChild(el('div.savebox__head', null, [
+      el('span.savebox__dot' + (st.available ? '.is-ok' : '.is-bad')),
+      el('strong', { text: st.available ? 'Automatisch gespeichert' : 'Speichern nicht möglich' })
+    ]));
+    saveBox.appendChild(el('span.savebox__text', {
+      text: st.available
+        ? 'Nach jedem Satz, jeder Nacht und jedem Einkauf — dazu alle 15 Sekunden '
+          + 'und beim Schließen der Seite.'
+          + (st.secondsAgo === null ? '' : ' Zuletzt vor ' + st.secondsAgo + ' s.')
+        : 'Dieser Browser lässt keine Website-Daten zu (z. B. privater Modus). '
+          + 'Der Fortschritt geht beim Schließen verloren.'
+    }));
+
+    if (st.available) {
+      var saveBtn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Jetzt speichern' });
+      util.onTap(saveBtn, function () {
+        var res = MF.game.state.saveNow();
+        MF.ui.toast.show(
+          res === 'error' ? 'Speichern fehlgeschlagen.' : 'Spielstand gespeichert.',
+          res === 'error' ? 'bad' : 'good'
+        );
+        MF.ui.router.refresh('stats');
+      });
+      saveBox.appendChild(saveBtn);
+    }
+    panel.appendChild(saveBox);
+
     var resetBtn = el('button.btn.btn--danger', { type: 'button', text: 'Spielstand zurücksetzen' });
     util.onTap(resetBtn, function () {
       MF.ui.modal.confirm({
