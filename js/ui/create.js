@@ -12,9 +12,19 @@
 
   var MAX_NAME = 14;
 
+  /* Zwei Fälle führen hierher: gar kein Spieler, oder ein Spieler aus einer
+     Version vor der Mitgliedskarte. Die Mitgliedsnummer ist das Merkmal —
+     ohne sie gibt es keine Karte, egal wie alt der Spielstand ist. */
   function needed() {
     var s = MF.game.state.get();
-    return !s || !s.player || !s.player.created;
+    if (!s || !s.player) return true;
+    return !s.player.created || !s.player.number;
+  }
+
+  /* Spieler da, Karte fehlt: der Fortschritt bleibt, es wird nur nachgetragen. */
+  function isRetrofit() {
+    var s = MF.game.state.get();
+    return !!(s && s.player && s.player.created && !s.player.number);
   }
 
   function clean(value) {
@@ -26,15 +36,19 @@
     var s = MF.game.state.get();
     var done = onDone || function () {};
     var close = null;
+    var retrofit = isRetrofit();
 
-    /* Entwurf, bis auf "Mitglied werden" getippt wird. Vorher wandert nichts
-       in den Spielstand — ein abgebrochener Anlauf hinterlässt nichts. */
+    /* Entwurf, bis auf "Karte ausstellen" getippt wird. Vorher wandert nichts
+       in den Spielstand — ein abgebrochener Anlauf hinterlässt nichts.
+
+       Beim Nachtragen ist der Eintrittstag nicht heute: wer seit dreißig Tagen
+       trainiert, ist nicht seit Tag 30 Mitglied. */
     var draft = {
       name: (s.player && s.player.name) || '',
       outfit: (s.player && s.player.outfit) || 'blau',
-      photo: '',
+      photo: (s.player && s.player.photo) || '',
       number: MF.ui.membercard.newNumber(),
-      since: s.day || 1
+      since: retrofit ? (s.player.since || 1) : (s.day || 1)
     };
 
     var preview = el('div.create__card');
@@ -43,7 +57,8 @@
       MF.ui.membercard.mount(preview, {
         id: 'create-card',
         data: function () { return draft; },
-        title: MF.data.levels.forLevel(1).title,
+        /* Beim Nachtragen steht der erreichte Titel drauf, nicht der von Tag 1. */
+        title: MF.game.progression.currentTitle(),
         editable: true,
         onPhoto: function (url) {
           draft.photo = url || '';
@@ -96,6 +111,13 @@
       })
     ]);
 
+    if (retrofit) {
+      body.insertBefore(el('p.create__note.create__note--keep', {
+        text: 'Du trainierst schon bei uns — die Karte wird nur nachgetragen. '
+            + 'Tag, Level, Masse und Geld bleiben unangetastet.'
+      }), preview);
+    }
+
     drawCard();
 
     function commit() {
@@ -111,7 +133,7 @@
         outfit: draft.outfit,
         photo: draft.photo,
         number: draft.number,
-        since: st.day || 1,
+        since: draft.since,
         created: true
       };
 
@@ -130,8 +152,10 @@
     }
 
     close = MF.ui.modal.open({
-      title: 'Mitglied werden',
-      subtitle: 'Deine MacFit-Karte wird ausgestellt.',
+      title: retrofit ? 'Mitgliedskarte nachtragen' : 'Mitglied werden',
+      subtitle: retrofit
+        ? 'Für dich gab es noch keine Karte.'
+        : 'Deine MacFit-Karte wird ausgestellt.',
       body: body,
       dismissible: false,
       /* close:false — der Dialog geht erst zu, wenn ein Name dasteht. */
@@ -141,5 +165,5 @@
     return close;
   }
 
-  MF.ui.create = { show: show, needed: needed, maxName: MAX_NAME };
+  MF.ui.create = { show: show, needed: needed, isRetrofit: isRetrofit, maxName: MAX_NAME };
 })(window.MacFit);

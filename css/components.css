@@ -1364,6 +1364,15 @@
   color: var(--text-faint);
 }
 
+.create__note--keep {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border-left: 3px solid var(--good);
+}
+
 .create__lead {
   font-size: 14px;
   color: var(--text-dim);
