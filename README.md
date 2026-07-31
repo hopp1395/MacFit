@@ -14,10 +14,17 @@ Creatin bis zu Substanzen, die schnelle Gains bringen und dafür deine Gesundhei
 Jeder Start beginnt mit einem kurzen Vorspann: du fährst mit dem Sportwagen vor dem Studio
 vor, steigst aus, nimmst die Sporttasche und gehst rein. Antippen überspringt ihn.
 
-Beim allerersten Mal folgt danach die **Spieleranlage** — Name und Trainingsklamotten. Die
-Farbe siehst du im Vorspann, an den Geräten und am Avatar wieder. Einen bestehenden Spieler
-löschst du unter **Körper → Einstellungen → Spieler zurücksetzen**; danach legst du direkt
-einen neuen an.
+Beim allerersten Mal wird danach deine **Mitgliedskarte** ausgestellt: Name, Trainings-
+klamotten und freiwillig ein Foto. Die Farbe siehst du im Vorspann, an den Geräten und am
+Avatar wieder.
+
+Das Foto kommt aus einem normalen Dateifeld — am Handy also Kamera oder Galerie — und wird
+vor dem Speichern auf Passbildgröße (132 × 168) heruntergerechnet. Ein unbearbeitetes
+Handyfoto würde den `localStorage` sprengen. Es verlässt das Gerät nicht. Ändern oder
+entfernen kannst du es jederzeit im Tab **Körper**, ganz oben auf der Karte.
+
+Einen bestehenden Spieler löschst du unter **Körper → Einstellungen → Spieler zurücksetzen**;
+danach wird direkt eine neue Karte ausgestellt.
 
 ## Steuerung
 
@@ -63,7 +70,7 @@ css/                base (Reset/Farben) · layout (Gerüst) · components (Baust
 js/core/            util, events, storage, ticker, haptics
 js/data/            muscles, exercises, supplements, levels, outfits, scenes — reine Spieldaten
 js/game/            state, stats, fitness, training, progression, supplements, economy, day
-js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create
+js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create, membercard
 js/ui/pixel|figure|scene   Pixel-Grafik: Palette, Figuren-Rig, Szenenaufbau
 js/main.js          Bootstrap
 ```

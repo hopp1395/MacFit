@@ -42,8 +42,9 @@
       },
       history: [],           /* [{ day, mass }] — letzte 40 Tage */
       /* created bleibt false, bis die Anlage durchlaufen ist. Alte Spielstände
-         ohne diesen Block laufen dadurch einmalig durch die Anlage. */
-      player: { name: '', outfit: 'blau', created: false },
+         ohne diesen Block laufen dadurch einmalig durch die Anlage.
+         photo ist ein verkleinertes JPEG als data-URL oder leer. */
+      player: { name: '', outfit: 'blau', photo: '', number: '', since: 1, created: false },
       settings: { haptics: true, muscle: 'brust', weight: 1 },
       seenIntro: false,
       lastReport: null

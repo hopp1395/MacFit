@@ -22,6 +22,37 @@
     return 'bad';
   }
 
+  /* Mitgliedskarte samt Foto. Das Foto lässt sich hier jederzeit tauschen —
+     die Anlage läuft ja nur einmal. */
+  function cardPanel() {
+    var host = el('section.mcard-host');
+
+    function draw() {
+      MF.ui.membercard.mount(host, {
+        id: 'stats-card',
+        data: function () { return state().player; },
+        title: MF.game.progression.currentTitle(),
+        editable: true,
+        onPhoto: function (url) {
+          var p = state().player;
+          var before = p.photo || '';
+          p.photo = url || '';
+          if (MF.game.state.saveNow() === 'error') {
+            p.photo = before;
+            MF.game.state.saveNow();
+            MF.ui.toast.show('Das Foto passt nicht in den Speicher.', 'warn');
+          } else {
+            MF.ui.toast.show(url ? 'Foto übernommen.' : 'Foto entfernt.', 'good');
+          }
+          draw();
+        }
+      });
+    }
+
+    draw();
+    return host;
+  }
+
   function avatarPanel() {
     var s = state();
     var panel = el('section.body-panel');
@@ -31,9 +62,6 @@
     MF.ui.avatar.update(avatarSvg);
 
     var info = el('div.body-info');
-    if (s.player && s.player.name) {
-      info.appendChild(el('div.body-info__name', { text: s.player.name }));
-    }
     info.appendChild(el('div.body-info__mass', { text: util.formatKg(MF.game.stats.muscleMass()) }));
     info.appendChild(el('div.body-info__label', { text: 'Muskelmasse' }));
     info.appendChild(el('div.body-info__title', { text: MF.game.progression.currentTitle() }));
@@ -283,14 +311,6 @@
 
     /* Spieler zurücksetzen: löscht den Stand und führt direkt in die Anlage —
        sonst stünde man ohne Namen im Spiel. */
-    var who = state().player;
-    if (who && who.name) {
-      panel.appendChild(el('div.savebox', null, [
-        el('span.savebox__text', { text: 'Spieler: ' + who.name }),
-        el('span.savebox__text', { text: MF.data.outfits.get(who.outfit).name })
-      ]));
-    }
-
     var resetBtn = el('button.btn.btn--danger', { type: 'button', text: 'Spieler zurücksetzen' });
     util.onTap(resetBtn, function () {
       MF.ui.modal.confirm({
@@ -323,6 +343,7 @@
 
   function render(container) {
     util.clear(container);
+    container.appendChild(cardPanel());
     container.appendChild(avatarPanel());
     container.appendChild(fitnessPanel());
     container.appendChild(healthPanel());
