@@ -219,24 +219,29 @@
      narrow staucht nur die Quermaße. Bei 0.3 sieht die Rückansicht praktisch
      aus wie ein Profil — genau deshalb kann die Drehung an dieser Stelle vom
      Seitenriss herüberschneiden, ohne dass es springt. */
+  var BACK_FLOOR = {
+    shoulder: 14, lat: 12.5, waist: 8, delt: 6, arm: 6.5, fore: 5, thigh: 10, calf: 7
+  };
+
   function metrics(scale, narrow) {
     var m = MF.game.state.get().muscles;
     var n = narrow === undefined ? 1 : narrow;
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
-    function w(base, span, id, floor) {
+    function w(base, span, id, key) {
       var v = base + f(id) * span;
+      var floor = BACK_FLOOR[key];
       return (v < floor ? floor : v) * scale * n;
     }
     return {
-      shoulder: w(10, 9, 'schultern', 14),   /* halbe Schulterbreite */
-      lat: w(9, 8, 'ruecken', 12.5),         /* halbe Breite unter den Achseln */
-      waist: w(6, 3.5, 'bauch', 8),
-      delt: w(4, 4.5, 'schultern', 6),
+      shoulder: w(10, 9, 'schultern', 'shoulder'),   /* halbe Schulterbreite */
+      lat: w(9, 8, 'ruecken', 'lat'),                /* halbe Breite unter den Achseln */
+      waist: w(6, 3.5, 'bauch', 'waist'),
+      delt: w(4, 4.5, 'schultern', 'delt'),
       /* Gliedstärken bleiben unberührt — ein gedrehter Arm wird nicht dünner. */
-      arm: w(4, 5, 'bizeps', 6.5) / n,
-      fore: w(3.4, 3, 'trizeps', 5) / n,
-      thigh: w(7, 6, 'beine', 10) / n,
-      calf: w(5, 4, 'waden', 7) / n,
+      arm: w(4, 5, 'bizeps', 'arm') / n,
+      fore: w(3.4, 3, 'trizeps', 'fore') / n,
+      thigh: w(7, 6, 'beine', 'thigh') / n,
+      calf: w(5, 4, 'waden', 'calf') / n,
       hip: 6.5 * scale * n,
       head: 7 * scale
     };
@@ -260,7 +265,8 @@
     }
   }
 
-  /* Gelenke der Rückansicht. crouch 1 = noch tief im Wagen. */
+  /* Gelenke der Rückansicht. Dasselbe Skelett wie im Seitenriss — sonst
+     änderte die Figur beim Umschalten ihre Größe. crouch 1 = tief im Wagen. */
   function backPose(x, gy, phase, scale, crouch) {
     var s = Math.sin(phase) * (1 - crouch);
     var bob = Math.abs(Math.cos(phase)) * 1.4 * scale * (1 - crouch);
@@ -268,10 +274,10 @@
       x: x,
       swing: s,
       footY: gy,
-      kneeY: gy - (15 - 2 * crouch) * scale,
-      hipY: gy - (31 - 13 * crouch) * scale - bob,
-      shY: gy - (50 - 14 * crouch) * scale - bob,
-      headY: gy - (64 - 16 * crouch) * scale - bob,
+      kneeY: gy - (16 - 2 * crouch) * scale,
+      hipY: gy - (33 - 14 * crouch) * scale - bob,
+      shY: gy - (53 - 17 * crouch) * scale - bob,
+      headY: gy - (66 - 19 * crouch) * scale - bob,
       crouch: crouch,
       scale: scale
     };
@@ -369,8 +375,16 @@
   /* Aussteigen und die ersten Schritte laufen im Profil — von hinten wäre gar
      nicht zu sehen, dass er aus dem Wagen kommt. Dafür das Rig aus
      figure.js, das auch die Übungsszenen zeichnet. */
+  /* Die Werte stehen im Maßstab der Übungsszenen: dort ist die Figur 91 Punkte
+     hoch, hier nur 73. BODY rechnet sie herunter. Ohne diesen Faktor bekommt
+     die kleinere Vorspann-Figur die Stärken eines ausgereizten Bodybuilders
+     verpasst — dann sieht sie aus, als steckte sie in einem Regenanzug.
+
+     Die Untergrenzen liegen bei rund 60 % der Spannweite: sichtbar
+     durchtrainiert, aber nicht aufgeblasen. Wer weiter wächst, überholt sie. */
+  var BODY = 0.82;
   var ATHLETIC = {
-    arm: 8.6, fore: 5.6, torso: 22, shoulder: 8.2, thigh: 13.5, calf: 8.4, head: 7
+    arm: 7.6, fore: 5.2, torso: 18, shoulder: 7.2, thigh: 12, calf: 7.6, head: 8
   };
 
   function sideThickness(scale) {
@@ -378,7 +392,7 @@
     var out = {};
     for (var key in ATHLETIC) {
       if (!Object.prototype.hasOwnProperty.call(ATHLETIC, key)) continue;
-      out[key] = (th[key] > ATHLETIC[key] ? th[key] : ATHLETIC[key]) * scale;
+      out[key] = (th[key] > ATHLETIC[key] ? th[key] : ATHLETIC[key]) * BODY * scale;
     }
     return out;
   }
@@ -386,13 +400,10 @@
   function sidePose(x, gy, phase, scale, crouch) {
     var s = Math.sin(phase) * (1 - crouch);
     var bob = Math.abs(Math.cos(phase)) * 1.2 * scale * (1 - crouch);
-    /* Der Kopf muss deutlich über der Schulter sitzen: der Rumpf ist eine
-       Kapsel und ragt um seine halbe Stärke über den Schulterpunkt hinaus —
-       zu eng gesetzt verschwindet der Kopf darin. */
-    var hipY = gy - (31 - 13 * crouch) * scale - bob;
-    var shY = gy - (50 - 14 * crouch) * scale - bob;
-    var headY = gy - (64 - 16 * crouch) * scale - bob;
-    var kneeY = gy - (15 - 2 * crouch) * scale;
+    var hipY = gy - (33 - 14 * crouch) * scale - bob;
+    var shY = gy - (53 - 17 * crouch) * scale - bob;
+    var headY = gy - (66 - 19 * crouch) * scale - bob;
+    var kneeY = gy - (16 - 2 * crouch) * scale;
     var stride = 13 * scale;
 
     function leg(dir) {
@@ -463,10 +474,12 @@
      weiterlaufen statt neu anzusetzen. */
   var PH_TURN = (X_TURN - X_OUT) / SIDE_SPAN * Math.PI;
 
-  /* Bei diesem Wert ist die Rückansicht genauso breit wie der Seitenriss
-     (Rumpfkapsel 22 gegen Schulter plus Delta 18.6) — nur so springt die
-     Silhouette im Moment des Umschaltens nicht. */
-  var TURN_START = 22 / (2 * 18.6);
+  /* Bei diesem Wert ist die Rückansicht genauso breit wie der Seitenriss — nur
+     so springt die Silhouette im Moment des Umschaltens nicht. Gerechnet aus
+     den tatsächlichen Untergrenzen, nicht als feste Zahl: sonst stimmt es
+     nach der nächsten Änderung an der Statur nicht mehr. */
+  var TURN_START = (ATHLETIC.torso * BODY) /
+                   (2 * (BACK_FLOOR.shoulder * 0.9 + BACK_FLOOR.delt));
 
   function stage(t) {
     if (t < T_OPEN) return null;
