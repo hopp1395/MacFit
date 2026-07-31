@@ -1187,6 +1187,34 @@
   gap: 8px;
 }
 
+/* Countdown, der den Knopf ersetzt, bis die Nacht vorbei ist. */
+.modal__slot { display: flex; flex-direction: column; }
+
+.modal__wait {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+}
+
+.modal__wait-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar--wait { height: 8px; }
+
+.bar--wait .bar__fill {
+  background: linear-gradient(90deg, #3a5cc7, #6f8ae0);
+  transition: width .25s linear;
+}
+
 /* ---------- Report -------------------------------------------------------- */
 
 .report { display: flex; flex-direction: column; gap: 12px; }

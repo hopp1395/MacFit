@@ -7,13 +7,44 @@
   var el = util.el;
   var openCount = 0;
 
-  /* opts: { title, subtitle, body:Node, actions:[{label,tone,onTap,close}], dismissible } */
+  /* Zeigt statt des Knopfes einen Countdown und tauscht ihn erst am Ende aus.
+     Gerechnet wird gegen die Uhr, nicht über gezählte Ticks — so läuft die Zeit
+     auch weiter, während die App im Hintergrund liegt. */
+  function countdown(slot, button, seconds, waitText) {
+    var endsAt = (+new Date()) + seconds * 1000;
+    var total = seconds * 1000;
+
+    var label = el('div.modal__wait-label');
+    var bar = el('div.bar.bar--wait', null, [el('div.bar__fill')]);
+    var fill = bar.firstChild;
+    var wait = el('div.modal__wait', null, [label, bar]);
+    slot.appendChild(wait);
+
+    function tick() {
+      var left = endsAt - (+new Date());
+      if (left <= 0) {
+        window.clearInterval(handle);
+        if (wait.parentNode) wait.parentNode.removeChild(wait);
+        slot.appendChild(button);
+        return;
+      }
+      label.textContent = waitText + ' — noch ' + Math.ceil(left / 1000) + ' s';
+      fill.style.width = ((1 - left / total) * 100).toFixed(1) + '%';
+    }
+
+    var handle = window.setInterval(tick, 250);
+    tick();
+    return handle;
+  }
+
+  /* opts: { title, subtitle, body:Node, actions:[{label,tone,onTap,close,delaySeconds,waitText}], dismissible } */
   function open(opts) {
     var root = util.byId('modal-root');
     if (!root) return function () {};
 
     var overlay = el('div.modal-overlay');
     var box = el('div.modal');
+    var timers = [];
 
     if (opts.title) {
       box.appendChild(el('h2.modal__title', { text: opts.title }));
@@ -26,6 +57,8 @@
     }
 
     function close() {
+      for (var t = 0; t < timers.length; t++) window.clearInterval(timers[t]);
+      timers = [];
       overlay.classList.remove('is-in');
       window.setTimeout(function () {
         if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
@@ -43,7 +76,14 @@
         if (action.onTap) action.onTap();
         if (action.close !== false) close();
       });
-      actions.appendChild(btn);
+
+      if (action.delaySeconds > 0) {
+        var slot = el('div.modal__slot');
+        actions.appendChild(slot);
+        timers.push(countdown(slot, btn, action.delaySeconds, action.waitText || 'Bitte warten'));
+      } else {
+        actions.appendChild(btn);
+      }
     });
     box.appendChild(actions);
 

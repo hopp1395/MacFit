@@ -7,6 +7,10 @@
 
   var HEALTH_LABELS = { herz: 'Herz', leber: 'Leber', schlaf: 'Schlaf', laune: 'Laune' };
 
+  /* So lange dauert eine Nacht, bevor es weitergeht. Über setSleepSeconds()
+     veränderbar — das braucht der Test, der nicht wirklich warten will. */
+  var sleepSeconds = 60;
+
   function deltaText(v, digits) {
     var d = util.round(v, digits === undefined ? 1 : digits);
     return (d > 0 ? '+' : '') + util.formatNum(d, digits === undefined ? 1 : digits);
@@ -91,11 +95,21 @@
       }));
     }
 
+    /* Die Nacht dauert. Das Fenster bleibt gesperrt, sonst wäre die Wartezeit
+       durch Antippen daneben zu umgehen. */
     MF.ui.modal.open({
       title: 'Tag ' + (report.day - 1) + ' abgeschlossen',
-      subtitle: 'Guten Morgen. Tag ' + report.day + ' beginnt.',
+      subtitle: sleepSeconds > 0
+        ? 'Du schläfst. Der Körper baut jetzt auf.'
+        : 'Guten Morgen. Tag ' + report.day + ' beginnt.',
       body: body,
-      actions: [{ label: 'Weiter trainieren', tone: 'primary' }]
+      dismissible: sleepSeconds <= 0,
+      actions: [{
+        label: 'Weiter trainieren',
+        tone: 'primary',
+        delaySeconds: sleepSeconds,
+        waitText: '🛌 Du schläfst'
+      }]
     });
   }
 
@@ -157,6 +171,8 @@
   MF.ui.report = {
     show: show,
     showLevelUp: showLevelUp,
-    showIntro: showIntro
+    showIntro: showIntro,
+    sleepSeconds: function () { return sleepSeconds; },
+    setSleepSeconds: function (v) { sleepSeconds = Math.max(0, v); }
   };
 })(window.MacFit);
