@@ -13,7 +13,6 @@
   'use strict';
 
   var px = MF.ui.pixel;
-  var fig = MF.ui.figure;
   var C = px.colors;
   var util = MF.core.util;
   var el = util.el;
@@ -184,51 +183,157 @@
     px.capsule(ctx, hinge, tip, 3, C.shirtLit);
   }
 
-  /* ---------- Figuren ------------------------------------------------------ */
+  /* ---------- Figur in Rückansicht ----------------------------------------- */
 
-  /* Gehende Figur aus Gelenkpunkten. phase treibt den Schritt, crouch 1 sitzt
-     noch im Wagen, scale schrumpft sie beim Hineingehen. */
-  function walker(x, gy, phase, scale, crouch) {
-    var s = Math.sin(phase);
-    var bob = Math.abs(Math.cos(phase)) * 1.2 * (1 - crouch);
-    /* Der Kopf muss deutlich über der Schulter sitzen: der Rumpf ist eine
-       Kapsel und ragt um seine halbe Stärke über den Schulterpunkt hinaus —
-       zu eng gesetzt verschwindet der Kopf darin. */
-    var hipY = gy - (31 - 13 * crouch) * scale - bob;
-    var shY = gy - (50 - 14 * crouch) * scale - bob;
-    var headY = gy - (64 - 16 * crouch) * scale - bob;
-    var kneeY = gy - (15 - 2 * crouch) * scale;
-    var stride = 13 * scale * (1 - crouch);
+  /* Der Seitenriss aus figure.js kann keine Schulterbreite zeigen — im Profil
+     ist Breite schlicht unsichtbar. Der Vorspann bekommt deshalb ein eigenes
+     Rig von hinten: er geht schräg vom Betrachter weg zum Eingang, und man
+     sieht die V-Form von Schultern zu Taille.
 
-    function leg(dir) {
-      var lift = Math.max(0, dir * s) * (1 - crouch);
-      return {
-        knee: [x + dir * s * 5 * scale + (2 + 9 * crouch) * scale, kneeY - lift * 3 * scale],
-        foot: [x + dir * s * stride + 11 * crouch * scale, gy - lift * 4 * scale]
-      };
+     Alle Maße sind halbe Breiten in Bildpunkten, aus den Muskelwerten des
+     Spielstands abgeleitet. Die Untergrenzen sorgen dafür, dass er auch am
+     ersten Tag durchtrainiert aussieht; wer weiter wächst, wird breiter. */
+  function metrics(scale) {
+    var m = MF.game.state.get().muscles;
+    function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
+    function w(base, span, id, floor) {
+      var v = base + f(id) * span;
+      return (v < floor ? floor : v) * scale;
     }
-    var near = leg(1), far = leg(-1);
-
     return {
-      head: [x + 1 * scale, headY],
-      shoulder: [x, shY],
-      hip: [x, hipY],
-      knee: near.knee, foot: near.foot,
-      farKnee: far.knee, farFoot: far.foot,
-      /* Die nahe Hand trägt die Tasche und schwingt kaum. */
-      elbow: [x - s * 3 * scale, shY + 12 * scale],
-      hand: [x - s * 2 * scale, shY + 24 * scale],
-      farElbow: [x + s * 4 * scale, shY + 12 * scale],
-      farHand: [x + s * 6 * scale, shY + 24 * scale]
+      shoulder: w(10, 9, 'schultern', 14),   /* halbe Schulterbreite */
+      lat: w(9, 8, 'ruecken', 12.5),         /* halbe Breite unter den Achseln */
+      waist: w(6, 3.5, 'bauch', 8),
+      delt: w(4, 4.5, 'schultern', 6),
+      arm: w(4, 5, 'bizeps', 6.5),
+      fore: w(3.4, 3, 'trizeps', 5),
+      thigh: w(7, 6, 'beine', 10),
+      calf: w(5, 4, 'waden', 7),
+      hip: 6.5 * scale,
+      head: 7 * scale
     };
   }
 
-  function scaleTh(th, k) {
-    var out = {};
-    for (var key in th) {
-      if (Object.prototype.hasOwnProperty.call(th, key)) out[key] = th[key] * k;
+  /* Halbe Rumpfbreite auf der Höhe u (0 = Schulter, 1 = Taille). */
+  function torsoW(th, u) {
+    if (u < 0.28) return lerp(th.shoulder, th.lat, u / 0.28);
+    return lerp(th.lat, th.waist, (u - 0.28) / 0.72);
+  }
+
+  /* Rumpf als Stapel waagerechter Kapseln — nur so lässt sich mit den
+     vorhandenen Grundformen eine sich verjüngende Fläche zeichnen. */
+  function torso(ctx, x, y0, y1, th, color, extra) {
+    var N = 11, h = (y1 - y0) / N, i, u, w, y;
+    for (i = 0; i < N; i++) {
+      u = i / (N - 1);
+      w = torsoW(th, u) + (extra || 0);
+      y = y0 + i * h;
+      px.capsule(ctx, [x - w, y], [x + w, y], h + 1.8 + (extra || 0) * 2, color);
     }
-    return out;
+  }
+
+  /* Gelenke der Rückansicht. crouch 1 = noch tief im Wagen. */
+  function backPose(x, gy, phase, scale, crouch) {
+    var s = Math.sin(phase) * (1 - crouch);
+    var bob = Math.abs(Math.cos(phase)) * 1.4 * scale * (1 - crouch);
+    return {
+      x: x,
+      swing: s,
+      footY: gy,
+      kneeY: gy - (15 - 2 * crouch) * scale,
+      hipY: gy - (31 - 13 * crouch) * scale - bob,
+      shY: gy - (50 - 14 * crouch) * scale - bob,
+      headY: gy - (64 - 16 * crouch) * scale - bob,
+      crouch: crouch,
+      scale: scale
+    };
+  }
+
+  function drawBack(ctx, p, th, look, bagColor) {
+    var x = p.x, k = p.scale, s = p.swing;
+    var skin = look.skin || C.skin;
+    var skinDark = look.skinDark || C.skinDark;
+    var skinLit = look.skinLit || C.skinLit;
+
+    /* Beine: eines hebt ab, das andere trägt. Das angehobene liegt hinten. */
+    var legs = [
+      { side: -1, lift: Math.max(0, s) },
+      { side: 1, lift: Math.max(0, -s) }
+    ];
+    if (legs[0].lift < legs[1].lift) legs.reverse();
+
+    function legPts(L) {
+      var out = L.side * (1 + L.lift * 1.5) * k;
+      return {
+        hip: [x + L.side * th.hip, p.hipY],
+        knee: [x + L.side * th.hip + out, p.kneeY - L.lift * 4 * k],
+        foot: [x + L.side * th.hip + out * 1.4, p.footY - L.lift * 9 * k]
+      };
+    }
+
+    var i, L, pts;
+
+    /* 1. Kontur */
+    for (i = 0; i < legs.length; i++) {
+      pts = legPts(legs[i]);
+      px.capsule(ctx, pts.hip, pts.knee, th.thigh + 2, C.ink);
+      px.capsule(ctx, pts.knee, pts.foot, th.calf + 2, C.ink);
+      px.rect(ctx, pts.foot[0] - th.calf * 0.7, pts.foot[1] - 1, th.calf * 1.4, 4 * k + 2, C.ink);
+    }
+    torso(ctx, x, p.shY - 2 * k, p.hipY + 2 * k, th, C.ink, 1.3);
+    px.disc(ctx, x - th.shoulder * 0.9, p.shY + 1 * k, th.delt + 1.5, C.ink);
+    px.disc(ctx, x + th.shoulder * 0.9, p.shY + 1 * k, th.delt + 1.5, C.ink);
+    px.disc(ctx, x, p.headY, th.head + 1.5, C.ink);
+
+    /* 2. Flächen */
+    for (i = 0; i < legs.length; i++) {
+      L = legs[i];
+      pts = legPts(L);
+      var tone = L.lift > 0.05 ? skinDark : skin;
+      px.capsule(ctx, pts.hip, pts.knee, th.thigh, tone);
+      px.capsule(ctx, pts.knee, pts.foot, th.calf, tone);
+      px.rect(ctx, pts.foot[0] - th.calf * 0.7, pts.foot[1] - 1, th.calf * 1.4, 4 * k, look.shoe || C.shadow);
+    }
+
+    /* Hals, dann Rumpf im Shirt — die Schultern bleiben frei, das Trägertop
+       ist genau die Stelle, an der man die Breite sieht. */
+    px.capsule(ctx, [x, p.headY + th.head * 0.6], [x, p.shY], 5 * k, skinDark);
+    torso(ctx, x, p.shY - 2 * k, p.hipY + 2 * k, th, look.shirt);
+
+    /* Shorts */
+    var sw = th.waist * 1.18;
+    px.rect(ctx, x - sw, p.hipY - 3 * k, sw * 2, 11 * k, look.shorts || C.shadow);
+    px.rect(ctx, x - 0.7 * k, p.hipY - 3 * k, 1.4 * k, 11 * k, C.ink);
+
+    /* Schultern und Arme */
+    var arms = [
+      { side: -1, dy: s * 2.5 * k },
+      { side: 1, dy: -s * 2.5 * k }
+    ];
+    for (i = 0; i < arms.length; i++) {
+      var a = arms[i];
+      var sh = [x + a.side * th.shoulder * 0.9, p.shY + 1 * k];
+      var elbow = [x + a.side * (th.shoulder + 1.5 * k), p.shY + 14 * k + a.dy];
+      var hand = [x + a.side * (th.shoulder + 2.5 * k), p.shY + 26 * k + a.dy * 1.4];
+      px.capsule(ctx, sh, elbow, th.arm + 2, C.ink);
+      px.capsule(ctx, elbow, hand, th.fore + 2, C.ink);
+      px.capsule(ctx, sh, elbow, th.arm, skin);
+      px.capsule(ctx, elbow, hand, th.fore, skin);
+      px.disc(ctx, sh[0], sh[1], th.delt, skin);
+      px.disc(ctx, sh[0] - 1, sh[1] - 1.5, th.delt * 0.45, skinLit);
+      if (a.side > 0 && bagColor) bag(ctx, hand, bagColor, k);
+    }
+
+    /* Hinterkopf: fast nur Haar, ein Streifen Nacken darunter. */
+    px.disc(ctx, x, p.headY, th.head, skin);
+    px.disc(ctx, x, p.headY - 1 * k, th.head * 0.95, look.hair || C.shadow);
+
+    /* 3. Licht: Rückenmitte und Schulterkanten */
+    px.capsule(ctx, [x, p.shY + 4 * k], [x, p.hipY - 3 * k], th.waist * 0.5, look.shirtLit);
+    px.capsule(ctx, [x - th.lat * 0.75, p.shY + 5 * k], [x - th.waist * 0.6, p.hipY - 4 * k],
+      2 * k, look.shirtLit);
+    px.capsule(ctx, [x + th.lat * 0.75, p.shY + 5 * k], [x + th.waist * 0.6, p.hipY - 4 * k],
+      2 * k, look.shirtLit);
   }
 
   /* Klamotten aus der Spieleranlage — im Film sieht man, was man gewählt hat. */
@@ -236,48 +341,25 @@
     var s = MF.game.state.get();
     var o = MF.data.outfits.look(s && s.player ? s.player.outfit : 'blau');
     o.hair = C.shadow;
-    o.face = 1;
     return o;
   }
 
-  /* Untergrenze für die Statur: der Spieler ist auch am ersten Tag schon
-     durchtrainiert. Wer weiter wächst, steigt entsprechend breiter aus —
-     deshalb wird gegen den Spielstand gemessen, nicht ersetzt. */
-  var ATHLETIC = {
-    arm: 8.6, fore: 5.6, torso: 22, shoulder: 8.2, thigh: 13.5, calf: 8.4, head: 7
-  };
-
-  function heroThickness() {
-    var th = fig.thicknessFromState();
-    var out = {};
-    for (var key in ATHLETIC) {
-      if (!Object.prototype.hasOwnProperty.call(ATHLETIC, key)) continue;
-      out[key] = th[key] > ATHLETIC[key] ? th[key] : ATHLETIC[key];
-    }
-    return out;
-  }
-
   function bag(ctx, hand, color, k) {
-    var w = 16 * k, h = 10 * k;
-    var y = hand[1] + 5 * k;
+    var w = 15 * k, h = 10 * k;
+    var y = hand[1] + 4 * k;
     px.capsule(ctx, [hand[0], hand[1]], [hand[0], y], 2 * k, C.ink);
     px.rect(ctx, hand[0] - w / 2 - 1, y - 1, w + 2, h + 2, C.ink);
     px.rect(ctx, hand[0] - w / 2, y, w, h, color);
     px.rect(ctx, hand[0] - w / 2, y, w, 2 * k, C.steelLit);
   }
 
-  function person(ctx, pose, look, th, bagColor, k) {
-    fig.draw(ctx, pose, th, look);
-    if (bagColor) bag(ctx, pose.hand, bagColor, k);
-  }
-
   /* Wo steht er zum Zeitpunkt t? Gibt null, solange er noch im Auto sitzt.
 
-     Wichtig ist die Tiefe: er steigt zum Betrachter hin aus und läuft auf
-     einer näheren Bodenlinie als der Wagen (NEAR statt GROUND). Ohne das
-     stünde er scheinbar auf dem Auto statt davor. Am Eingang geht er wieder
-     nach hinten — Bodenlinie und Größe wandern zurück Richtung Gebäude. */
-  var NEAR = 165;
+     Er steigt nach vorn zum Betrachter aus (NEAR liegt deutlich tiefer als die
+     Standlinie des Wagens) und geht dann schräg nach hinten zum Eingang:
+     Bodenlinie steigt, Größe nimmt ab. Diese Diagonale ist der Grund für die
+     Rückansicht — nur so sieht man, wie breit er gebaut ist. */
+  var NEAR = 171;
 
   function stage(t, from, to) {
     if (t < T_OPEN) return null;
@@ -285,20 +367,22 @@
     if (t < T_OUT) {                       /* Aussteigen */
       var u = seg(t, T_OPEN, T_OUT);
       return {
-        x: lerp(CAR_X - 4, from, u),
-        gy: lerp(GROUND + 3, NEAR, u),
-        crouch: 1 - u, scale: 1, alpha: 1, walk: false
+        x: lerp(CAR_X - 6, from, u),
+        gy: lerp(GROUND + 2, NEAR, u),
+        crouch: 1 - u, scale: 1.06, alpha: 1, walk: false
       };
     }
 
+    /* Die Tiefe läuft über den ganzen Weg mit, nicht erst am Ende — sonst
+       wäre es kein schräger Weg, sondern ein Knick kurz vor der Tür. */
     var v = seg(t, T_OUT, T_GONE);
-    var late = seg(t, T_ARRIVE - 0.6, T_GONE);   /* letzte Schritte hinein */
+    var d = v * v * 0.35 + v * 0.65;       /* hinten wird der Weg kürzer */
     return {
       x: lerp(from, to, v),
-      gy: lerp(NEAR, GROUND - 2, late),
+      gy: lerp(NEAR, GROUND - 3, d),
       crouch: 0,
-      scale: lerp(1, 0.82, late),
-      alpha: 1 - seg(t, T_ARRIVE + 0.1, T_GONE),
+      scale: lerp(1.06, 0.68, d),
+      alpha: 1 - seg(t, T_ARRIVE + 0.15, T_GONE),
       walk: true,
       from: from
     };
@@ -321,16 +405,16 @@
     facade(ctx, gymDoor);
     car(ctx, carX, Math.max(0, carDoor), bounce);
 
-    var st = stage(t, 96, 250);
+    var st = stage(t, 100, 258);
     if (!st) return;
 
     /* Schrittfrequenz aus dem zurückgelegten Weg — so rutschen die Füße
        nicht über den Boden. */
-    var phase = st.walk ? (st.x - st.from) / 26 * Math.PI : 0;
-    var pose = walker(st.x, st.gy, phase, st.scale, st.crouch);
+    var phase = st.walk ? (st.x - st.from) / 21 * Math.PI : 0;
+    var pose = backPose(st.x, st.gy, phase, st.scale, st.crouch);
 
     if (st.alpha < 1) ctx.globalAlpha = st.alpha;
-    person(ctx, pose, heroLook(), scaleTh(heroThickness(), st.scale), C.green, st.scale);
+    drawBack(ctx, pose, metrics(st.scale), heroLook(), C.green);
     ctx.globalAlpha = 1;
   }
 
