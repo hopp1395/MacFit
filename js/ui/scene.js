@@ -136,9 +136,11 @@
           shirt: NPC_SHIRTS[(i + Math.floor(Math.random() * 5)) % NPC_SHIRTS.length],
           shirtLit: C.steelLit,
           shorts: C.shadow,
-          skin: C.skinDark,
-          skinDark: C.shadow,
-          skinLit: C.skin
+          /* Hintergrundleute sitzen zwei Stufen tiefer auf derselben Rampe —
+             sie sollen zurücktreten, ohne dass ihr Hautton aus der Reihe fällt.
+             Vorher waren die drei Töne einzeln gesetzt, und der dunkelste war
+             'shadow', also gar keine Hautfarbe. */
+          ramp: px.ramp('skin', 2)
         },
         speed: 0.3 + Math.random() * 0.4,
         phase: Math.random() * Math.PI * 2

@@ -289,9 +289,12 @@
 
   function drawBack(ctx, p, th, look, bagColor) {
     var x = p.x, k = p.scale, s = p.swing;
-    var skin = look.skin || C.skin;
-    var skinDark = look.skinDark || C.skinDark;
-    var skinLit = look.skinLit || C.skinLit;
+    /* Dieselbe Rampe wie überall sonst — gemischte Zwischentöne hätte
+       quantize() auf die Bodenfarben geschoben. */
+    var r = look.ramp || px.ramp('skin', 4);
+    var skin = look.skin || r(0);
+    var skinDark = look.skinDark || r(-2);
+    var skinLit = look.skinLit || r(1);
 
     /* Beine: eines hebt ab, das andere trägt. Das angehobene liegt hinten. */
     var legs = [

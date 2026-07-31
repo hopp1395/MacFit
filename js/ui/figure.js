@@ -15,6 +15,7 @@
   var util = MF.core.util;
 
   var LIGHT = [-1, -1];   /* Lichtquelle oben links */
+  var DARK = [1.5, 1];    /* Schattenseite gegenüber */
 
   function offset(p, d) { return [p[0] + d[0], p[1] + d[1]]; }
   function between(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
@@ -93,12 +94,17 @@
     }
   }
 
-  /* opts: { shirt, shorts, skin, skinDark, skinLit, face } */
+  /* opts: { shirt, shorts, skin, skinDark, skinLit, face, ramp } */
   function draw(ctx, f, th, opts) {
     opts = opts || {};
-    var skin = opts.skin || C.skin;
-    var skinDark = opts.skinDark || C.skinDark;
-    var skinLit = opts.skinLit || C.skinLit;
+    /* Schattiert wird über Rampenstufen, damit quantize() die Zwischentöne
+       nicht auf die Bodenfarben schiebt. opts.skin* bleiben als Ausweg für
+       Aufrufer, die eine feste Farbe brauchen. */
+    var r = opts.ramp || px.ramp('skin', 4);
+    var skin = opts.skin || r(0);
+    var skinDark = opts.skinDark || r(-2);
+    var skinLit = opts.skinLit || r(1);
+    var soft = r(-1);
     var shirt = opts.shirt || C.shirt;
     var shirtLit = opts.shirtLit || C.shirtLit;
     var shorts = opts.shorts || C.jeans;
@@ -130,6 +136,9 @@
     px.disc(ctx, f.shoulder[0], f.shoulder[1], th.shoulder, skin);
     px.capsule(ctx, f.shoulder, f.elbow, th.arm, skin);
     px.capsule(ctx, f.elbow, f.hand, th.fore, skin);
+    /* Hand als Scheibe, nicht als Raster: die Szenenfigur ist nur 91 Punkte
+       hoch, das 9 x 9 grosse Faustraster aus sprites.js säße hier wie ein
+       Boxhandschuh — und in den meisten Szenen liegt ohnehin ein Gerät darauf. */
     px.disc(ctx, f.hand[0], f.hand[1], th.fore * 0.62, skin);
 
     /* Kleidung */
@@ -145,7 +154,12 @@
       hr * 0.95, opts.hair || C.shadow);
     px.rect(ctx, f.head[0] + face * 2 - 0.5, f.head[1] + 0.5, 1.5, 2, C.ink);
 
-    /* 3. Licht: schmaler Streifen leicht versetzt. */
+    /* 3. Schatten auf der lichtabgewandten Seite, dann Licht. Zwei Stufen der
+       Rampe auseinander — mit den früheren drei Hauttönen ging nur eines. */
+    px.capsule(ctx, offset(f.shoulder, DARK), offset(f.elbow, DARK), th.arm * 0.3, soft);
+    px.capsule(ctx, offset(f.hip, DARK), offset(f.knee, DARK), th.thigh * 0.3, soft);
+    px.capsule(ctx, offset(f.knee, DARK), offset(f.foot, DARK), th.calf * 0.3, soft);
+
     px.capsule(ctx, offset(f.shoulder, LIGHT), offset(between(f.shoulder, f.hip, 0.55), LIGHT),
       th.torso * 0.30, shirtLit);
     px.capsule(ctx, offset(f.shoulder, LIGHT), offset(f.elbow, LIGHT), th.arm * 0.34, skinLit);

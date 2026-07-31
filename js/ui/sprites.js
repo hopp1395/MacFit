@@ -98,6 +98,27 @@
     '......cbbbbbc......'
   ]);
 
+  /* Derselbe Kopf für den Avatar im Körper-Bildschirm. Der ist mit 99,5 Punkten
+     kleiner als die posierende Figur, sein Kopf hat Radius 7,5 statt 9,5 — das
+     19er Raster säße dort wie ein Helm. */
+  var HEAD_SMALL = sprite([
+    '....KKKKKKK....',
+    '...KKKKKKKKK...',
+    '..KKKKKKKKKKK..',
+    '.KKKKKKKKKKKKK.',
+    '.KKKKHKKKKKKKK.',
+    'KKKKKKKKKKKKKKK',
+    'KKdddddddddddKK',
+    'KcdkkdddddkkdcK',
+    'KcddddddeddddcK',
+    'KcdddddcbcdddcK',
+    '.cddddbbbddddc.',
+    '.cdddddddddddc.',
+    '..cbdddddddbc..',
+    '...cbbdddbbc...',
+    '....cbbbbbc....'
+  ]);
+
   /* Faust: Knöchelreihe oben, Fingerkerben in der Mitte. Feste Größe — eine
      Hand wächst nicht mit dem Bizeps. */
   var FIST = sprite([
@@ -149,6 +170,7 @@
     headFront: HEAD_FRONT,
     headBack: HEAD_BACK,
     headSide: HEAD_SIDE,
+    headSmall: HEAD_SMALL,
     fist: FIST,
     shoeFront: SHOE_FRONT,
     shoeSide: SHOE_SIDE,

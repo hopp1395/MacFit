@@ -11,17 +11,6 @@
   var W = 64, H = 116;
   var CX = 32;
 
-  function mix(a, b, t) {
-    var out = '#';
-    for (var i = 0; i < 3; i++) {
-      var av = parseInt(a.substr(1 + i * 2, 2), 16);
-      var bv = parseInt(b.substr(1 + i * 2, 2), 16);
-      var v = Math.round(av + (bv - av) * util.clamp(t, 0, 1));
-      out += ('0' + v.toString(16)).slice(-2);
-    }
-    return out;
-  }
-
   function create(container) {
     return px.create(container, W, H, 'pix--avatar');
   }
@@ -34,14 +23,22 @@
     var health = MF.game.stats.healthAvg();
 
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
-    function tone(id) {
-      /* Müde Partien werden dunkler. */
-      return mix(skin, C.skinDark, m[id].fatigue * 0.75);
-    }
 
-    /* Schlechte Werte = fahler Teint. */
-    var skin = health < 60 ? mix(C.skin, C.steel, (60 - health) / 90) : C.skin;
-    var skinLit = mix(skin, C.skinLit, 0.7);
+    /* Dieselben Rampen wie im Posenbild: schattiert wird über Stufen, nicht
+       über gemischte Farben. Gemischte Zwischentöne hatte quantize() vorher auf
+       die Bodenfarben geschoben, und der fahle Teint tat bis Gesundheit 30 gar
+       nichts. */
+    var r = health < 30 ? px.ramp('pale', 2)
+          : health < 55 ? px.ramp('pale', 3)
+          : px.ramp('skin', 4);
+
+    var skin = r(0);
+    var skinLit = r(1);
+
+    /* Müde Partien werden dunkler — eine Rampenstufe je halbe Ermüdung. */
+    function tone(id) {
+      return r(-Math.round(util.clamp(m[id].fatigue, 0, 1) * 2));
+    }
 
     surface.clear();
 
@@ -115,7 +112,7 @@
     leg(1, tone('beine'), 0);
 
     /* Hals vor dem Rumpf, sonst steht sein unteres Ende als Fleck auf der Brust. */
-    px.capsule(ctx, [CX, 18], [CX, shoulderY - 1], 7, mix(skin, C.skinDark, 0.8));
+    px.capsule(ctx, [CX, 18], [CX, shoulderY - 1], 7, r(-2));
     px.capsule(ctx, [CX, shoulderY], [CX, hipY - 2], backW, tone('ruecken'));
     /* Taille schmaler als der Brustkorb — das macht die V-Form. */
     px.capsule(ctx, [CX, hipY - 10], [CX, hipY - 2], waistW, tone('bauch'));
@@ -133,12 +130,9 @@
     px.disc(ctx, CX + chestW * 0.85, 31, chestW, tone('brust'));
 
     /* Kopf */
-    /* Flacher Haarschnitt als Kappe. Sitzt sie zu tief, bleibt vom Gesicht
-       nichts als ein Streifen Kinn und die Augen verschwinden darin. */
-    px.disc(ctx, CX, 12, 7.5, skin);
-    px.capsule(ctx, [CX - 3, 7.6], [CX + 3, 7.6], 6.4, C.shadow);
-    px.rect(ctx, CX - 4, 13, 2, 2, C.ink);
-    px.rect(ctx, CX + 2, 13, 2, 2, C.ink);
+    /* Kopf als handgezeichnetes Raster, dieselbe Machart wie im Posenbild,
+       nur 15 x 15 statt 19 x 19. */
+    px.stamp(ctx, MF.ui.sprites.headSmall, CX - 7, 5, r);
 
     /* Shorts in der gewählten Farbe */
     var outfit = MF.data.outfits.get(s.player ? s.player.outfit : 'blau');
@@ -155,9 +149,9 @@
     /* Bauchmuskeln zeichnen sich erst ab einer gewissen Größe ab. */
     if (m.bauch.size > 26) {
       var rows = m.bauch.size > 55 ? 3 : 2;
-      for (var r = 0; r < rows; r++) {
-        px.rect(ctx, CX - 4, hipY - 13 + r * 4, 3, 2, mix(tone('bauch'), C.ink, 0.35));
-        px.rect(ctx, CX + 1, hipY - 13 + r * 4, 3, 2, mix(tone('bauch'), C.ink, 0.35));
+      for (var row = 0; row < rows; row++) {
+        px.rect(ctx, CX - 4, hipY - 13 + row * 4, 3, 2, r(-3));
+        px.rect(ctx, CX + 1, hipY - 13 + row * 4, 3, 2, r(-3));
       }
     }
 
