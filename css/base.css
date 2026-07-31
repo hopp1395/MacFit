@@ -1,0 +1,87 @@
+/* Grundlagen: Reset, Farbwelt, Typografie, Touch-Verhalten. */
+
+:root {
+  --bg: #0e1116;
+  --bg-soft: #161b23;
+  --bg-card: #1b212b;
+  --bg-card-hi: #222a36;
+  --line: #2b3441;
+
+  --text: #e9edf3;
+  --text-dim: #97a3b4;
+  --text-faint: #6b7787;
+
+  --accent: #ff7a29;        /* MacFit-Orange */
+  --accent-dark: #d95f13;
+  --good: #3ecf7a;
+  --warn: #ffbe3d;
+  --bad: #ff5470;
+  --info: #4aa8ff;
+
+  --radius: 14px;
+  --radius-sm: 9px;
+  --gap: 12px;
+  --pad: 14px;
+
+  --shadow: 0 6px 20px rgba(0, 0, 0, .35);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+
+  /* Touch-Verhalten: kein Doppeltipp-Zoom, keine Textauswahl, keine blaue Blase */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+h1, h2, h3 {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+svg {
+  display: block;
+}
+
+/* Sichtbarer Fokus nur fuer Tastatur, nicht bei Touch. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}

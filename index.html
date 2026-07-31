@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#101319">
+  <meta name="description" content="MacFit — Bodybuilding-Spiel für den Browser. Trainieren, wachsen, aufsteigen.">
+  <title>MacFit</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+  <div id="app">
+    <header id="hud"></header>
+
+    <main id="screens">
+      <section id="screen-gym" class="screen"></section>
+      <section id="screen-session" class="screen screen--session"></section>
+      <section id="screen-shop" class="screen"></section>
+      <section id="screen-stats" class="screen"></section>
+    </main>
+
+    <nav id="tabbar">
+      <button type="button" data-tab="gym"><span>🏋️</span>Gym</button>
+      <button type="button" data-tab="shop"><span>🧪</span>Shop</button>
+      <button type="button" data-tab="stats"><span>📊</span>Körper</button>
+    </nav>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="modal-root"></div>
+
+  <!-- Reihenfolge zaehlt: core -> data -> game -> ui -> main -->
+  <script src="js/core/namespace.js"></script>
+  <script src="js/core/util.js"></script>
+  <script src="js/core/events.js"></script>
+  <script src="js/core/storage.js"></script>
+  <script src="js/core/ticker.js"></script>
+  <script src="js/core/haptics.js"></script>
+
+  <script src="js/data/muscles.js"></script>
+  <script src="js/data/exercises.js"></script>
+  <script src="js/data/supplements.js"></script>
+  <script src="js/data/levels.js"></script>
+
+  <script src="js/game/state.js"></script>
+  <script src="js/game/stats.js"></script>
+  <script src="js/game/progression.js"></script>
+  <script src="js/game/economy.js"></script>
+  <script src="js/game/supplements.js"></script>
+  <script src="js/game/training.js"></script>
+  <script src="js/game/day.js"></script>
+
+  <script src="js/ui/router.js"></script>
+  <script src="js/ui/toast.js"></script>
+  <script src="js/ui/modal.js"></script>
+  <script src="js/ui/report.js"></script>
+  <script src="js/ui/hud.js"></script>
+  <script src="js/ui/avatar.js"></script>
+  <script src="js/ui/screen-gym.js"></script>
+  <script src="js/ui/screen-session.js"></script>
+  <script src="js/ui/screen-shop.js"></script>
+  <script src="js/ui/screen-stats.js"></script>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
