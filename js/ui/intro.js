@@ -552,16 +552,20 @@
       var x = lerp(X_DOOR, X_OUT, v);
       return {
         x: x, gy: lerp(GROUND - 3, NEAR, d), scale: lerp(0.7, SCALE, d),
-        crouch: 0, alpha: seg(t, L_OUT, 0.6),
+        crouch: 0, alpha: seg(t, L_OUT, 0.6), face: -1,
         phase: (X_DOOR - x) / SIDE_SPAN * Math.PI
       };
     }
 
-    var u = seg(t, L_AT_CAR, L_IN);         /* Einsteigen */
+    /* Einsteigen. Er geht bis links an der Fahrertür vorbei, dreht sich dort
+       um und steigt nach rechts ein — in dieselbe Richtung, in die der Wagen
+       zeigt. Ohne die Drehung säße er rückwärts am Steuer. Bewegungsrichtung
+       und Blickrichtung wechseln im selben Moment, das liest sich als Drehen. */
+    var u = seg(t, L_AT_CAR, L_IN);
     return {
       x: lerp(X_OUT, CAR_X - 8, u),
       gy: lerp(NEAR, GROUND + 2, u),
-      scale: SCALE, crouch: u, alpha: 1, phase: PH_LEAVE
+      scale: SCALE, crouch: u, alpha: 1, face: 1, phase: PH_LEAVE
     };
   }
 
@@ -572,8 +576,10 @@
     var carX, bounce = 0, carDoor, gymDoor;
 
     if (leaving) {
+      /* Nach rechts weg, nicht nach links: der Wagen ist mit Schnauze und
+         Scheinwerfern nach rechts gezeichnet — nach links wäre Rückwärtsgang. */
       carX = t > L_OFF
-        ? lerp(CAR_X, -110, inCubic(seg(t, L_OFF, DURATION)))
+        ? lerp(CAR_X, W + 140, inCubic(seg(t, L_OFF, DURATION)))
         : CAR_X;
       if (t > L_IN - 0.1 && t < L_IN + 0.3) {   /* federt ein, wenn er sitzt */
         bounce = Math.sin((t - L_IN + 0.1) / 0.4 * Math.PI) * 1.4;
@@ -600,8 +606,8 @@
 
     if (st.alpha < 1) ctx.globalAlpha = st.alpha;
     if (leaving) {
-      drawSide(ctx, sidePose(st.x, st.gy, st.phase, st.scale, st.crouch, -1),
-        sideThickness(st.scale), heroLook(-1), C.green, st.scale);
+      drawSide(ctx, sidePose(st.x, st.gy, st.phase, st.scale, st.crouch, st.face),
+        sideThickness(st.scale), heroLook(st.face), C.green, st.scale);
     } else if (st.mode === 'side') {
       drawSide(ctx, sidePose(st.x, st.gy, st.phase, st.scale, st.crouch, 1),
         sideThickness(st.scale), heroLook(1), C.green, st.scale);
