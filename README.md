@@ -47,6 +47,13 @@ untere Bildschirmhälfte.
 Die Zone schrumpft mit jeder Wiederholung im Satz und wird enger, je müder die Partie ist.
 Mehr Intensität bringt mehr Reiz, macht das Timing aber härter.
 
+Dazu **Geräusche im Stil von Amiga 500 und C64**: Rechteckwellen statt Sinustönen, harte
+Hüllkurven, Tonhöhen, die in Rastern springen statt zu gleiten, und der ganze Effektweg
+durch ein 4-Bit-Raster. Gewicht auflegen klirrt, eine saubere Wiederholung antwortet mit
+einem SID-Arpeggio nach oben, eine verrissene mit einem Ton, der stufenweise abstürzt.
+Satzende und Levelaufstieg bekommen die Fanfare, die damals hinter jedem Level stand.
+Abschalten unter **Körper → Einstellungen → Geräusche**, unabhängig von der Titelmusik.
+
 ## Erfolge teilen
 
 Im Tab **Körper** gibt es „Erfolge teilen“. Du wählst eine Pose — Doppelter Bizeps,
@@ -95,7 +102,7 @@ globalen `window.MacFit`.
 ```
 index.html          Grundgerüst + Skripte in Ladereihenfolge
 css/                base (Reset/Farben) · layout (Gerüst) · components (Bausteine)
-js/core/            util, events, storage, ticker, haptics, audio (Titelmusik)
+js/core/            util, events, storage, ticker, haptics, audio (Musik + Geräusche)
 js/data/            muscles, exercises, supplements, levels, outfits, scenes — reine Spieldaten
 js/game/            state, stats, fitness, training, progression, supplements, economy, day
 js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create,

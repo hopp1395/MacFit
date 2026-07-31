@@ -45,7 +45,7 @@
          ohne diesen Block laufen dadurch einmalig durch die Anlage.
          photo ist ein verkleinertes JPEG als data-URL oder leer. */
       player: { name: '', outfit: 'blau', photo: '', number: '', since: 1, created: false },
-      settings: { haptics: true, music: true, muscle: 'brust', weight: 1 },
+      settings: { haptics: true, music: true, sound: true, muscle: 'brust', weight: 1 },
       seenIntro: false,
       lastReport: null
     };

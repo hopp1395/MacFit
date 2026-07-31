@@ -129,6 +129,7 @@
 
     buildSetUi(container, ex, run.weight);
     nextRep();
+    MF.core.audio.sfx('rack');   /* Gewicht aufgelegt */
 
     if (!ticker) ticker = MF.core.ticker.create(frame);
     ticker.start();
@@ -197,6 +198,7 @@
     run.lock = LOCK_AFTER_TAP;
 
     MF.core.haptics.buzz(kind === 'perfect' ? 'perfect' : (kind === 'ok' ? 'ok' : 'miss'));
+    MF.core.audio.sfx(kind);
 
     nodes.feedback.textContent = label;
     nodes.feedback.className = 'session__feedback is-shown is-' + kind;
@@ -235,6 +237,9 @@
     if (ticker) ticker.stop();
 
     var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits);
+    /* Beim Aufstieg spielt gleich die laengere Fanfare aus dem Modal — zwei
+       Melodien uebereinander waeren Krach. */
+    if (!result.levelUp) MF.core.audio.sfx('done');
     showResult(result);
   }
 

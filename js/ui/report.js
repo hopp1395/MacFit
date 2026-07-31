@@ -119,6 +119,7 @@
 
   function showLevelUp(info) {
     MF.core.haptics.buzz('levelUp');
+    MF.core.audio.sfx('level');
 
     var body = el('div.levelup');
     body.appendChild(el('div.levelup__badge', { text: 'Lv ' + info.level }));

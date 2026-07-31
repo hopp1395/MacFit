@@ -299,6 +299,19 @@
     });
     panel.appendChild(musicBtn);
 
+    var soundBtn = el('button.btn.btn--ghost', {
+      type: 'button',
+      text: (s.settings.sound ? '✓ ' : '✕ ') + 'Geräusche'
+    });
+    util.onTap(soundBtn, function () {
+      s.settings.sound = !s.settings.sound;
+      MF.core.audio.setSfxEnabled(s.settings.sound);
+      if (s.settings.sound) MF.core.audio.sfx('perfect');   /* kurze Hörprobe */
+      MF.game.state.saveSoon();
+      MF.ui.router.refresh('stats');
+    });
+    panel.appendChild(soundBtn);
+
     /* Klartext zum Speicherstand — der Punkt im HUD allein sagt zu wenig. */
     var st = MF.core.storage.status();
     var saveBox = el('div.savebox' + (st.available ? '' : '.savebox--bad'));

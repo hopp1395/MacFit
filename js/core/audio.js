@@ -1,4 +1,9 @@
-/* Titelmusik zum Vorspann.
+/* Titelmusik und Trainingsgeraeusche.
+
+   Zwei getrennte Wege in denselben Ausgang: die Musik haengt an master und
+   wird mit dem Vorspann ein- und ausgeblendet, die Effekte haengen an einem
+   eigenen Bus und sind davon unabhaengig. Sonst waeren die Geraeusche im
+   Training stumm, weil master nach dem Film heruntergeblendet ist.
 
    Eigene Komposition im Stil des Dream-Trance der Neunziger: Klavier-Arpeggio
    über einer Moll-Kadenz, Flächen-Pad darunter, ab dem zweiten Takt Kick,
@@ -19,11 +24,12 @@
   var Ctor = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
   var supported = !!Ctor;
 
-  var enabled = true;      /* Einstellung des Spielers        */
+  var enabled = true;      /* Musik erlaubt                   */
+  var sfxOn = true;        /* Geraeusche erlaubt              */
   var wanted = false;      /* soll gerade Musik laufen?       */
   var armed = false;       /* wartet auf die erste Nutzergeste */
 
-  var ctx = null, master = null, noiseBuf = null;
+  var ctx = null, master = null, sfxBus = null, noiseBuf = null;
   var timer = 0, next = 0, step = 0;
 
   var file = null, fileState = 'unknown';   /* unknown | ready | missing */
@@ -229,6 +235,165 @@
     }
   }
 
+  /* ---------- Trainingsgeraeusche ------------------------------------------ */
+
+  /* Vorbild sind Amiga 500 und C64: Rechteck- und Saegezahnwellen statt
+     Sinustoenen, harte Kanten statt weicher Huellkurven, Tonhoehen, die in
+     Stufen springen. Der ganze Bus laeuft am Ende durch ein grobes Raster —
+     das ist der Beigeschmack der alten 8-Bit-Wandler und macht mehr vom
+     Charakter aus als die Wellenform selbst. */
+
+  var CRUNCH = 15;        /* Stufen pro Halbwelle, also gut 4 Bit */
+
+  function crusher() {
+    var n = 1024;
+    var curve = new Float32Array(n);
+    for (var i = 0; i < n; i++) {
+      var x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.round(x * CRUNCH) / CRUNCH;
+    }
+    var ws = ctx.createWaveShaper();
+    ws.curve = curve;
+    return ws;
+  }
+
+  /* Ein Ton mit der Kante eines Chip-Bausteins: sofort da, kein Einblenden,
+     am Ende ein kurzer Abfall statt eines Ausklangs. */
+  function chip(at, freq, dur, type, vol, cut) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(vol, at);
+    g.gain.setValueAtTime(vol, at + dur * 0.75);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+
+    var tail = g;
+    if (cut) {
+      var lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = cut;
+      lp.connect(g);
+      tail = lp;
+    }
+    g.connect(sfxBus);
+
+    var o = ctx.createOscillator();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(freq, at);
+    o.connect(tail);
+    o.start(at); o.stop(at + dur + 0.02);
+    return o;
+  }
+
+  /* Der Arpeggio-Trick des C64: ein einziger Oszillator springt im Rhythmus
+     der Bildwiederholung durch die Toene eines Akkords. Klingt nach Akkord,
+     kostet aber nur eine Stimme — und genau danach klingt es auch. */
+  function sidArp(at, midis, dur, vol, rate) {
+    var frame = rate || 0.02;               /* 1/50 s, wie beim Original */
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(vol, at);
+    g.gain.setValueAtTime(vol, at + dur * 0.8);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    g.connect(sfxBus);
+
+    var o = ctx.createOscillator();
+    o.type = 'square';
+    var steps = Math.max(1, Math.floor(dur / frame));
+    for (var i = 0; i < steps; i++) {
+      o.frequency.setValueAtTime(hz(midis[i % midis.length]), at + i * frame);
+    }
+    o.connect(g);
+    o.start(at); o.stop(at + dur + 0.02);
+  }
+
+  /* Eisen: kurzer Rauschstoss durch ein schmales Band. Das ist die
+     Amiga-Seite — dort kam so etwas als kurzes Sample von der Diskette. */
+  function clank(at, freq, dur, vol) {
+    var src = ctx.createBufferSource();
+    src.buffer = noise();
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = freq;
+    bp.Q.value = 3;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(vol, at);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    src.connect(bp); bp.connect(g); g.connect(sfxBus);
+    src.start(at); src.stop(at + dur + 0.02);
+  }
+
+  /* Tonhoehe, die in Stufen faellt oder steigt — das Rutschen einer Sirene
+     gab es auf dem SID nicht, dort wurde in Rastern gerechnet. */
+  function slide(at, fromMidi, toMidi, dur, vol, type) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(vol, at);
+    g.gain.setValueAtTime(vol, at + dur * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    g.connect(sfxBus);
+
+    var o = ctx.createOscillator();
+    o.type = type || 'square';
+    var steps = Math.max(2, Math.round(dur / 0.02));
+    for (var i = 0; i < steps; i++) {
+      var m = fromMidi + (toMidi - fromMidi) * (i / (steps - 1));
+      o.frequency.setValueAtTime(hz(Math.round(m)), at + i * (dur / steps));
+    }
+    o.connect(g);
+    o.start(at); o.stop(at + dur + 0.02);
+  }
+
+  var SFX = {
+    /* Griff ans Gewicht: Scheibe klirrt, Rahmen wummert. */
+    rack: function (at) {
+      clank(at, 2400, 0.07, 0.34);
+      clank(at + 0.05, 1500, 0.12, 0.2);
+      slide(at, 45, 33, 0.14, 0.22, 'triangle');
+    },
+    /* Saubere Wiederholung: Akkord nach oben, dazu das Klacken des Gewichts. */
+    perfect: function (at) {
+      clank(at, 2000, 0.05, 0.3);
+      sidArp(at + 0.01, [72, 76, 79, 84], 0.18, 0.2);
+      chip(at + 0.19, hz(84), 0.11, 'square', 0.16);
+    },
+    /* Unsauber: zwei Stufen, dumpfer, kein Glanz oben drauf. */
+    ok: function (at) {
+      clank(at, 1400, 0.05, 0.22);
+      sidArp(at + 0.01, [67, 72], 0.12, 0.17, 0.03);
+    },
+    /* Verrissen: Tonhoehe faellt in Stufen, dazu ein Scheppern. */
+    miss: function (at) {
+      slide(at, 62, 38, 0.26, 0.24, 'sawtooth');
+      clank(at + 0.02, 700, 0.22, 0.24);
+    },
+    /* Satz geschafft: die Fanfare, die auf dem C64 hinter jedem Level stand. */
+    done: function (at) {
+      sidArp(at, [60, 64, 67], 0.12, 0.2, 0.025);
+      sidArp(at + 0.12, [64, 67, 72], 0.12, 0.2, 0.025);
+      sidArp(at + 0.24, [67, 72, 76], 0.34, 0.22, 0.025);
+      clank(at + 0.24, 3000, 0.1, 0.2);
+    },
+    /* Aufstieg: laenger, eine Stufe hoeher, mit Nachschlag. */
+    level: function (at) {
+      sidArp(at, [60, 64, 67, 72], 0.24, 0.2, 0.025);
+      sidArp(at + 0.24, [64, 67, 72, 76], 0.24, 0.2, 0.025);
+      sidArp(at + 0.48, [67, 72, 76, 79], 0.55, 0.24, 0.02);
+      chip(at + 0.48, hz(84), 0.5, 'square', 0.1, 3000);
+    }
+  };
+
+  function sfx(name) {
+    if (!sfxOn || !supported) return;
+    var make = SFX[name];
+    if (!make || !build()) return;
+    if (ctx.state === 'suspended' && ctx.resume) {
+      try { ctx.resume(); } catch (err) { return; }
+    }
+    if (ctx.state === 'suspended') return;
+    try {
+      make(ctx.currentTime + 0.005);
+    } catch (err) {
+      /* Ein misslungenes Geraeusch darf das Training nicht anhalten. */
+    }
+  }
+
   /* ---------- Aufbau und Steuerung ----------------------------------------- */
 
   function build() {
@@ -239,14 +404,28 @@
       supported = false;
       return false;
     }
-    master = ctx.createGain();
-    master.gain.value = 0.0001;
+
+    var out = ctx.destination;
     if (ctx.createDynamicsCompressor) {
       var comp = ctx.createDynamicsCompressor();
-      master.connect(comp);
       comp.connect(ctx.destination);
+      out = comp;
+    }
+
+    master = ctx.createGain();
+    master.gain.value = 0.0001;
+    master.connect(out);
+
+    /* Eigener Weg fuer die Geraeusche, damit sie nicht mit der Musik
+       weggeblendet werden — und mit dem Raster am Ende. */
+    sfxBus = ctx.createGain();
+    sfxBus.gain.value = 0.55;
+    if (ctx.createWaveShaper && typeof Float32Array !== 'undefined') {
+      var ws = crusher();
+      sfxBus.connect(ws);
+      ws.connect(out);
     } else {
-      master.connect(ctx.destination);
+      sfxBus.connect(out);
     }
     return true;
   }
@@ -352,11 +531,14 @@
     init: init,
     start: start,
     stop: stop,
+    sfx: sfx,
     setEnabled: function (v) {
       enabled = !!v;
       if (!enabled) stop(0.25);
     },
     isEnabled: function () { return enabled; },
+    setSfxEnabled: function (v) { sfxOn = !!v; },
+    isSfxEnabled: function () { return sfxOn; },
     isSupported: function () { return supported; }
   };
 })(window.MacFit);
