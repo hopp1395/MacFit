@@ -1431,6 +1431,14 @@
   color: var(--text-faint);
 }
 
+.share__note--warn {
+  color: var(--text-dim);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border-left: 3px solid var(--warn);
+}
+
 /* ---------- Spieleranlage ------------------------------------------------- */
 
 .create { display: flex; flex-direction: column; gap: 10px; }

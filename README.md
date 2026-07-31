@@ -46,10 +46,10 @@ Figur in dieser Pose, gebaut aus deinen aktuellen Muskelwerten, darunter Fitness
 Rang, Masse, Level und Tag. Ganz unten steht der Einladungslink, damit auch ein
 weitergeleiteter Screenshot noch zum Spiel führt.
 
-Verschickt wird über das Teilen-Menü des Geräts, das am Handy WhatsApp mit anbietet. Wo es
-das nicht gibt, wird das Bild heruntergeladen und WhatsApp mit dem Text geöffnet; anhängen
-musst du dann selbst. Ein Bild direkt über einen `wa.me`-Link anzuhängen geht nicht — der
-Link kann nur Text, und ein Bild-Upload bräuchte einen Server.
+Geteilt wird über das Teilen-Menü des Geräts — dort stehen WhatsApp, Signal, Mail und alles
+andere, was installiert ist. Ein Knopf, drei Stufen: Bild und Text zusammen, sonst Text im
+Teilen-Menü und Bild in die Downloads, sonst Bild speichern und Text in die Zwischenablage.
+Der Dialog sagt vorher, welche Stufe dein Browser kann.
 
 Hinaus geht nur Bild und Text. Dein Foto und dein Spielstand bleiben auf dem Gerät.
 

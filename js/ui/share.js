@@ -186,24 +186,24 @@
     return new window.File([arr], name, { type: 'image/png' });
   }
 
+  function canShare() {
+    return !!(window.navigator && window.navigator.share);
+  }
+
   function canShareFiles() {
     var nav = window.navigator;
     return !!(nav && nav.share && nav.canShare && window.File && window.Uint8Array);
   }
 
-  function whatsappUrl(message) {
-    return 'https://wa.me/?text=' + encodeURIComponent(message);
+  function run(promise) {
+    if (promise && promise['catch']) {
+      promise['catch'](function () { /* abgebrochen ist kein Fehler */ });
+    }
   }
 
-  function openWhatsApp(message) {
-    var url = whatsappUrl(message);
-    var win = window.open(url, '_blank');
-    if (!win) window.location.href = url;
-  }
-
-  /* Bild speichern und den Text öffnen — der Umweg, wenn das Gerät kein
-     Teilen-Blatt für Dateien anbietet. */
-  function download(canvas, message) {
+  /* Bild in den Downloads ablegen. Das ist kein Ersatz fürs Teilen, aber der
+     einzige Weg, der ohne Teilen-Blatt überall funktioniert. */
+  function download(canvas) {
     try {
       var a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
@@ -211,30 +211,68 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      MF.ui.toast.show('Bild gespeichert — in WhatsApp anhängen.', 'good');
+      return true;
     } catch (err) {
-      MF.ui.toast.show('Bild konnte nicht gespeichert werden.', 'warn');
+      return false;
     }
-    openWhatsApp(message);
   }
 
-  function shareImage(canvas, message) {
-    if (!canvas) { openWhatsApp(message); return; }
-
-    if (canShareFiles()) {
+  function copyText(message) {
+    var nav = window.navigator;
+    if (nav && nav.clipboard && nav.clipboard.writeText) {
       try {
-        var file = toFile(canvas, 'macfit-pose.png');
-        var data = { files: [file], text: message, title: 'MacFit' };
-        if (window.navigator.canShare(data)) {
-          var p = window.navigator.share(data);
-          if (p && p['catch']) p['catch'](function () { /* abgebrochen */ });
-          return;
-        }
+        run(nav.clipboard.writeText(message));
+        return true;
       } catch (err) {
-        /* fällt unten durch */
+        return false;
       }
     }
-    download(canvas, message);
+    return false;
+  }
+
+  /* Ein Knopf, drei Stufen — die erste, die das Gerät kann, gewinnt:
+       1. Teilen-Blatt mit Bild und Text  (Handy: darin steht WhatsApp)
+       2. Teilen-Blatt nur mit Text, Bild vorher in die Downloads
+       3. Bild speichern und Text in die Zwischenablage
+
+     Der frühere Weg über einen wa.me-Link ist raus: er schickt nur Text, und
+     nach einem ausgelösten Download blockieren Browser das Pop-up ohnehin. */
+  function share(canvas, message) {
+    if (canvas && canShareFiles()) {
+      try {
+        var data = { files: [toFile(canvas, 'macfit-pose.png')], text: message, title: 'MacFit' };
+        if (window.navigator.canShare(data)) {
+          run(window.navigator.share(data));
+          return 'files';
+        }
+      } catch (err) {
+        /* fällt durch auf die nächste Stufe */
+      }
+    }
+
+    if (canShare()) {
+      var saved = canvas ? download(canvas) : false;
+      try {
+        run(window.navigator.share({ title: 'MacFit', text: message }));
+        MF.ui.toast.show(saved
+          ? 'Bild gespeichert — im Chat noch anhängen.'
+          : 'Text geteilt.', 'good');
+        return 'text';
+      } catch (err) {
+        /* fällt durch auf die nächste Stufe */
+      }
+    }
+
+    var okImage = canvas ? download(canvas) : false;
+    var okText = copyText(message);
+    MF.ui.toast.show(
+      okImage && okText ? 'Bild gespeichert, Text kopiert — jetzt einfügen.'
+        : okImage ? 'Bild gespeichert.'
+        : okText ? 'Text kopiert.'
+        : 'Teilen geht in diesem Browser leider nicht.',
+      okImage || okText ? 'good' : 'warn'
+    );
+    return 'fallback';
   }
 
   /* ---------- Dialog -------------------------------------------------------- */
@@ -283,23 +321,38 @@
       })
     ]);
 
+    /* Sagen, was passieren wird, statt hinterher zu überraschen. */
+    if (!canShareFiles()) {
+      body.appendChild(el('p.share__note.share__note--warn', {
+        text: canShare()
+          ? 'Dieser Browser teilt keine Bilder direkt. Das Bild landet in den '
+            + 'Downloads, den Text kannst du gleich weitergeben.'
+          : 'Dieser Browser hat kein Teilen-Menü. Bild und Text werden '
+            + 'gespeichert beziehungsweise kopiert — anhängen musst du selbst.'
+      }));
+    }
+
     drawCard();
 
     MF.ui.modal.open({
       title: 'Erfolge teilen',
-      subtitle: 'Pose wählen, Bild verschicken.',
+      subtitle: 'Pose wählen, dann teilen.',
       body: body,
       dismissible: true,
       actions: [
         {
-          label: '📤 Bild per WhatsApp',
+          label: '📤 Teilen',
           tone: 'primary',
-          onTap: function () { shareImage(card, text(chosen)); }
+          onTap: function () { share(card, text(chosen)); }
         },
         {
-          label: 'Nur Text',
+          label: 'Bild speichern',
           tone: 'ghost',
-          onTap: function () { openWhatsApp(text(chosen)); }
+          onTap: function () {
+            var ok = download(card);
+            MF.ui.toast.show(ok ? 'Bild gespeichert.' : 'Bild konnte nicht gespeichert werden.',
+              ok ? 'good' : 'warn');
+          }
         },
         { label: 'Abbrechen', tone: 'ghost' }
       ]
@@ -310,8 +363,10 @@
     show: show,
     text: text,
     buildCard: buildCard,
-    whatsappUrl: whatsappUrl,
+    share: share,
+    download: download,
     gameUrl: gameUrl,
+    canShare: canShare,
     canShareFiles: canShareFiles,
     cardSize: { w: CARD_W, h: CARD_H }
   };
