@@ -40,10 +40,18 @@ Mehr Intensität bringt mehr Reiz, macht das Timing aber härter.
 
 ## Erfolge teilen
 
-Im Tab **Körper** gibt es „Erfolge teilen“: Fitness-Index, Rang, Masse, Level und Tag als
-kurzer Text, mit Vorschau vor dem Absenden. Ein Tipp öffnet WhatsApp, alternativ das
-Teilen-Menü des Geräts oder die Zwischenablage. Es geht nur dieser Text hinaus — Foto und
-Spielstand bleiben auf dem Gerät.
+Im Tab **Körper** gibt es „Erfolge teilen“. Du wählst eine Pose — Doppelter Bizeps,
+Lat-Spreizen, Most Muscular oder Bauch und Beine — und bekommst ein fertiges Bild: deine
+Figur in dieser Pose, gebaut aus deinen aktuellen Muskelwerten, darunter Fitness-Index,
+Rang, Masse, Level und Tag. Ganz unten steht der Einladungslink, damit auch ein
+weitergeleiteter Screenshot noch zum Spiel führt.
+
+Verschickt wird über das Teilen-Menü des Geräts, das am Handy WhatsApp mit anbietet. Wo es
+das nicht gibt, wird das Bild heruntergeladen und WhatsApp mit dem Text geöffnet; anhängen
+musst du dann selbst. Ein Bild direkt über einen `wa.me`-Link anzuhängen geht nicht — der
+Link kann nur Text, und ein Bild-Upload bräuchte einen Server.
+
+Hinaus geht nur Bild und Text. Dein Foto und dein Spielstand bleiben auf dem Gerät.
 
 ## Der Tagesablauf
 
@@ -81,7 +89,8 @@ css/                base (Reset/Farben) · layout (Gerüst) · components (Baust
 js/core/            util, events, storage, ticker, haptics
 js/data/            muscles, exercises, supplements, levels, outfits, scenes — reine Spieldaten
 js/game/            state, stats, fitness, training, progression, supplements, economy, day
-js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create, membercard
+js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create,
+                    membercard, poses, share
 js/ui/pixel|figure|scene   Pixel-Grafik: Palette, Figuren-Rig, Szenenaufbau
 js/main.js          Bootstrap
 ```
