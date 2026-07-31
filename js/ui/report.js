@@ -39,6 +39,8 @@
 
     body.appendChild(el('div.report__block', null, [
       line('Gesamtmasse', util.formatKg(report.massAfter), 'flat'),
+      line('Fitness-Index', report.fitAfter + ' (' + deltaText(report.fitDelta, 0) + ')',
+           deltaTone(report.fitDelta)),
       line('Sätze gestern', String(report.setsTrained), 'flat'),
       line('Einnahmen', '+' + util.formatMoney(report.income), 'good')
     ]));

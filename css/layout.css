@@ -52,6 +52,36 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Fitness-Index — immer im Blick. */
+.hud__fit {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-card-hi);
+  border: 1px solid var(--line);
+}
+
+.hud__fit-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  color: var(--text-faint);
+}
+
+.hud__fit-value {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__fit.is-good { border-color: rgba(62, 207, 122, .5); }
+.hud__fit.is-good .hud__fit-value { color: var(--good); }
+.hud__fit.is-warn { border-color: rgba(255, 190, 61, .5); }
+.hud__fit.is-warn .hud__fit-value { color: var(--warn); }
+.hud__fit.is-bad .hud__fit-value { color: var(--text-dim); }
+
 .hud__row {
   display: flex;
   align-items: center;

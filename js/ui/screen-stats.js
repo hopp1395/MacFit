@@ -65,6 +65,54 @@
     return panel;
   }
 
+  /* Der Fitness-Index mit Aufschlüsselung — sonst bleibt die Zahl beliebig. */
+  function fitnessPanel() {
+    var p = MF.game.fitness.parts();
+    var rank = MF.game.fitness.rank(p.index);
+    var next = MF.game.fitness.nextRank(p.index);
+
+    var panel = el('section.fit-panel');
+
+    panel.appendChild(el('div.fit-head', null, [
+      el('div.fit-head__main', null, [
+        el('div.fit-head__value.is-' + rank.tone, { text: String(p.index) }),
+        el('div.fit-head__scale', { text: '/ ' + MF.game.fitness.MAX })
+      ]),
+      el('div.fit-head__side', null, [
+        el('div.fit-head__label', { text: 'Fitness-Index' }),
+        el('div.fit-head__rank.is-' + rank.tone, { text: rank.name }),
+        el('div.fit-head__next', {
+          text: next
+            ? (next.min - p.index) + ' bis „' + next.name + '“'
+            : 'Höchste Stufe erreicht'
+        })
+      ])
+    ]));
+
+    panel.appendChild(el('div.bar.bar--fit', null, [
+      el('div.bar__fill', { style: 'width:' + (p.index / MF.game.fitness.MAX * 100).toFixed(1) + '%' })
+    ]));
+
+    p.components.forEach(function (c) {
+      panel.appendChild(el('div.fit-row', null, [
+        el('span.fit-row__name', { text: c.name }),
+        el('div.bar.bar--fit-part', null, [
+          el('div.bar__fill', { style: 'width:' + (c.value * 100).toFixed(0) + '%' })
+        ]),
+        el('span.fit-row__weight', { text: c.weight })
+      ]));
+    });
+
+    panel.appendChild(el('p.hint', {
+      text: 'Die Muskelmasse gibt den Grundwert vor (' + p.massScore + ' Punkte), '
+          + 'die vier übrigen Werte strecken oder stauchen ihn auf ×'
+          + util.formatNum(p.quality, 2) + '. Einseitiges Training, kaputte '
+          + 'Gesundheit und schlampige Form kosten also Index, ohne dass Masse verloren geht.'
+    }));
+
+    return panel;
+  }
+
   function healthPanel() {
     var s = state();
     var label = MF.game.stats.healthLabel();
@@ -230,6 +278,7 @@
   function render(container) {
     util.clear(container);
     container.appendChild(avatarPanel());
+    container.appendChild(fitnessPanel());
     container.appendChild(healthPanel());
     container.appendChild(musclePanel());
     var hist = historyPanel();

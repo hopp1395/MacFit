@@ -19,6 +19,7 @@
   function sleep() {
     var s = state();
     var massBefore = MF.game.stats.muscleMass();
+    var fitBefore = MF.game.fitness.index();
     var growthMult = MF.game.stats.growthMultiplier();
     var regenMult = MF.game.stats.regenMultiplier();
     var ceiling = MF.game.stats.sizeCeiling();
@@ -81,6 +82,8 @@
 
     gains.sort(function (a, b) { return b.delta - a.delta; });
 
+    var fitAfter = MF.game.fitness.index();
+
     var report = {
       day: s.day,
       setsTrained: trained,
@@ -88,6 +91,9 @@
       massBefore: massBefore,
       massAfter: massAfter,
       massDelta: massAfter - massBefore,
+      fitBefore: fitBefore,
+      fitAfter: fitAfter,
+      fitDelta: fitAfter - fitBefore,
       income: income,
       healthDeltas: supp.deltas,
       endedCourses: supp.ended,

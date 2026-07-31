@@ -17,9 +17,14 @@
       el('span.hud__logo.hud__logo--alt', { text: 'Fit' })
     ]);
     var day = el('div.hud__day', { id: 'hud-day', text: 'Tag 1' });
+    var fit = el('div.hud__fit', { id: 'hud-fit' }, [
+      el('span.hud__fit-label', { text: 'FIT' }),
+      el('span.hud__fit-value', { id: 'hud-fit-value', text: '0' })
+    ]);
     var money = el('div.hud__money', { id: 'hud-money', text: '0 €' });
     top.appendChild(brand);
     top.appendChild(day);
+    top.appendChild(fit);
     top.appendChild(money);
 
     var levelRow = el('div.hud__row');
@@ -44,6 +49,8 @@
 
     nodes = {
       day: util.byId('hud-day'),
+      fit: util.byId('hud-fit'),
+      fitValue: util.byId('hud-fit-value'),
       money: util.byId('hud-money'),
       level: util.byId('hud-level'),
       xpFill: util.byId('hud-xp-fill'),
@@ -61,6 +68,10 @@
     nodes.day.textContent = 'Tag ' + s.day;
     nodes.money.textContent = util.formatMoney(s.money);
     nodes.level.textContent = 'Lv ' + s.level;
+
+    var fit = MF.game.fitness.index();
+    nodes.fitValue.textContent = fit;
+    nodes.fit.className = 'hud__fit is-' + MF.game.fitness.rank(fit).tone;
 
     var progress = MF.data.levels.progress(s.xp);
     nodes.xpFill.style.width = (progress * 100).toFixed(1) + '%';
