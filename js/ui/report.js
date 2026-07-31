@@ -108,7 +108,9 @@
         label: 'Weiter trainieren',
         tone: 'primary',
         delaySeconds: sleepSeconds,
-        waitText: '🛌 Du schläfst'
+        waitText: '🛌 Du schläfst',
+        /* Der neue Tag beginnt wie der erste: Anfahrt ans Studio. */
+        onTap: function () { MF.ui.intro.play(); }
       }]
     });
   }

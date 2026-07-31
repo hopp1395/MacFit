@@ -38,11 +38,22 @@ untere Bildschirmhälfte.
 Die Zone schrumpft mit jeder Wiederholung im Satz und wird enger, je müder die Partie ist.
 Mehr Intensität bringt mehr Reiz, macht das Timing aber härter.
 
+## Erfolge teilen
+
+Im Tab **Körper** gibt es „Erfolge teilen“: Fitness-Index, Rang, Masse, Level und Tag als
+kurzer Text, mit Vorschau vor dem Absenden. Ein Tipp öffnet WhatsApp, alternativ das
+Teilen-Menü des Geräts oder die Zwischenablage. Es geht nur dieser Text hinaus — Foto und
+Spielstand bleiben auf dem Gerät.
+
 ## Der Tagesablauf
 
 Jeder Tag hat begrenzte Energie. Ist sie leer, gehst du schlafen — **erst dann wächst der
 Muskel**. Trainingsreiz wird über Nacht in Masse umgerechnet, die Ermüdung klingt ab, Kuren
 und Nebenwirkungen ticken einen Tag weiter, und es gibt Geld.
+
+Der Tageswechsel ist eingerahmt: Beim Schlafen siehst du, wie du das Studio verlässt und
+wegfährst, danach kommt der Tagesreport mit dem Schlaf-Countdown, und „Weiter trainieren“
+spielt die Anfahrt wie beim Spielstart. Beide Filme lassen sich antippen und überspringen.
 
 Partien, die länger als vier Tage liegen bleiben, gehen zurück. Wer nur Oberkörper trainiert,
 sieht das an der Symmetrie-Wertung und an der Figur.

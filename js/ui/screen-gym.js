@@ -159,7 +159,10 @@
     var btn = el('button.btn.btn--sleep.btn--slim', { type: 'button', text: '🛌 Schlafen' });
     util.onTap(btn, function () {
       MF.core.haptics.buzz('sleep');
-      MF.ui.report.show(MF.game.day.sleep());
+      /* Erst den Tag abschließen, dann den Feierabend zeigen: der Report muss
+         die Werte der Nacht kennen, wenn der Film durch ist. */
+      var report = MF.game.day.sleep();
+      MF.ui.intro.playLeave(function () { MF.ui.report.show(report); });
     });
     bar.appendChild(btn);
     return bar;

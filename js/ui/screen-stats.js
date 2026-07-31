@@ -53,6 +53,14 @@
     return host;
   }
 
+  /* Erfolge teilen. Sitzt direkt unter der Karte — geteilt wird die Identität
+     samt Werten, nicht irgendeine Zahl aus der Tiefe des Bildschirms. */
+  function sharePanel() {
+    var btn = el('button.btn.btn--share', { type: 'button', text: '📤 Erfolge teilen' });
+    util.onTap(btn, function () { MF.ui.share.show(); });
+    return btn;
+  }
+
   function avatarPanel() {
     var s = state();
     var panel = el('section.body-panel');
@@ -344,6 +352,7 @@
   function render(container) {
     util.clear(container);
     container.appendChild(cardPanel());
+    container.appendChild(sharePanel());
     container.appendChild(avatarPanel());
     container.appendChild(fitnessPanel());
     container.appendChild(healthPanel());

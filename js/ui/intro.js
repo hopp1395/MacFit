@@ -36,6 +36,7 @@
   function clamp01(t) { return t < 0 ? 0 : (t > 1 ? 1 : t); }
   function seg(t, a, b) { return clamp01((t - a) / (b - a)); }
   function outCubic(t) { var u = 1 - t; return 1 - u * u * u; }
+  function inCubic(t) { return t * t * t; }
   function lerp(a, b, t) { return a + (b - a) * t; }
 
   /* ---------- Kulisse ------------------------------------------------------ */
@@ -397,26 +398,29 @@
     return out;
   }
 
-  function sidePose(x, gy, phase, scale, crouch) {
+  function sidePose(x, gy, phase, scale, crouch, face) {
     var s = Math.sin(phase) * (1 - crouch);
     var bob = Math.abs(Math.cos(phase)) * 1.2 * scale * (1 - crouch);
+    var f = face === undefined ? 1 : face;
     var hipY = gy - (33 - 14 * crouch) * scale - bob;
     var shY = gy - (53 - 17 * crouch) * scale - bob;
     var headY = gy - (66 - 19 * crouch) * scale - bob;
     var kneeY = gy - (16 - 2 * crouch) * scale;
     var stride = 13 * scale;
 
+    /* Alles, was in Blickrichtung zeigt, dreht mit — beim Einsteigen sitzt er
+       sonst rückwärts im Wagen. Das Beinschwingen ist symmetrisch und bleibt. */
     function leg(dir) {
       var lift = Math.max(0, dir * s);
       return {
-        knee: [x + dir * s * 5 * scale + (2 + 9 * crouch) * scale, kneeY - lift * 3 * scale],
-        foot: [x + dir * s * stride + 11 * crouch * scale, gy - lift * 4 * scale]
+        knee: [x + dir * s * 5 * scale + (2 + 9 * crouch) * scale * f, kneeY - lift * 3 * scale],
+        foot: [x + dir * s * stride + 11 * crouch * scale * f, gy - lift * 4 * scale]
       };
     }
     var near = leg(1), far = leg(-1);
 
     return {
-      head: [x + 1 * scale, headY],
+      head: [x + 1 * scale * f, headY],
       shoulder: [x, shY],
       hip: [x, hipY],
       knee: near.knee, foot: near.foot,
@@ -435,11 +439,11 @@
   }
 
   /* Klamotten aus der Spieleranlage — im Film sieht man, was man gewählt hat. */
-  function heroLook() {
+  function heroLook(face) {
     var s = MF.game.state.get();
     var o = MF.data.outfits.look(s && s.player ? s.player.outfit : 'blau');
     o.hair = C.shadow;
-    o.face = 1;
+    o.face = face === undefined ? 1 : face;
     return o;
   }
 
@@ -527,30 +531,80 @@
     };
   }
 
+  /* ---------- Feierabend: derselbe Ort, andere Richtung -------------------- */
+
+  /* Bewusst kein rückwärts abgespielter Vorspann. Der Rückweg führt auf den
+     Betrachter zu — mit der Rückansicht liefe er rückwärts aus dem Studio.
+     Deshalb hier durchgehend Seitenriss, Blickrichtung nach links. */
+  var L_OUT = 0.15;      /* tritt aus der Tür            */
+  var L_AT_CAR = 2.60;   /* steht an der Fahrertür       */
+  var L_IN = 3.20;       /* sitzt im Wagen               */
+  var L_OFF = 3.85;      /* fährt los                    */
+  var PH_LEAVE = (X_DOOR - X_OUT) / SIDE_SPAN * Math.PI;
+
+  function stageLeave(t) {
+    if (t < L_OUT || t > L_IN) return null;
+
+    if (t < L_AT_CAR) {                     /* Weg vom Eingang zum Wagen */
+      var v = seg(t, L_OUT, L_AT_CAR);
+      var w = 1 - v;
+      var d = 1 - (w * w * 0.35 + w * 0.65);    /* Spiegelbild der Ankunft */
+      var x = lerp(X_DOOR, X_OUT, v);
+      return {
+        x: x, gy: lerp(GROUND - 3, NEAR, d), scale: lerp(0.7, SCALE, d),
+        crouch: 0, alpha: seg(t, L_OUT, 0.6),
+        phase: (X_DOOR - x) / SIDE_SPAN * Math.PI
+      };
+    }
+
+    var u = seg(t, L_AT_CAR, L_IN);         /* Einsteigen */
+    return {
+      x: lerp(X_OUT, CAR_X - 8, u),
+      gy: lerp(NEAR, GROUND + 2, u),
+      scale: SCALE, crouch: u, alpha: 1, phase: PH_LEAVE
+    };
+  }
+
   /* ---------- Ein Bild ----------------------------------------------------- */
 
-  function frame(ctx, t) {
-    var carX = lerp(-110, CAR_X, outCubic(seg(t, 0, T_STOP)));
-    var bounce = 0;
-    if (t > T_STOP - 0.1 && t < T_STOP + 0.35) {
-      bounce = Math.sin((t - T_STOP + 0.1) / 0.45 * Math.PI * 2) * 1.6;
+  function frame(ctx, t, mode) {
+    var leaving = mode === 'leave';
+    var carX, bounce = 0, carDoor, gymDoor;
+
+    if (leaving) {
+      carX = t > L_OFF
+        ? lerp(CAR_X, -110, inCubic(seg(t, L_OFF, DURATION)))
+        : CAR_X;
+      if (t > L_IN - 0.1 && t < L_IN + 0.3) {   /* federt ein, wenn er sitzt */
+        bounce = Math.sin((t - L_IN + 0.1) / 0.4 * Math.PI) * 1.4;
+      }
+      carDoor = seg(t, L_AT_CAR - 0.3, L_AT_CAR) - seg(t, L_IN, L_IN + 0.35);
+      gymDoor = seg(t, 0, 0.3) - seg(t, 0.9, 1.3);
+    } else {
+      carX = lerp(-110, CAR_X, outCubic(seg(t, 0, T_STOP)));
+      if (t > T_STOP - 0.1 && t < T_STOP + 0.35) {
+        bounce = Math.sin((t - T_STOP + 0.1) / 0.45 * Math.PI * 2) * 1.6;
+      }
+      /* Tür auf, und wieder zu, sobald er draußen ist. */
+      carDoor = seg(t, T_STOP, T_OPEN) - seg(t, T_OUT + 0.2, T_OUT + 0.6);
+      gymDoor = seg(t, T_ARRIVE - 0.35, T_ARRIVE + 0.15);
     }
-    /* Tür auf, und wieder zu, sobald er draußen ist. */
-    var carDoor = seg(t, T_STOP, T_OPEN) - seg(t, T_OUT + 0.2, T_OUT + 0.6);
-    var gymDoor = seg(t, T_ARRIVE - 0.35, T_ARRIVE + 0.15);
 
     street(ctx);
     lamp(ctx);
-    facade(ctx, gymDoor);
+    facade(ctx, Math.max(0, gymDoor));
     car(ctx, carX, Math.max(0, carDoor), bounce);
 
-    var st = stage(t);
+    var st = leaving ? stageLeave(t) : stage(t);
     if (!st) return;
 
     if (st.alpha < 1) ctx.globalAlpha = st.alpha;
-    if (st.mode === 'side') {
-      drawSide(ctx, sidePose(st.x, st.gy, st.phase, st.scale, st.crouch),
-        sideThickness(st.scale), heroLook(), C.green, st.scale);
+    if (leaving) {
+      drawSide(ctx, sidePose(st.x, st.gy, st.phase, st.scale, st.crouch, -1),
+        sideThickness(st.scale), heroLook(-1), C.green, st.scale);
+    } else if (st.mode === 'side') {
+      drawSide(ctx, sidePose(st.x, st.gy, st.phase, st.scale, st.crouch, 1),
+        sideThickness(st.scale), heroLook(1), C.green, st.scale);
     } else {
       drawBack(ctx, backPose(st.x, st.gy, st.phase, st.scale, st.crouch),
         metrics(st.scale, st.narrow), heroLook(), C.green);
@@ -560,13 +614,21 @@
 
   /* ---------- Ablauf ------------------------------------------------------- */
 
-  var CAPTIONS = [
-    { at: 0, text: 'Feierabend. Zeit fürs Studio.' },
-    { at: T_OUT, text: 'Tasche geschnappt.' },
-    { at: T_BACK, text: 'Willkommen bei MacFit.' }
-  ];
+  var CAPTIONS = {
+    arrive: [
+      { at: 0, text: 'Feierabend. Zeit fürs Studio.' },
+      { at: T_OUT, text: 'Tasche geschnappt.' },
+      { at: T_BACK, text: 'Willkommen bei MacFit.' }
+    ],
+    leave: [
+      { at: 0, text: 'Für heute reicht’s.' },
+      { at: L_AT_CAR, text: 'Ab nach Hause.' },
+      { at: L_OFF, text: 'Der Muskel wächst im Schlaf.' }
+    ]
+  };
 
-  function play(onDone) {
+  /* mode: 'arrive' (Standard) oder 'leave' */
+  function play(onDone, mode) {
     var root = util.byId('intro-root');
     var done = onDone || function () {};
     if (!root) { done(); return function () {}; }
@@ -588,13 +650,14 @@
     }
 
     var t = 0, since = STEP, capIdx = -1, finished = false;
+    var lines = CAPTIONS[mode === 'leave' ? 'leave' : 'arrive'];
 
     function setCaption() {
       var idx = 0;
-      for (var i = 0; i < CAPTIONS.length; i++) if (t >= CAPTIONS[i].at) idx = i;
+      for (var i = 0; i < lines.length; i++) if (t >= lines[i].at) idx = i;
       if (idx === capIdx) return;
       capIdx = idx;
-      caption.textContent = CAPTIONS[idx].text;
+      caption.textContent = lines[idx].text;
       /* Klasse kurz wegnehmen, sonst startet die Einblendung nicht neu. */
       caption.className = 'cine__cap';
       void caption.offsetWidth;
@@ -609,7 +672,7 @@
       since = 0;
       setCaption();
       surface.clear();
-      frame(surface.ctx, t);
+      frame(surface.ctx, t, mode);
       surface.present();
     });
 
@@ -625,7 +688,7 @@
     }
 
     setCaption();
-    frame(surface.ctx, 0);
+    frame(surface.ctx, 0, mode);
     surface.present();
     util.onTap(box, finish);
     ticker.start();
@@ -635,6 +698,8 @@
 
   MF.ui.intro = {
     play: play,
+    /* Feierabend: derselbe Film, andere Richtung. */
+    playLeave: function (onDone) { return play(onDone, 'leave'); },
     duration: DURATION,
     /* für die Sichtprüfung: ein einzelnes Bild in einen fremden Kontext */
     frame: frame,
