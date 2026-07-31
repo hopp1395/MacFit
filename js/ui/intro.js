@@ -20,7 +20,7 @@
   var W = 320, H = 180, GROUND = 152;
   var STEP = 1 / 24;          /* 24 Bilder/s — Kino reicht, spart Akku */
 
-  var CAR_X = 118;            /* dort hält der Wagen */
+  var CAR_X = 106;            /* dort hält der Wagen */
   var DOOR_L = 232, DOOR_R = 296;   /* Eingang des Studios */
 
   /* Zeitplan in Sekunden. */
@@ -131,25 +131,31 @@
 
   function car(ctx, cx, doorOpen, bounce) {
     var gy = GROUND + (bounce || 0);
+    var i;
 
-    px.rect(ctx, cx - 52, gy - 2, 104, 3, C.ink);         /* Schatten */
+    px.rect(ctx, cx - 64, gy - 2, 132, 3, C.ink);         /* Schatten */
 
-    for (var i = 0; i < 2; i++) {                         /* Räder */
-      var wx = cx + (i ? 28 : -30);
-      px.disc(ctx, wx, gy - 8, 8.5, C.ink);
-      px.disc(ctx, wx, gy - 8, 5.5, C.steelDark);
-      px.disc(ctx, wx - 1, gy - 9, 2.5, C.steelLit);
+    /* Räder mit Speichen — leere Scheiben sehen nach Spielzeug aus. Helle
+       Felge mit dunklen Speichen, sonst geht das Rad im Nachtbild unter. */
+    var axles = [cx - 40, cx + 38];
+    for (i = 0; i < 2; i++) {
+      var wx = axles[i];
+      px.disc(ctx, wx, gy - 11, 11, C.ink);
+      px.disc(ctx, wx, gy - 11, 7.5, C.steel);
+      px.line(ctx, wx - 6, gy - 11, wx + 6, gy - 11, 1, C.steelDark);
+      px.line(ctx, wx, gy - 17, wx, gy - 5, 1, C.steelDark);
+      px.disc(ctx, wx, gy - 11, 2.5, C.steelLit);
     }
 
     /* Die Keilform entsteht aus gestaffelten Kästen, die nach vorn flacher
        werden. Erst alle Umrisse, dann alle Flächen — sonst schneiden sich die
        Konturen gegenseitig ins Blech. */
     var boxes = [
-      [cx - 26, gy - 35, 36, 12],   /* Dach, weit hinten = Sportwagen */
-      [cx - 50, gy - 26, 44, 19],   /* Heck */
-      [cx - 10, gy - 24, 34, 17],   /* Mitte */
-      [cx + 20, gy - 21, 22, 14],   /* Schnauze */
-      [cx + 40, gy - 18, 12, 11]    /* Spitze */
+      [cx - 34, gy - 43, 42, 15],   /* Dach, weit hinten = Sportwagen */
+      [cx - 62, gy - 31, 48, 22],   /* Heck */
+      [cx - 16, gy - 29, 42, 20],   /* Mitte */
+      [cx + 24, gy - 25, 30, 16],   /* Schnauze */
+      [cx + 52, gy - 21, 14, 12]    /* Spitze */
     ];
     var b;
     for (i = 0; i < boxes.length; i++) {
@@ -161,28 +167,42 @@
       px.rect(ctx, b[0], b[1], b[2], b[3], C.shirt);
     }
 
-    px.rect(ctx, cx - 23, gy - 33, 14, 8, C.steel);       /* Seitenfenster */
-    px.rect(ctx, cx - 7, gy - 33, 15, 8, C.steel);        /* Windschutz */
-    px.capsule(ctx, [cx - 5, gy - 26], [cx + 6, gy - 32], 1.5, C.steelLit);
-    px.rect(ctx, cx - 50, gy - 13, 94, 2, C.shirtLit);    /* Zierstreifen */
-    px.rect(ctx, cx + 45, gy - 16, 7, 4, C.gold);         /* Scheinwerfer */
-    px.rect(ctx, cx - 50, gy - 23, 4, 4, C.orange);       /* Rücklicht */
-    px.rect(ctx, cx - 55, gy - 31, 13, 4, C.ink);         /* Heckflügel */
-    px.rect(ctx, cx - 54, gy - 30, 11, 2, C.shadow);
+    px.rect(ctx, cx - 31, gy - 41, 17, 10, C.steel);      /* Seitenfenster */
+    px.rect(ctx, cx - 11, gy - 41, 18, 10, C.steel);      /* Windschutz */
+    px.capsule(ctx, [cx - 8, gy - 32], [cx + 4, gy - 40], 1.5, C.steelLit);
+    px.rect(ctx, cx + 6, gy - 25, 12, 7, C.ink);          /* Seitliche Lufthutze */
+    px.rect(ctx, cx + 7, gy - 24, 10, 5, C.shadow);
+    px.rect(ctx, cx - 60, gy - 16, 124, 2, C.shirtLit);   /* Zierstreifen */
+    px.rect(ctx, cx - 56, gy - 11, 112, 3, C.shadow);     /* Schweller */
+    px.rect(ctx, cx + 56, gy - 19, 10, 5, C.gold);        /* Scheinwerfer */
+    px.rect(ctx, cx - 62, gy - 28, 6, 5, C.orange);       /* Rücklicht */
+
+    /* Heckflügel: zwei Streben auf dem Heckdeckel, darüber ein angestelltes
+       Blatt. Das Blatt endet auf Dachhöhe — steht es höher, liest es sich als
+       Dachträger statt als Flügel. Die Anstellung nach vorn oben macht den
+       Unterschied zwischen Spoilerkante und Flügel. */
+    for (i = 0; i < 2; i++) {
+      var sx = cx - (i ? 38 : 54);
+      px.rect(ctx, sx - 1, gy - 42, 6, 13, C.ink);
+      px.rect(ctx, sx, gy - 41, 4, 12, C.steelDark);
+    }
+    px.capsule(ctx, [cx - 62, gy - 40], [cx - 30, gy - 44], 8, C.ink);
+    px.capsule(ctx, [cx - 62, gy - 40], [cx - 30, gy - 44], 5, C.shirt);
+    px.capsule(ctx, [cx - 61, gy - 41.5], [cx - 31, gy - 45.5], 1.5, C.shirtLit);
 
     if (doorOpen <= 0.01) {
-      px.line(ctx, cx - 6, gy - 25, cx - 6, gy - 8, 1, C.ink);   /* Türfuge */
+      px.line(ctx, cx - 10, gy - 30, cx - 10, gy - 10, 1, C.ink);   /* Türfuge */
       return;
     }
 
     /* Offene Tür: dunkler Einstieg plus ein Blatt, das zum Betrachter
        aufschwingt — nach unten-links, das liest sich im Seitenriss richtig. */
-    px.rect(ctx, cx - 20, gy - 23, 26, 15, C.ink);
-    var hinge = [cx + 6, gy - 22];
-    var tip = [cx + 6 - 17 * doorOpen, gy - 19 + 11 * doorOpen];
-    px.capsule(ctx, hinge, tip, 15, C.ink);
-    px.capsule(ctx, hinge, tip, 12, C.shirt);
-    px.capsule(ctx, hinge, tip, 3, C.shirtLit);
+    px.rect(ctx, cx - 28, gy - 28, 34, 18, C.ink);
+    var hinge = [cx + 6, gy - 27];
+    var tip = [cx + 6 - 22 * doorOpen, gy - 23 + 14 * doorOpen];
+    px.capsule(ctx, hinge, tip, 19, C.ink);
+    px.capsule(ctx, hinge, tip, 16, C.shirt);
+    px.capsule(ctx, hinge, tip, 3.5, C.shirtLit);
   }
 
   /* ---------- Figur in Rückansicht ----------------------------------------- */
@@ -428,9 +448,9 @@
      Eingang — Bodenlinie steigt, Größe nimmt ab. Erst diese Diagonale in der
      Rückansicht zeigt, wie breit er gebaut ist. */
   var NEAR = 171;
-  var X_OUT = 92;      /* steht neben dem Wagen         */
-  var X_TURN = 134;    /* dreht sich hier um            */
-  var X_PIVOT = 142;   /* Ende der Drehung              */
+  var X_OUT = 86;      /* steht neben dem Wagen         */
+  var X_TURN = 140;    /* dreht sich hier um            */
+  var X_PIVOT = 148;   /* Ende der Drehung              */
   var X_DOOR = 258;    /* verschwindet im Eingang       */
   var SCALE = 1.06;
 
@@ -456,7 +476,7 @@
     if (t < T_OUT) {                                   /* Aussteigen, Profil */
       u = seg(t, T_OPEN, T_OUT);
       return {
-        mode: 'side', x: lerp(CAR_X - 6, X_OUT, u), gy: NEAR,
+        mode: 'side', x: lerp(CAR_X - 8, X_OUT, u), gy: NEAR,
         crouch: 1 - u, scale: SCALE, narrow: 1, alpha: 1, phase: 0
       };
     }
@@ -497,7 +517,7 @@
   /* ---------- Ein Bild ----------------------------------------------------- */
 
   function frame(ctx, t) {
-    var carX = lerp(-80, CAR_X, outCubic(seg(t, 0, T_STOP)));
+    var carX = lerp(-110, CAR_X, outCubic(seg(t, 0, T_STOP)));
     var bounce = 0;
     if (t > T_STOP - 0.1 && t < T_STOP + 0.35) {
       bounce = Math.sin((t - T_STOP + 0.1) / 0.45 * Math.PI * 2) * 1.6;
