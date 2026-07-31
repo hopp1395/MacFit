@@ -19,7 +19,15 @@
   function offset(p, d) { return [p[0] + d[0], p[1] + d[1]]; }
   function between(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
 
-  /* Strichstärken aus dem Spielstand. */
+  /* Strichstärken aus dem Spielstand.
+
+     Dieselben Verhältnisse wie im Posenbild, um 0,70 kleiner gerechnet — die
+     Szenenfigur ist 91 Punkte hoch, die posierende 129,5. Die Gelenkpunkte
+     stehen in data/scenes.js und sind bereits richtig proportioniert (6,5
+     Kopfhöhen, Beine 49 % der Höhe); zu korrigieren waren nur die Stärken.
+     Unterarm zu Oberarm lag bei 0,58 statt 0,75, Wade zu Schenkel bei 0,64
+     statt 0,72. torso ist hier die Körpertiefe, nicht die Breite von vorn —
+     die Szenen sind Seitenansichten. */
   function thicknessFromState() {
     var m = MF.game.state.get().muscles;
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
@@ -27,12 +35,12 @@
     var torso = (f('brust') + f('ruecken')) / 2;
 
     return {
-      arm: 5 + arm * 7,
-      fore: 4 + arm * 3,
-      torso: 14 + torso * 15,
-      shoulder: 4.5 + f('schultern') * 6.5,
-      thigh: 8.5 + f('beine') * 9.5,
-      calf: 5.5 + f('waden') * 6,
+      arm: 4.3 + arm * 3.6,
+      fore: 3.4 + arm * 2.5,          /* 0,75 x arm   */
+      torso: 10 + torso * 8,
+      shoulder: 3.6 + f('schultern') * 1.8,
+      thigh: 8.2 + f('beine') * 3.7,  /* 1,4  x arm   */
+      calf: 5.7 + f('waden') * 2.9,   /* 0,72 x thigh */
       head: 7
     };
   }
@@ -41,8 +49,8 @@
   function npcThickness(seed) {
     var v = ((seed * 7) % 5) / 5;
     return {
-      arm: 5.5 + v * 3, fore: 4.5 + v * 1.5, torso: 15 + v * 7,
-      shoulder: 5 + v * 2.5, thigh: 10 + v * 3.5, calf: 6.5 + v * 1.5, head: 7
+      arm: 5 + v * 2.5, fore: 3.8 + v * 1.8, torso: 12 + v * 5,
+      shoulder: 4 + v * 1.2, thigh: 9 + v * 2.5, calf: 6.3 + v * 1.8, head: 7
     };
   }
 

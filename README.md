@@ -95,12 +95,28 @@ Zur Wahl stehen die **sieben Pflichtposen** des Wettkampfs plus Most Muscular:
 | Seitlicher Trizeps | Profil | Trizeps, seitliche Schulter, Schenkel |
 | Bauch und Oberschenkel | vorn | Bauch, Rumpfsymmetrie, Quadrizeps |
 | Most Muscular | vorn | die achte Pose für Masse |
+| **Victory-Pose** | vorn | die Kür der Golden Era — **ab Level 10** |
+
+Die Victory-Pose ist die frei wählbare klassische Pose: ein Arm gebeugt, der andere lang
+nach oben außen gestreckt, Blick hinterher. Vorher steht sie abgeblendet in der Auswahl,
+damit man sieht, worauf man hinarbeitet.
 
 Drei Ansichten, drei Zeichenwege: Vorder- und Rückansicht teilen sich Skelett und
 Silhouette und unterscheiden sich nur in der Ausarbeitung — vorn Brust und Bauch, hinten
 Trapez, Rückenrinne und Beinbeuger. Das Profil wird eigens gezeichnet, streng von hinten
 nach vorn, weil dort der Arm auf dem Rumpf liegt und beide sonst zu einer Masse
 verschmelzen.
+
+Drei Posen bringen ihre Wettkampf-Beinhaltung mit, weil sie sonst nicht wiederzuerkennen
+sind: der Doppelbizeps von hinten steht mit einem Bein auf dem Ballen (dafür wird die Wade
+bewertet), „Bauch und Oberschenkel" hat ein Bein vorgestellt und durchgestreckt, und die
+seitliche Brust steht auf den Zehen mit gebeugtem Knie. Bei den beiden Profilposen sind
+die Hände geschlossen — vorn beim Brustdrücken, hinten im Kreuz beim Trizeps.
+
+Die Figur folgt überall denselben Verhältnissen: 6,8 Kopfhöhen, Beine 53 % der Körperhöhe,
+Arm ein Drittel, Oberschenkel 1,4-mal so dick wie der Oberarm, Unterarm 0,75 und Wade 0,72
+davon. Avatar, Gerätefiguren und Posenbild rechnen mit denselben Werten, nur unterschiedlich
+skaliert — sonst wäre der Mann im Körper-Bildschirm ein anderer als der auf dem Teilen-Bild.
 
 Geteilt wird über das Teilen-Menü des Geräts — dort stehen WhatsApp, Signal, Mail und alles
 andere, was installiert ist. Ein Knopf, drei Stufen: Bild und Text zusammen, sonst Text im

@@ -1419,6 +1419,12 @@
 
 .posebtn.is-active .posebtn__name { color: var(--text); }
 
+/* Gesperrt: sichtbar, aber erkennbar nicht wählbar. */
+.posebtn.is-locked {
+  opacity: .45;
+  border-style: dashed;
+}
+
 .posebtn__hint {
   font-size: 10px;
   color: var(--text-faint);

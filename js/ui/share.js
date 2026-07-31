@@ -299,9 +299,14 @@
     }
 
     MF.ui.poses.list.forEach(function (p, idx) {
-      var btn = el('button.posebtn' + (idx === 0 ? '.is-active' : ''), { type: 'button' }, [
+      /* Gesperrte Posen bleiben sichtbar, aber nicht wählbar — man soll sehen,
+         worauf man hinarbeitet. Dieselbe Darstellung wie bei den Geräten im
+         Gym: abgeblendet, mit dem nötigen Level statt des Hinweistextes. */
+      var locked = !MF.ui.poses.isUnlocked(p.id);
+      var btn = el('button.posebtn' + (idx === 0 ? '.is-active' : '')
+        + (locked ? '.is-locked' : ''), { type: 'button' }, [
         el('span.posebtn__name', { text: p.name }),
-        el('span.posebtn__hint', { text: p.hint })
+        el('span.posebtn__hint', { text: locked ? '🔒 ab Level ' + p.level : p.hint })
       ]);
       util.onTap(btn, function () {
         chosen = p.id;

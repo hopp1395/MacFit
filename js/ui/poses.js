@@ -8,8 +8,8 @@
    Gezeigt werden die sieben Pflichtposen des Wettkampfs plus Most Muscular.
    Vier davon gehen nicht von vorn: zwei von hinten, zwei im Profil. Deshalb
    drei Ansichten in einer Datei — Vorder- und Rückansicht teilen sich dasselbe
-   Skelett und unterscheiden sich nur in der Ausarbeitung, das Profil kommt aus
-   dem Seitenriss-Rig, das auch die Übungsszenen zeichnet.
+   Skelett und unterscheiden sich nur in der Ausarbeitung, das Profil hat eine
+   eigene Zeichnung.
 
    Koordinatenraum 180 x 180, Boden bei y = 168. */
 (function (MF) {
@@ -21,76 +21,118 @@
 
   var W = 180, H = 180;
   var CX = 90;
-  var FOOT = 168, KNEE = 140, HIP = 114, SHOULDER = 70, HEAD = 52, HEAD_R = 11;
 
-  /* hand: [Abstand von der Mitte nach außen, Abstand von der Schulter nach
-     unten]. Negative y heißt über der Schulter. Die Hand ist der Punkt, auf
-     den es ankommt — Fäuste am Kopf, Hände an der Hüfte.
+  /* Das Skelett folgt den üblichen anthropometrischen Bruchteilen der
+     Körperhöhe: Schulter 0,818 · Hüftgelenk 0,530 · Knie 0,285. Vorher lag die
+     Hüfte bei 114 — die Beine machten damit nur 42 % der Höhe aus statt 53 %,
+     der Rumpf war entsprechend zu lang. */
+  var FOOT = 168, KNEE = 133, HIP = 99, SHOULDER = 63, HEAD = 48, HEAD_R = 9.5;
 
-     elbow gibt nur die Richtung vor, in die der Ellenbogen ausbricht; wo er
-     landet, rechnet elbowFor aus den Knochenlängen.
+  /* Knochenlängen. Zusammen 43 von 129,5 Punkten Körperhöhe — ein Drittel, wie
+     am Menschen. Vorher waren es 56, und damit war der Arm länger als das ganze
+     Bein. Der Unterarm ist kürzer als der Oberarm, Verhältnis 0,79. */
+  var UPPER = 24, FORE = 19;
 
-     Die Umrisse müssen sich deutlich unterscheiden — beim ersten Anlauf lagen
-     die Fäuste bei zwei Posen fast gleich, und sie waren im Bild nicht
-     auseinanderzuhalten. */
+  var DEG = Math.PI / 180;
+
+  /* Arme stehen als zwei Winkel je Pose, nicht als Handpunkte: 0° ist
+     waagerecht nach außen, positive Werte gehen nach oben.
+
+       upper   Richtung des Oberarms ab der Schulter
+       fore    Richtung des Unterarms ab dem Ellenbogen
+
+     Vorher standen Ellenbogen und Hand als Koordinaten da, und der Ellenbogen
+     wurde per Zwei-Knochen-Rechnung dazwischengelegt. Das ging jedes Mal
+     kaputt, wenn sich Schulterbreite oder Knochenlänge änderten — beim
+     Doppelbizeps lagen die Unterarme dadurch fast waagerecht statt aufgerichtet.
+     Über Winkel bleibt die Haltung dieselbe, egal wie breit die Figur wird.
+
+     Beide Arme nehmen dieselben Winkel, gespiegelt. Wo das nicht reicht, steht
+     stattdessen arms: [links, rechts] mit eigenen Winkeln je Seite — die
+     Victory-Pose hat einen gebeugten und einen weit ausgestreckten Arm.
+
+     stance    halber Fußabstand von der Mitte
+     backLeg   diese Seite steht hinten auf dem Ballen (Wade)
+     frontLeg  diese Seite steht vorgestellt und durchgestreckt (Quadrizeps)
+     shrug     negative Werte ziehen die Schultern hoch
+     look      Blickrichtung; ohne Angabe schaut die Figur geradeaus
+     level     ab diesem Level wählbar, ohne Angabe von Anfang an */
   var POSES = [
     {
       id: 'front-biceps', name: 'Doppelbizeps vorne', hint: 'Arme auf, Bizeps hoch',
       view: 'front',
-      elbow: [30, 0], hand: [25, -24], flex: 1.35, stance: 18, shrug: -2
+      upper: 12, fore: 100, flex: 1.15, stance: 15, shrug: -2
     },
     {
       id: 'front-lat', name: 'Latissimus vorne', hint: 'Hände an die Rippen, V-Form',
       view: 'front',
-      elbow: [31, 15], hand: [14, 34], flex: 1.06, stance: 15, shrug: 0, lat: 1.34
+      upper: -48, fore: -168, flex: 1.05, stance: 13, shrug: 0, lat: 1.34
     },
     {
       id: 'side-chest', name: 'Seitliche Brust', hint: 'Profil, Brust raus',
       view: 'side',
-      /* Enger Stand, Arme vor dem Körper, Oberkörper leicht zurück: sonst
-         liest sich das Profil als Gehen statt als Pose. */
+      /* Nahes Bein auf den Zehen mit gebeugtem Knie, beide Hände vorn
+         geschlossen — das sind die beiden Merkmale, an denen man die Pose
+         erkennt. Ohne sie liest sich das Profil als Herumstehen. */
       side: {
-        face: 1,
-        head: [5, HEAD], shoulder: [-4, SHOULDER], hip: [2, HIP],
-        knee: [7, KNEE], foot: [11, FOOT],
-        farKnee: [-5, KNEE + 2], farFoot: [-9, FOOT],
-        elbow: [7, SHOULDER + 25], hand: [18, SHOULDER + 36],
-        farElbow: [-5, SHOULDER + 23], farHand: [14, SHOULDER + 35]
+        head: [2, HEAD], shoulder: [-2, SHOULDER], hip: [1, HIP],
+        knee: [6, KNEE - 3], foot: [8, FOOT - 5], ball: 1,
+        farKnee: [-2, KNEE], farFoot: [-3, FOOT],
+        /* Beide Unterarme laufen auf denselben Punkt vor dem Bauch zu — die
+           ferne Hand fasst das nahe Handgelenk. Ohne den geschlossenen Ring
+           sieht die Pose aus wie Herumstehen mit hängenden Armen. */
+        elbow: [6, SHOULDER + 24], hand: [20, SHOULDER + 34],
+        farElbow: [13, SHOULDER + 22], farHand: [27, SHOULDER + 34]
       },
-      flex: 1.25, chest: 1
+      flex: 1.1, chest: 1, depth: 1.2
     },
     {
       id: 'rear-biceps', name: 'Doppelbizeps hinten', hint: 'Rücken, Arme auf',
       view: 'back',
-      elbow: [30, 0], hand: [25, -24], flex: 1.35, stance: 17, shrug: -2
+      upper: 12, fore: 100, flex: 1.15, stance: 15, shrug: -2, backLeg: -1
     },
     {
       id: 'rear-lat', name: 'Latissimus hinten', hint: 'Rücken auf volle Breite',
       view: 'back',
-      elbow: [31, 15], hand: [14, 34], flex: 1.06, stance: 14, shrug: 0, lat: 1.42
+      upper: -42, fore: -170, flex: 1.05, stance: 12, shrug: 0, lat: 1.42
     },
     {
       id: 'side-triceps', name: 'Seitlicher Trizeps', hint: 'Profil, Arm nach hinten',
       view: 'side',
+      /* Beide Arme hinter dem Rücken, Hände im Kreuz geschlossen, naher Arm
+         fast durchgestreckt — nur so steht der Trizeps im Profil heraus. */
       side: {
-        face: 1,
-        head: [5, HEAD], shoulder: [-3, SHOULDER], hip: [1, HIP],
-        knee: [7, KNEE], foot: [11, FOOT],
-        farKnee: [-5, KNEE + 2], farFoot: [-9, FOOT],
-        elbow: [-10, SHOULDER + 24], hand: [-8, SHOULDER + 44],
-        farElbow: [-12, SHOULDER + 22], farHand: [-6, SHOULDER + 42]
+        head: [2, HEAD], shoulder: [-1, SHOULDER], hip: [0, HIP],
+        knee: [5, KNEE], foot: [8, FOOT], locked: 1,
+        farKnee: [-3, KNEE], farFoot: [-4, FOOT],
+        /* Hände im Kreuz geschlossen, naher Arm fast durchgestreckt und nach
+           hinten gedrückt — nur so steht der Trizeps als Kante heraus. */
+        elbow: [-13, SHOULDER + 22], hand: [-15, SHOULDER + 40],
+        farElbow: [-4, SHOULDER + 22], farHand: [-8, SHOULDER + 40]
       },
-      flex: 1.18, triceps: 1
+      flex: 1.08, triceps: 1
     },
     {
       id: 'abs-thigh', name: 'Bauch und Oberschenkel', hint: 'Hände hinter den Kopf',
       view: 'front',
-      elbow: [19, -19], hand: [5, -31], flex: 1.0, stance: 11, shrug: -1
+      upper: 58, fore: 185, flex: 1.0, stance: 11, shrug: -1, frontLeg: 1
     },
     {
       id: 'most-muscular', name: 'Most Muscular', hint: 'Alles nach vorn',
       view: 'front',
-      elbow: [23, 23], hand: [7, 32], flex: 1.22, stance: 13, shrug: 5
+      upper: -68, fore: -160, flex: 1.12, stance: 12, shrug: -5
+    },
+    {
+      /* Die frei wählbare klassische Pose der Golden Era: ein Arm gebeugt am
+         Kopf, der andere lang nach oben außen gestreckt, Blick dem gestreckten
+         Arm hinterher. Als einzige Pose unsymmetrisch — deshalb arms[]. */
+      id: 'victory', name: 'Victory-Pose', hint: 'Golden Era — ein Arm auf, einer weit hinaus',
+      view: 'front', level: 10,
+      arms: [
+        { upper: 10, fore: 105, flex: 1.15, dy: 1 },     /* gebeugt, Bizeps */
+        { upper: 35, fore: 35, flex: 1.0, dy: -3 }       /* durchgestreckt   */
+      ],
+      stance: 13, shrug: -1, look: 1
     }
   ];
 
@@ -112,108 +154,134 @@
 
   function lerp(a, b, t) { return a + (b - a) * t; }
 
-  /* Maße aus denselben Formeln wie der Avatar, nur größer gerechnet: die Figur
-     hier ist rund ein Drittel höher.
-
-     Die Namen sagen, was gemeint ist. Vorher hieß alles nur "breit", und die
-     Hose rechnete mit halben, der Rumpf mit ganzen Breiten — die Hüfte kam
-     dadurch doppelt so breit heraus wie gewollt.
+  /* Maße aus den Muskelwerten. Die Namen sagen, welches Maß gemeint ist:
        *Span / *Half / *R   halbe Maße ab der Mittelachse
-       *W                   Strichstärken für Gliedmaßen */
+       *W                   volle Strichstärken für Gliedmaßen
+
+     Die Verhältnisse untereinander stehen als Kommentar dahinter und werden im
+     Durchlauftest nachgerechnet. Vorher hatten nur thighW und calfW einen
+     Dämpfer 0,72 abbekommen, die Armmaße nicht — dadurch war der Oberarm
+     dicker als der Oberschenkel. */
   function widths(pose) {
     var m = MF.game.state.get().muscles;
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
     var k = 1.35;
 
-    var waistHalf = (7 + f('bauch') * 2.5) * k * 0.5;
-    /* 0.72, nicht 1.0: beim Umbenennen hatten nur die Rumpfwerte den halben
-       Faktor bekommen, die Beine blieben auf voller Breite stehen und spannten
-       doppelt so weit wie der Rumpf. Ganz halbieren geht aber auch nicht —
-       dann sind die Schenkel dünner als die Oberarme. */
-    var thighW = (7 + f('beine') * 7.5) * k * 0.72;
+    var thighW = (8.6 + f('beine') * 3.9) * k;
+    var latHalf = (11.5 + f('ruecken') * 13) * k * 0.5 * (pose.lat || 1);
+    var chestR = (4.0 + f('brust') * 3.0) * k;
 
     return {
-      shoulderSpan: (9 + f('schultern') * 8) * k,
-      /* Der Latissimus wächst kräftiger als die Taille — daraus entsteht die
-         V-Form. Beide Werte sind halbe Breiten. */
-      latHalf: (9 + f('ruecken') * 11) * k * 0.5 * (pose.lat || 1),
-      waistHalf: waistHalf,
-      /* Der Zuschlag ist ein halbes Maß, thighW eine ganze Strichstärke —
-         deshalb 0.15 und nicht 0.30. Sonst stehen die Schenkel neben dem
-         Rumpf statt darunter. */
-      hipHalf: waistHalf + thighW * 0.15,
-      chestR: (5 + f('brust') * 5) * k,
-      armW: (4 + f('bizeps') * 5) * k * (pose.flex || 1),
-      foreW: (3.5 + f('trizeps') * 3) * k,
-      thighW: thighW,
-      calfW: (5 + f('waden') * 4) * k * 0.72,
+      /* Außenkante der Schulter = shoulderSpan * 1,44. Ergibt 34 bis 50 Punkte
+         Schulterbreite auf 129,5 Punkte Höhe; vorher waren es bis zu 62. */
+      shoulderSpan: (8.7 + f('schultern') * 4.2) * k,
+      latHalf: latHalf,
+      waistHalf: (11 + f('bauch') * 4.7) * k * 0.5,
+      /* Die Schenkel sitzen unter dem Rumpf, nicht daneben. */
+      hipHalf: thighW * 0.37,
+      chestR: chestR,
+      /* Die Brustkanten dürfen nie außerhalb des Brustkorbs landen — vorher
+         lagen sie bei chestR * 1.45 auf Schulter und Arm. */
+      pecHalf: Math.min(chestR * 1.45, latHalf * 0.86),
+      armW: (4.5 + f('bizeps') * 3.8) * k,
+      foreW: (3.6 + f('trizeps') * 2.6) * k,     /* 0,75 x armW */
+      thighW: thighW,                            /* 1,4 x armW  */
+      calfW: (6.0 + f('waden') * 3.1) * k,       /* 0,72 x thighW */
+      /* Angespannt wölbt sich der Muskelbauch, nicht der ganze Arm: flex geht
+         nicht mehr auf armW, sondern nur auf den Bizepsberg in der Mitte. */
+      flex: util.clamp(pose.flex || 1, 1, 1.15),
       abs: f('bauch'),
       back: f('ruecken')
     };
   }
 
-  /* Knochenlängen in Bildpunkten. Der Unterarm ist etwas kürzer als der
-     Oberarm — so ist der Arm gebaut. */
-  var UPPER = 30, FORE = 26;
+  /* ---------- Gelenke ------------------------------------------------------ */
 
-  /* Schulter und Hand stehen fest, der Ellenbogen ergibt sich daraus: die
-     übliche Zwei-Knochen-Rechnung.
+  function armFor(pose, w, side, sy) {
+    var spec = pose.arms ? pose.arms[side > 0 ? 1 : 0] : pose;
+    var shoulder = [CX + side * w.shoulderSpan, sy + (spec.dy || 0)];
+    var u = spec.upper * DEG, o = spec.fore * DEG;
+    var elbow = [
+      shoulder[0] + side * UPPER * Math.cos(u),
+      shoulder[1] - UPPER * Math.sin(u)
+    ];
+    return {
+      side: side,
+      shoulder: shoulder,
+      elbow: elbow,
+      hand: [elbow[0] + side * FORE * Math.cos(o), elbow[1] - FORE * Math.sin(o)],
+      /* Ein durchgestreckter Arm hat keinen Bizepsberg — der Faktor gehört
+         deshalb an den Arm, nicht an die ganze Pose. */
+      flex: util.clamp(spec.flex || pose.flex || 1, 1, 1.15)
+    };
+  }
 
-     Vorher stand der Ellenbogen relativ zur Schulter, die Hand aber relativ
-     zur Mitte. Mit den Schultern wanderte deshalb nur der Ellenbogen nach
-     außen und zog den Unterarm mit — bei ausgereizten Werten war er
-     anderthalb mal so lang wie der Oberarm. */
-  function elbowFor(shoulder, hand, bend) {
-    var dx = hand[0] - shoulder[0], dy = hand[1] - shoulder[1];
-    var d = Math.sqrt(dx * dx + dy * dy) || 0.001;
-    /* Weiter als der Arm reicht, geht nicht — dann ist er durchgestreckt. */
-    var reach = Math.min(d, UPPER + FORE - 0.5);
-    var a = (UPPER * UPPER - FORE * FORE + reach * reach) / (2 * reach);
-    var h = Math.sqrt(Math.max(0, UPPER * UPPER - a * a));
-    var ux = dx / d, uy = dy / d;
+  /* Der Bizepsberg sitzt auf der Innenseite der Beuge — also auf der Seite, zu
+     der sich der Unterarm dreht. Das ist der Anteil von (Hand − Ellenbogen),
+     der senkrecht auf dem Oberarm steht. */
+  function peakOf(a, w) {
+    var ux = a.elbow[0] - a.shoulder[0], uy = a.elbow[1] - a.shoulder[1];
+    var ul = Math.sqrt(ux * ux + uy * uy) || 1;
+    ux /= ul; uy /= ul;
+
+    var vx = a.hand[0] - a.elbow[0], vy = a.hand[1] - a.elbow[1];
+    var along = vx * ux + vy * uy;
+    var nx = vx - along * ux, ny = vy - along * uy;
+    var nl = Math.sqrt(nx * nx + ny * ny) || 1;
+
+    var off = w.armW * 0.16;
     return [
-      shoulder[0] + ux * a + bend * uy * h,
-      shoulder[1] + uy * a - bend * ux * h
+      a.shoulder[0] + ux * ul * 0.52 + (nx / nl) * off,
+      a.shoulder[1] + uy * ul * 0.52 + (ny / nl) * off
     ];
   }
 
-  function bendOf(pose, span) {
-    var hx = pose.hand[0] - span, hy = pose.hand[1];      /* Hand ab Schulter */
-    var cross = hx * pose.elbow[1] - hy * pose.elbow[0];
-    return cross > 0 ? -1 : 1;
+  function legFor(pose, w, side) {
+    var st = pose.stance || 13;
+    var l = {
+      side: side,
+      hip: [CX + side * w.hipHalf, HIP],
+      knee: [CX + side * st * 0.62, KNEE],
+      foot: [CX + side * st, FOOT],
+      ball: 0, locked: 0
+    };
+
+    /* Hinteres Bein auf dem Ballen: Ferse hoch, Knie leicht gebeugt. Das ist
+       die Haltung, in der beim Doppelbizeps von hinten die Wade bewertet wird. */
+    if (pose.backLeg === side) {
+      l.knee = [CX + side * (st * 0.62 + 2), KNEE - 3];
+      l.foot = [CX + side * (st - 2), FOOT - 5];
+      l.ball = 1;
+    }
+
+    /* Vorgestelltes Bein: durchgestreckt, Fuß etwas näher an der Mitte und
+       einen Hauch tiefer — näher am Betrachter. */
+    if (pose.frontLeg === side) {
+      l.foot = [CX + side * (st - 2), FOOT + 1];
+      l.knee = [(l.hip[0] + l.foot[0]) / 2, KNEE];
+      l.locked = 1;
+    }
+    return l;
   }
 
   function joints(pose, w) {
     var sy = SHOULDER + (pose.shrug || 0);
     var out = { shoulderY: sy, arms: [], legs: [] };
-    var side;
-
     for (var i = 0; i < 2; i++) {
-      side = i ? 1 : -1;
-      var shoulder = [CX + side * w.shoulderSpan, sy];
-      var hand = [CX + side * pose.hand[0], sy + pose.hand[1]];
-      out.arms.push({
-        side: side,
-        shoulder: shoulder,
-        elbow: elbowFor(shoulder, hand, side * bendOf(pose, w.shoulderSpan)),
-        hand: hand
-      });
-      out.legs.push({
-        side: side,
-        hip: [CX + side * w.hipHalf, HIP],
-        knee: [CX + side * pose.stance * 0.62, KNEE],
-        foot: [CX + side * pose.stance, FOOT]
-      });
+      var side = i ? 1 : -1;
+      out.arms.push(armFor(pose, w, side, sy));
+      out.legs.push(legFor(pose, w, side));
     }
     return out;
   }
 
+  /* ---------- Rumpf -------------------------------------------------------- */
+
   /* Halbe Rumpfbreite auf Höhe u (0 = Achselhöhe, 1 = Taille).
 
      Der Latissimus setzt direkt unter der Achsel an, ist dort am breitesten
-     und läuft keilförmig zur Taille aus. Eine gleichmäßig breite Kapsel wie
-     vorher ergibt dagegen eine Tonne mit runden Enden — und die liest sich als
-     zwei Beulen statt als Rücken. */
+     und läuft keilförmig zur Taille aus. Eine gleichmäßig breite Kapsel ergibt
+     dagegen eine Tonne mit runden Enden. */
   function torsoW(w, u) {
     if (u < 0.14) return lerp(w.latHalf * 0.86, w.latHalf, u / 0.14);
     return lerp(w.latHalf, w.waistHalf, (u - 0.14) / 0.86);
@@ -226,9 +294,9 @@
     for (var i = 0; i < 2; i++) {
       var side = i ? 1 : -1;
       px.capsule(ctx,
-        [CX + side * 3, sy - 9],
-        [CX + side * w.shoulderSpan * 0.88, sy + 1],
-        9 + e, color);
+        [CX + side * 2.5, sy - 8],
+        [CX + side * w.shoulderSpan * 0.86, sy + 1],
+        7.5 + e, color);
     }
   }
 
@@ -247,14 +315,40 @@
 
   /* ---------- Vorder- und Rückansicht -------------------------------------- */
 
-  /* Beide teilen sich Skelett, Silhouette und Flächen. Unterschiedlich sind
-     nur der Kopf und die Ausarbeitung: vorn Brust und Bauch, hinten Trapez,
-     Rückenrinne und Beinbeuger. */
+  /* Bein als verjüngte Form statt zweier gleich dicker Rohre: der Schenkel ist
+     oben am dicksten, die Wade sitzt im oberen Drittel des Unterschenkels, zum
+     Knöchel hin wird es dünn. Zwei durchgehend gleich starke Kapseln lasen sich
+     als Hosenbein statt als Bein. */
+  function legShape(ctx, l, w, color, extra) {
+    var e = extra || 0;
+    var thighEnd = [lerp(l.hip[0], l.knee[0], 0.78), lerp(l.hip[1], l.knee[1], 0.78)];
+    var calfEnd = [lerp(l.knee[0], l.foot[0], 0.5), lerp(l.knee[1], l.foot[1], 0.5)];
+
+    px.capsule(ctx, l.knee, l.foot, w.calfW * 0.6 + e, color);       /* Schienbein */
+    px.capsule(ctx, l.hip, l.knee, w.thighW * 0.8 + e, color);       /* Knie */
+    px.capsule(ctx, l.knee, calfEnd, w.calfW + e, color);            /* Wadenbauch */
+    px.capsule(ctx, l.hip, thighEnd, w.thighW + e, color);           /* Schenkel */
+  }
+
+  function shoeOf(ctx, l, w, color) {
+    if (l.ball) {
+      /* Nur der Ballen steht auf — ein kurzer Klotz vor dem Fußpunkt, der bis
+         auf den Boden reicht. Die angehobene Ferse ergibt sich daraus, dass
+         das Schienbein schon oberhalb endet. */
+      px.rect(ctx, l.foot[0] - w.calfW * 0.5, FOOT - 4, w.calfW * 1.1, 5, color);
+      return;
+    }
+    px.rect(ctx, l.foot[0] - w.calfW * 0.9, FOOT - 1, w.calfW * 1.8, 5, color);
+  }
+
+  /* Beide Ansichten teilen sich Skelett, Silhouette und Flächen. Unterschiedlich
+     sind nur der Kopf und die Ausarbeitung: vorn Brust und Bauch, hinten
+     Trapez, Rückenrinne und Beinbeuger. */
   function drawUpright(ctx, pose, w, col, o) {
     var j = joints(pose, w);
     var sy = j.shoulderY;
     var back = pose.view === 'back';
-    var i, a, l;
+    var i, a, l, pk;
 
     /* Flacher Bodenschatten. Eine Scheibe wäre hier eine Kugel und würde bis
        an die Knie reichen — eine liegende Kapsel ist die flache Ellipse. */
@@ -264,38 +358,40 @@
     /* 1. Kontur — erst alles in Fast-Schwarz, ergibt eine saubere Silhouette. */
     for (i = 0; i < 2; i++) {
       l = j.legs[i];
-      px.capsule(ctx, l.hip, l.knee, w.thighW + 2, C.ink);
-      px.capsule(ctx, l.knee, l.foot, w.calfW + 2, C.ink);
-      px.rect(ctx, l.foot[0] - w.calfW * 0.9, FOOT - 1, w.calfW * 1.8, 6, C.ink);
+      legShape(ctx, l, w, C.ink, 2);
+      shoeOf(ctx, l, w, C.ink);
 
       a = j.arms[i];
       px.capsule(ctx, a.shoulder, a.elbow, w.armW + 2, C.ink);
+      pk = peakOf(a, w);
+      px.disc(ctx, pk[0], pk[1], w.armW * 0.5 * a.flex + 1, C.ink);
       px.capsule(ctx, a.elbow, a.hand, w.foreW + 2, C.ink);
       px.disc(ctx, a.hand[0], a.hand[1], w.foreW * 0.7 + 1.5, C.ink);
       px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulderSpan * 0.44 + 2, C.ink);
     }
     torso(ctx, sy, w, C.ink, 1.4);
     traps(ctx, sy, w, C.ink, 2);
-    px.capsule(ctx, [CX, HEAD + 6], [CX, sy], 12, C.ink);          /* Hals */
+    px.capsule(ctx, [CX, HEAD + 5], [CX, sy], 11, C.ink);          /* Hals */
     px.disc(ctx, CX, HEAD, HEAD_R + 1.5, C.ink);
 
     /* 2. Flächen */
     for (i = 0; i < 2; i++) {
       l = j.legs[i];
-      px.capsule(ctx, l.hip, l.knee, w.thighW, col.skin);
-      px.capsule(ctx, l.knee, l.foot, w.calfW, col.skin);
-      px.rect(ctx, l.foot[0] - w.calfW * 0.9, FOOT - 1, w.calfW * 1.8, 5, C.shadow);
+      legShape(ctx, l, w, col.skin, 0);
+      shoeOf(ctx, l, w, C.shadow);
     }
 
     /* Hals vor dem Rumpf, sonst steht sein unteres Ende als dunkler Fleck
        mitten auf der Brust. */
-    px.capsule(ctx, [CX, HEAD + 7], [CX, sy - 2], 9, col.skinDark);
+    px.capsule(ctx, [CX, HEAD + 6], [CX, sy - 2], 8, col.skinDark);
     torso(ctx, sy, w, col.skin);
     traps(ctx, sy, w, col.skin);
 
     for (i = 0; i < 2; i++) {
       a = j.arms[i];
       px.capsule(ctx, a.shoulder, a.elbow, w.armW, col.skin);
+      pk = peakOf(a, w);
+      px.disc(ctx, pk[0], pk[1], w.armW * 0.5 * a.flex, col.skin);
       px.capsule(ctx, a.elbow, a.hand, w.foreW, col.skin);
       px.disc(ctx, a.hand[0], a.hand[1], w.foreW * 0.7, col.skin);
       px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulderSpan * 0.44, col.skin);
@@ -307,9 +403,18 @@
     if (back) {
       px.disc(ctx, CX, HEAD - 1, HEAD_R * 0.95, C.shadow);
     } else {
-      px.disc(ctx, CX, HEAD - 6, HEAD_R * 0.92, C.shadow);
-      px.rect(ctx, CX - 5, HEAD, 2, 3, C.ink);
-      px.rect(ctx, CX + 3, HEAD, 2, 3, C.ink);
+      /* Flacher Haarschnitt als Kappe, keine Scheibe: eine Scheibe in
+         Kopfgröße lässt vom Gesicht nur einen Streifen Kinn übrig, und der
+         Kopf wird zum schwarzen Klumpen. */
+      px.capsule(ctx,
+        [CX - HEAD_R * 0.5, HEAD - HEAD_R * 0.45],
+        [CX + HEAD_R * 0.5, HEAD - HEAD_R * 0.45],
+        HEAD_R * 0.95, C.shadow);
+      /* Beide Augen wandern mit dem Blick — mehr Kopfdrehung gibt eine
+         Vorderansicht nicht her. */
+      var eye = (pose.look || 0) * 2;
+      px.rect(ctx, CX - 4 + eye, HEAD + 1, 2, 2, C.ink);
+      px.rect(ctx, CX + 2 + eye, HEAD + 1, 2, 2, C.ink);
     }
 
     /* Hose in der gewählten Farbe. Breite aus der Hüfte, nicht aus der Taille —
@@ -324,18 +429,30 @@
     if (back) backDetail(ctx, sy, w, j, col);
     else frontDetail(ctx, sy, w, j, col);
 
-    /* Arme und Beine bekommen in beiden Ansichten dieselben Glanzlichter. */
     for (i = 0; i < 2; i++) {
       a = j.arms[i];
-      px.disc(ctx, (a.shoulder[0] + a.elbow[0]) / 2 - a.side * w.armW * 0.2,
-        (a.shoulder[1] + a.elbow[1]) / 2 - 1, w.armW * 0.46, col.skinLit);
+      pk = peakOf(a, w);
+      px.disc(ctx, pk[0] - a.side * 1, pk[1] - 1, w.armW * 0.3 * a.flex, col.skinLit);
       px.disc(ctx, a.shoulder[0] - a.side * 1.5, a.shoulder[1] - 2,
         w.shoulderSpan * 0.2, col.skinLit);
+
       l = j.legs[i];
       px.capsule(ctx, [l.hip[0] - l.side * 1, l.hip[1] + 4],
-        [l.knee[0] - l.side * 1, l.knee[1] - 4], w.thighW * 0.28, col.skinLit);
+        [l.knee[0] - l.side * 1, l.knee[1] - 4],
+        w.thighW * (l.locked ? 0.36 : 0.28), col.skinLit);
       px.capsule(ctx, [l.knee[0], l.knee[1] + 3], [l.foot[0], l.foot[1] - 8],
-        w.calfW * 0.3, col.skinLit);
+        w.calfW * (l.ball ? 0.42 : 0.3), col.skinLit);
+
+      /* Durchgestreckt zeichnet sich die Trennung der Schenkelköpfe ab. */
+      if (l.locked) {
+        px.capsule(ctx, [l.hip[0] + l.side * w.thighW * 0.22, l.hip[1] + 8],
+          [l.knee[0] + l.side * w.thighW * 0.18, l.knee[1] - 5], 2, col.edge);
+      }
+      /* Auf dem Ballen tritt der Wadenbauch hervor. */
+      if (l.ball) {
+        px.capsule(ctx, [l.knee[0] - l.side * 1, l.knee[1] + 5],
+          [l.foot[0] - l.side * 1, l.foot[1] - 11], w.calfW * 0.28, col.edge);
+      }
     }
   }
 
@@ -348,7 +465,7 @@
       s = i ? 1 : -1;
       px.capsule(ctx,
         [CX + s * (w.latHalf - 1.5), sy + 4],
-        [CX + s * (w.waistHalf - 0.5), HIP - 10],
+        [CX + s * (w.waistHalf - 0.5), HIP - 9],
         2, col.edge);
     }
 
@@ -357,23 +474,25 @@
     for (i = 0; i < 2; i++) {
       s = i ? 1 : -1;
       px.capsule(ctx,
-        [CX + s * w.chestR * 0.22, sy + 22],
-        [CX + s * w.chestR * 1.45, sy + 19],
+        [CX + s * w.pecHalf * 0.16, sy + 20],
+        [CX + s * w.pecHalf, sy + 17],
         2.5, col.deep);                                              /* Unterkante */
+      /* Licht auf der Wölbung. Flach und breit, nicht als kurzer dicker
+         Strich — der ergibt zwei runde Knöpfe statt einer Brustplatte. */
       px.capsule(ctx,
-        [CX + s * w.chestR * 0.55, sy + 9],
-        [CX + s * w.chestR * 1.25, sy + 11],
-        w.chestR * 0.55, col.skinLit);                               /* Licht oben */
+        [CX + s * w.pecHalf * 0.24, sy + 9],
+        [CX + s * w.pecHalf * 0.9, sy + 11],
+        w.chestR * 0.42, col.skinLit);
     }
-    px.capsule(ctx, [CX, sy + 8], [CX, sy + 21], 2, col.deep);       /* Brustbein */
-    px.capsule(ctx, [CX, sy + 22], [CX, HIP - 12], 2.5, col.edge);   /* Bauchrinne */
+    px.capsule(ctx, [CX, sy + 7], [CX, sy + 19], 2, col.deep);       /* Brustbein */
+    px.capsule(ctx, [CX, sy + 20], [CX, HIP - 11], 2.5, col.edge);   /* Bauchrinne */
 
     /* Bauchmuskeln zeichnen sich erst ab einer gewissen Größe ab. */
     if (w.abs > 0.26) {
       var rows = w.abs > 0.55 ? 3 : 2;
       for (var r = 0; r < rows; r++) {
-        px.rect(ctx, CX - 6, HIP - 24 + r * 6, 4, 2, col.edge);
-        px.rect(ctx, CX + 2, HIP - 24 + r * 6, 4, 2, col.edge);
+        px.rect(ctx, CX - 6, HIP - 22 + r * 6, 4, 2, col.edge);
+        px.rect(ctx, CX + 2, HIP - 22 + r * 6, 4, 2, col.edge);
       }
     }
   }
@@ -385,14 +504,14 @@
     var i, s;
 
     /* Rückenrinne: von den Schultern bis zum Kreuz, oben breiter. */
-    px.capsule(ctx, [CX, sy + 6], [CX, HIP - 8], 2.5, col.deep);
-    px.capsule(ctx, [CX, sy + 4], [CX, sy + 18], 4, col.edge);
+    px.capsule(ctx, [CX, sy + 5], [CX, HIP - 7], 2.5, col.deep);
+    px.capsule(ctx, [CX, sy + 4], [CX, sy + 16], 4, col.edge);
 
     /* Trapez: dunkler Keil vom Nacken zu den Schultern. */
     for (i = 0; i < 2; i++) {
       s = i ? 1 : -1;
       px.capsule(ctx,
-        [CX + s * 2, sy - 6],
+        [CX + s * 2, sy - 5],
         [CX + s * w.shoulderSpan * 0.7, sy + 3],
         3, col.deep);
     }
@@ -403,23 +522,22 @@
       s = i ? 1 : -1;
       px.capsule(ctx,
         [CX + s * (w.latHalf - 1.5), sy + 5],
-        [CX + s * (w.waistHalf - 0.5), HIP - 12],
+        [CX + s * (w.waistHalf - 0.5), HIP - 11],
         2.5, col.deep);
       /* Licht auf der Fläche dazwischen macht den Keil plastisch. */
       px.capsule(ctx,
-        [CX + s * w.latHalf * 0.55, sy + 10],
-        [CX + s * w.waistHalf * 0.7, HIP - 18],
+        [CX + s * w.latHalf * 0.55, sy + 9],
+        [CX + s * w.waistHalf * 0.7, HIP - 16],
         3, col.skinLit);
     }
 
     /* Untere Rückenpartie: zwei Grübchen über dem Hosenbund. */
     if (w.back > 0.3) {
-      px.rect(ctx, CX - 7, HIP - 13, 2, 2, col.deep);
-      px.rect(ctx, CX + 5, HIP - 13, 2, 2, col.deep);
+      px.rect(ctx, CX - 7, HIP - 12, 2, 2, col.deep);
+      px.rect(ctx, CX + 5, HIP - 12, 2, 2, col.deep);
     }
 
-    /* Beinbeuger: Schatten auf der Rückseite der Schenkel, dazu die Kerbe
-       zwischen den beiden Köpfen. */
+    /* Beinbeuger: Schatten auf der Rückseite der Schenkel. */
     for (i = 0; i < 2; i++) {
       var l = j.legs[i];
       px.capsule(ctx,
@@ -431,10 +549,8 @@
   /* ---------- Profil ------------------------------------------------------- */
 
   /* Eigene Zeichnung statt des Rigs aus figure.js. Jenes ist für die
-     gedrungene Szenenfigur gerechnet — Schulter und Hüfte liegen dort nur
-     20 Punkte auseinander, hier sind es 44. Mit seinen Werten wird der Rumpf
-     fast so breit wie lang, und die Hose landet als schräge Wurst auf einem
-     Bein.
+     gedrungene Szenenfigur gerechnet; mit seinen Werten wird der Rumpf fast so
+     breit wie lang, und die Hose landet als schräge Wurst auf einem Bein.
 
      Im Profil ist die Breite die Tiefe des Körpers: die Brust steht vorn
      heraus, der Rücken bleibt eine fast gerade Linie. Deshalb liegt die
@@ -443,22 +559,28 @@
 
   function profileTorso(ctx, d, backX, color, extra) {
     var y0 = SHOULDER - 3, y1 = HIP + 2;
-    var N = 12, h = (y1 - y0) / N, i, u, depth, e, y;
+    var N = 12, h = (y1 - y0) / N, i, u, depth, e, y, bx;
     for (i = 0; i < N; i++) {
       u = i / (N - 1);
       /* Oben die Brust, darunter die Verjüngung zur Taille. */
       depth = u < 0.3
         ? lerp(d.chest * 0.9, d.chest, u / 0.3)
         : lerp(d.chest, d.waist, (u - 0.3) / 0.7);
+      /* Der Brustkorb steht auch nach hinten etwas über — sonst wirkt die
+         gehobene Brust wie ein angesetzter Buckel. */
+      bx = backX - lerp(1.5, 0, util.clamp(u / 0.45, 0, 1));
       e = extra || 0;
       y = y0 + i * h;
-      px.capsule(ctx, [backX - e, y], [backX + depth + e, y], h + 1.6 + e * 2, color);
+      px.capsule(ctx, [bx - e, y], [bx + depth + e, y], h + 1.6 + e * 2, color);
     }
   }
 
   function drawProfile(ctx, pose, w, col, o) {
     var s = pose.side;
-    var d = { chest: w.latHalf * 1.55, waist: w.waistHalf * 1.9 };
+    var d = {
+      chest: w.latHalf * 1.55 * (pose.depth || 1),
+      waist: w.waistHalf * 1.9
+    };
     var backX = CX - d.waist * 0.5 - 2;
 
     function at(p) { return [CX + p[0], p[1]]; }
@@ -472,9 +594,14 @@
     var fHip = [hip[0] + FAR, hip[1]];
     var fShoulder = [shoulder[0] + FAR, shoulder[1]];
 
-    /* Fuß im Profil: ein Riegel nach vorn, kein Klotz unter dem Bein. */
-    function shoe(ctx2, p, color) {
-      px.rect(ctx2, p[0] - w.calfW * 0.6, FOOT - 1, w.calfW * 0.6 + 10, 5, color);
+    /* Fuß im Profil: ein Riegel nach vorn, kein Klotz unter dem Bein. Steht
+       das Bein auf dem Ballen, reicht nur der Vorderfuß auf den Boden. */
+    function shoe(p, ball, color) {
+      if (ball) {
+        px.rect(ctx, p[0] - 1, FOOT - 4, 11, 5, color);
+        return;
+      }
+      px.rect(ctx, p[0] - w.calfW * 0.6, FOOT - 1, w.calfW * 0.6 + 10, 5, color);
     }
 
     px.capsule(ctx, [CX - 20, FOOT + 3], [CX + 24, FOOT + 3], 8, C.wallDark);
@@ -492,21 +619,16 @@
     /* Abgewandte Körperhälfte: dunkler, das schafft die Tiefe. */
     limb(fHip, fKnee, w.thighW * 0.92, col.skinDark);
     limb(fKnee, fFoot, w.calfW * 0.92, col.skinDark);
-    px.rect(ctx, fFoot[0] - w.calfW * 0.6 - 1, FOOT - 2, w.calfW * 0.6 + 12, 7, C.ink);
-    shoe(ctx, fFoot, C.ink);
+    shoe(fFoot, 0, C.ink);
     limb(fShoulder, fElbow, w.armW * 0.9, col.skinDark);
     limb(fElbow, fHand, w.foreW * 0.9, col.skinDark);
+    px.disc(ctx, fHand[0], fHand[1], w.foreW * 0.66, col.skinDark);
 
     /* Hals und Rumpf */
-    px.capsule(ctx, [head[0] - 1, HEAD + 6], [shoulder[0] + 2, shoulder[1]], 12, C.ink);
-    px.capsule(ctx, [head[0] - 1, HEAD + 7], [shoulder[0] + 2, shoulder[1] - 2], 9, col.skinDark);
+    px.capsule(ctx, [head[0] - 1, HEAD + 5], [shoulder[0] + 2, shoulder[1]], 11, C.ink);
+    px.capsule(ctx, [head[0] - 1, HEAD + 6], [shoulder[0] + 2, shoulder[1] - 2], 8, col.skinDark);
     profileTorso(ctx, d, backX, C.ink, 1.4);
     profileTorso(ctx, d, backX, col.skin);
-
-    /* Hose: ein Riegel über der Hüfte, breit genug für die Schenkelansätze. */
-    var shorts = o.shorts || C.jeans;
-    px.rect(ctx, backX - 3, HIP - 8, d.waist + 10, 20, C.ink);
-    px.rect(ctx, backX - 2, HIP - 7, d.waist + 8, 18, shorts);
 
     /* Kopf im Profil: Haar über Hinterkopf und Scheitel, vorn Nase und Auge. */
     px.disc(ctx, head[0], head[1], HEAD_R + 1.5, C.ink);
@@ -519,51 +641,61 @@
     /* Nahes Bein vor dem Rumpf, danach der nahe Arm ganz vorn. */
     limb(hip, knee, w.thighW, col.skin);
     limb(knee, foot, w.calfW, col.skin);
-    px.rect(ctx, foot[0] - w.calfW * 0.6 - 1, FOOT - 2, w.calfW * 0.6 + 12, 7, C.ink);
-    shoe(ctx, foot, C.shadow);
+    shoe(foot, s.ball, C.shadow);
 
-    px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.4 + 2, C.ink);
-    px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.4, col.skin);
+    /* Hose erst jetzt: vor dem nahen Bein gezeichnet blitzte sie nur links und
+       rechts daneben hervor. Sie liegt über dem Schenkelansatz, nicht darunter.
+       Tiefe wie die Taille plus ein Rand — breiter sähe aus wie ein Brett. */
+    var shorts = o.shorts || C.jeans;
+    px.rect(ctx, backX - 3, HIP - 8, d.waist + 8, 20, C.ink);
+    px.rect(ctx, backX - 2, HIP - 7, d.waist + 6, 18, shorts);
+
+    /* Der Deltamuskel ist im Profil fast so tief wie der Brustkorb — mit einer
+       kleinen Kugel wirkt die Schulter abfallend statt geladen. */
+    px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55 + 2, C.ink);
+    px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55, col.skin);
     limb(shoulder, elbow, w.armW, col.skin);
     limb(elbow, hand, w.foreW, col.skin);
-    px.disc(ctx, hand[0], hand[1], w.foreW * 0.7 + 1.5, C.ink);
-    px.disc(ctx, hand[0], hand[1], w.foreW * 0.7, col.skin);
+    /* Beide Hände treffen sich an einem Punkt — geschlossen, nicht zwei Fäuste
+       nebeneinander. Deshalb eine gemeinsame Faust. */
+    px.disc(ctx, hand[0], hand[1], w.foreW * 0.62 + 1.5, C.ink);
+    px.disc(ctx, hand[0], hand[1], w.foreW * 0.62, col.skin);
 
     /* 3. Was die Pose ausmacht. */
-    px.disc(ctx, shoulder[0] - 1.5, shoulder[1] - 2, w.shoulderSpan * 0.19, col.skinLit);
-    px.capsule(ctx, [backX + 1, SHOULDER + 6], [backX + 1, HIP - 8], 2, col.edge);  /* Rückenlinie */
+    px.disc(ctx, shoulder[0] - 1.5, shoulder[1] - 2, w.shoulderSpan * 0.26, col.skinLit);
+    px.capsule(ctx, [backX + 1, SHOULDER + 6], [backX + 1, HIP - 8], 2, col.edge);
 
     if (pose.chest) {
       /* Brustplatte: Licht auf der Wölbung, darunter die Kante zum Bauch. */
       px.capsule(ctx,
-        [backX + d.chest * 0.45, SHOULDER + 8],
-        [backX + d.chest * 0.92, SHOULDER + 14],
-        d.chest * 0.34, col.skinLit);
+        [backX + d.chest * 0.45, SHOULDER + 6],
+        [backX + d.chest * 0.92, SHOULDER + 12],
+        d.chest * 0.32, col.skinLit);
       px.capsule(ctx,
-        [backX + d.chest * 0.3, SHOULDER + 22],
-        [backX + d.chest * 0.95, SHOULDER + 19],
+        [backX + d.chest * 0.3, SHOULDER + 20],
+        [backX + d.chest * 0.95, SHOULDER + 17],
         2.5, col.deep);
       px.capsule(ctx,
-        [backX + d.chest * 0.55, SHOULDER + 26],
-        [backX + d.waist * 0.75, HIP - 12],
+        [backX + d.chest * 0.55, SHOULDER + 24],
+        [backX + d.waist * 0.75, HIP - 11],
         2, col.edge);                                       /* seitliche Bauchkante */
     }
     if (pose.triceps) {
       /* Der Trizeps liegt hinten am Oberarm — im Profil die Hauptsache. */
       px.capsule(ctx,
-        [shoulder[0] - w.armW * 0.3, shoulder[1] + 7],
-        [elbow[0] - w.armW * 0.25, elbow[1] - 4],
-        w.armW * 0.42, col.skinLit);
+        [shoulder[0] - w.armW * 0.32, shoulder[1] + 6],
+        [elbow[0] - w.armW * 0.28, elbow[1] - 4],
+        w.armW * 0.44, col.skinLit);
       px.capsule(ctx,
-        [shoulder[0] + w.armW * 0.05, shoulder[1] + 9],
-        [elbow[0] + w.armW * 0.05, elbow[1] - 3],
+        [shoulder[0] + w.armW * 0.06, shoulder[1] + 8],
+        [elbow[0] + w.armW * 0.06, elbow[1] - 3],
         1.5, col.deep);
     }
 
     /* Bauchmuskeln zeichnen sich im Profil als Kerben an der Vorderkante ab. */
     if (w.abs > 0.3) {
       for (var r = 0; r < 2; r++) {
-        px.rect(ctx, backX + d.waist * 0.62, HIP - 22 + r * 7, 3, 2, col.edge);
+        px.rect(ctx, backX + d.waist * 0.62, HIP - 20 + r * 7, 3, 2, col.edge);
       }
     }
   }
@@ -601,10 +733,26 @@
     }
   }
 
+  /* Die Kür der Golden Era gibt es nicht ab Tag eins — sie ist die Belohnung
+     dafür, dass die Pflichtposen schon eine Weile stehen. */
+  function isUnlocked(id) {
+    var need = get(id).level || 1;
+    return MF.game.state.get().level >= need;
+  }
+
   MF.ui.poses = {
     list: POSES,
     get: get,
     draw: draw,
-    size: { w: W, h: H }
+    isUnlocked: isUnlocked,
+    size: { w: W, h: H },
+    /* Für den Durchlauftest: die Verhältnisse werden dort nachgerechnet, damit
+       sie nicht wieder still wegrutschen. */
+    widths: widths,
+    metrics: {
+      UPPER: UPPER, FORE: FORE,
+      FOOT: FOOT, KNEE: KNEE, HIP: HIP, SHOULDER: SHOULDER,
+      HEAD: HEAD, HEAD_R: HEAD_R
+    }
   };
 })(window.MacFit);
