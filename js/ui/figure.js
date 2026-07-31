@@ -46,15 +46,28 @@
     };
   }
 
+  /* Die abgewandte Seite folgt normalerweise der nahen — Geräteszenen sind
+     symmetrisch. Wer Gegenbewegung braucht, etwa beim Gehen, gibt farKnee,
+     farFoot, farElbow und farHand zusätzlich an. */
+  function farSide(f) {
+    return {
+      knee: f.farKnee || f.knee,
+      foot: f.farFoot || f.foot,
+      elbow: f.farElbow || f.elbow,
+      hand: f.farHand || f.hand
+    };
+  }
+
   /* Alle Glieder einer Pose als Liste [von, nach, Stärke]. */
   function limbs(f, th) {
     var farDx = [-4, 0];
+    var o = farSide(f);
     return {
       far: [
-        [offset(f.hip, farDx), offset(f.knee, farDx), th.thigh * 0.88],
-        [offset(f.knee, farDx), offset(f.foot, farDx), th.calf * 0.88],
-        [offset(f.shoulder, farDx), offset(f.elbow, farDx), th.arm * 0.82],
-        [offset(f.elbow, farDx), offset(f.hand, farDx), th.fore * 0.82]
+        [offset(f.hip, farDx), offset(o.knee, farDx), th.thigh * 0.88],
+        [offset(o.knee, farDx), offset(o.foot, farDx), th.calf * 0.88],
+        [offset(f.shoulder, farDx), offset(o.elbow, farDx), th.arm * 0.82],
+        [offset(o.elbow, farDx), offset(o.hand, farDx), th.fore * 0.82]
       ],
       near: [
         [f.shoulder, f.hip, th.torso],
@@ -85,14 +98,15 @@
     var face = opts.face === undefined ? 1 : opts.face;
 
     var L = limbs(f, th);
+    var o = farSide(f);
     var hr = th.head;
     var toe = [f.foot[0] + face * 5.5, f.foot[1] + 1.5];
-    var farToe = [toe[0] - 4, toe[1]];
+    var farToe = [o.foot[0] + face * 5.5 - 4, o.foot[1] + 1.5];
     var footW = th.calf * 0.8;
 
     /* 1. Kontur: erst hinten, dann vorne — ergibt eine saubere Silhouette. */
     strokeAll(ctx, L.far, 2, C.ink);
-    px.capsule(ctx, offset(f.foot, [-4, 0]), farToe, footW + 2, C.ink);
+    px.capsule(ctx, offset(o.foot, [-4, 0]), farToe, footW + 2, C.ink);
     px.disc(ctx, f.head[0], f.head[1], hr + 1, C.ink);
     strokeAll(ctx, L.near, 2, C.ink);
     px.capsule(ctx, f.foot, toe, footW + 2, C.ink);
@@ -100,7 +114,7 @@
 
     /* 2. Fläche */
     strokeAll(ctx, L.far, 0, skinDark);
-    px.capsule(ctx, offset(f.foot, [-4, 0]), farToe, footW, C.ink);
+    px.capsule(ctx, offset(o.foot, [-4, 0]), farToe, footW, C.ink);
 
     px.capsule(ctx, f.shoulder, f.hip, th.torso, skin);
     px.capsule(ctx, f.hip, f.knee, th.thigh, skin);

@@ -24,11 +24,13 @@
   var DOOR_L = 232, DOOR_R = 296;   /* Eingang des Studios */
 
   /* Zeitplan in Sekunden. */
-  var T_STOP = 1.35;   /* Wagen steht                     */
-  var T_OPEN = 1.85;   /* Türen sind auf                  */
-  var T_OUT = 2.40;    /* beide stehen neben dem Wagen    */
-  var T_ARRIVE = 4.20; /* am Eingang                      */
-  var T_GONE = 4.70;   /* im Studio verschwunden          */
+  var T_STOP = 1.20;   /* Wagen steht                          */
+  var T_OPEN = 1.60;   /* Tür ist auf                          */
+  var T_OUT = 2.10;    /* steht neben dem Wagen, Seitenansicht  */
+  var T_TURN = 2.90;   /* dreht sich Richtung Eingang           */
+  var T_BACK = 3.25;   /* Drehung fertig, Rückansicht           */
+  var T_ARRIVE = 4.45; /* am Eingang                            */
+  var T_GONE = 4.75;   /* im Studio verschwunden                */
   var DURATION = 5.00;
 
   function clamp01(t) { return t < 0 ? 0 : (t > 1 ? 1 : t); }
@@ -192,24 +194,30 @@
 
      Alle Maße sind halbe Breiten in Bildpunkten, aus den Muskelwerten des
      Spielstands abgeleitet. Die Untergrenzen sorgen dafür, dass er auch am
-     ersten Tag durchtrainiert aussieht; wer weiter wächst, wird breiter. */
-  function metrics(scale) {
+     ersten Tag durchtrainiert aussieht; wer weiter wächst, wird breiter.
+
+     narrow staucht nur die Quermaße. Bei 0.3 sieht die Rückansicht praktisch
+     aus wie ein Profil — genau deshalb kann die Drehung an dieser Stelle vom
+     Seitenriss herüberschneiden, ohne dass es springt. */
+  function metrics(scale, narrow) {
     var m = MF.game.state.get().muscles;
+    var n = narrow === undefined ? 1 : narrow;
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
     function w(base, span, id, floor) {
       var v = base + f(id) * span;
-      return (v < floor ? floor : v) * scale;
+      return (v < floor ? floor : v) * scale * n;
     }
     return {
       shoulder: w(10, 9, 'schultern', 14),   /* halbe Schulterbreite */
       lat: w(9, 8, 'ruecken', 12.5),         /* halbe Breite unter den Achseln */
       waist: w(6, 3.5, 'bauch', 8),
       delt: w(4, 4.5, 'schultern', 6),
-      arm: w(4, 5, 'bizeps', 6.5),
-      fore: w(3.4, 3, 'trizeps', 5),
-      thigh: w(7, 6, 'beine', 10),
-      calf: w(5, 4, 'waden', 7),
-      hip: 6.5 * scale,
+      /* Gliedstärken bleiben unberührt — ein gedrehter Arm wird nicht dünner. */
+      arm: w(4, 5, 'bizeps', 6.5) / n,
+      fore: w(3.4, 3, 'trizeps', 5) / n,
+      thigh: w(7, 6, 'beine', 10) / n,
+      calf: w(5, 4, 'waden', 7) / n,
+      hip: 6.5 * scale * n,
       head: 7 * scale
     };
   }
@@ -336,11 +344,71 @@
       2 * k, look.shirtLit);
   }
 
+  /* ---------- Figur im Seitenriss ------------------------------------------ */
+
+  /* Aussteigen und die ersten Schritte laufen im Profil — von hinten wäre gar
+     nicht zu sehen, dass er aus dem Wagen kommt. Dafür das Rig aus
+     figure.js, das auch die Übungsszenen zeichnet. */
+  var ATHLETIC = {
+    arm: 8.6, fore: 5.6, torso: 22, shoulder: 8.2, thigh: 13.5, calf: 8.4, head: 7
+  };
+
+  function sideThickness(scale) {
+    var th = MF.ui.figure.thicknessFromState();
+    var out = {};
+    for (var key in ATHLETIC) {
+      if (!Object.prototype.hasOwnProperty.call(ATHLETIC, key)) continue;
+      out[key] = (th[key] > ATHLETIC[key] ? th[key] : ATHLETIC[key]) * scale;
+    }
+    return out;
+  }
+
+  function sidePose(x, gy, phase, scale, crouch) {
+    var s = Math.sin(phase) * (1 - crouch);
+    var bob = Math.abs(Math.cos(phase)) * 1.2 * scale * (1 - crouch);
+    /* Der Kopf muss deutlich über der Schulter sitzen: der Rumpf ist eine
+       Kapsel und ragt um seine halbe Stärke über den Schulterpunkt hinaus —
+       zu eng gesetzt verschwindet der Kopf darin. */
+    var hipY = gy - (31 - 13 * crouch) * scale - bob;
+    var shY = gy - (50 - 14 * crouch) * scale - bob;
+    var headY = gy - (64 - 16 * crouch) * scale - bob;
+    var kneeY = gy - (15 - 2 * crouch) * scale;
+    var stride = 13 * scale;
+
+    function leg(dir) {
+      var lift = Math.max(0, dir * s);
+      return {
+        knee: [x + dir * s * 5 * scale + (2 + 9 * crouch) * scale, kneeY - lift * 3 * scale],
+        foot: [x + dir * s * stride + 11 * crouch * scale, gy - lift * 4 * scale]
+      };
+    }
+    var near = leg(1), far = leg(-1);
+
+    return {
+      head: [x + 1 * scale, headY],
+      shoulder: [x, shY],
+      hip: [x, hipY],
+      knee: near.knee, foot: near.foot,
+      farKnee: far.knee, farFoot: far.foot,
+      /* Die nahe Hand trägt die Tasche und schwingt kaum. */
+      elbow: [x - s * 3 * scale, shY + 12 * scale],
+      hand: [x - s * 2 * scale, shY + 24 * scale],
+      farElbow: [x + s * 4 * scale, shY + 12 * scale],
+      farHand: [x + s * 6 * scale, shY + 24 * scale]
+    };
+  }
+
+  function drawSide(ctx, pose, th, look, bagColor, scale) {
+    MF.ui.figure.draw(ctx, pose, th, look);
+    if (bagColor) bag(ctx, pose.hand, bagColor, scale);
+  }
+
   /* Klamotten aus der Spieleranlage — im Film sieht man, was man gewählt hat. */
   function heroLook() {
     var s = MF.game.state.get();
     var o = MF.data.outfits.look(s && s.player ? s.player.outfit : 'blau');
     o.hair = C.shadow;
+    o.face = 1;
     return o;
   }
 
@@ -355,36 +423,74 @@
 
   /* Wo steht er zum Zeitpunkt t? Gibt null, solange er noch im Auto sitzt.
 
-     Er steigt nach vorn zum Betrachter aus (NEAR liegt deutlich tiefer als die
-     Standlinie des Wagens) und geht dann schräg nach hinten zum Eingang:
-     Bodenlinie steigt, Größe nimmt ab. Diese Diagonale ist der Grund für die
-     Rückansicht — nur so sieht man, wie breit er gebaut ist. */
+     Vier Abschnitte: aussteigen und ein paar Schritte im Profil auf der
+     vorderen Bodenlinie NEAR, dann die Drehung, dann schräg nach hinten zum
+     Eingang — Bodenlinie steigt, Größe nimmt ab. Erst diese Diagonale in der
+     Rückansicht zeigt, wie breit er gebaut ist. */
   var NEAR = 171;
+  var X_OUT = 92;      /* steht neben dem Wagen         */
+  var X_TURN = 134;    /* dreht sich hier um            */
+  var X_PIVOT = 142;   /* Ende der Drehung              */
+  var X_DOOR = 258;    /* verschwindet im Eingang       */
+  var SCALE = 1.06;
 
-  function stage(t, from, to) {
+  /* Wegstrecke für einen halben Schritt. Die Schrittfrequenz kommt aus dem
+     zurückgelegten Weg, nicht aus der Zeit — sonst rutschen die Füße. Beide
+     Rigs haben verschiedene Schrittlängen, deshalb zwei Werte. */
+  var SIDE_SPAN = 26 * SCALE;
+  var BACK_SPAN = 21 * SCALE;
+  /* Phase beim Umschalten, damit die Beine über den Schnitt hinweg
+     weiterlaufen statt neu anzusetzen. */
+  var PH_TURN = (X_TURN - X_OUT) / SIDE_SPAN * Math.PI;
+
+  /* Bei diesem Wert ist die Rückansicht genauso breit wie der Seitenriss
+     (Rumpfkapsel 22 gegen Schulter plus Delta 18.6) — nur so springt die
+     Silhouette im Moment des Umschaltens nicht. */
+  var TURN_START = 22 / (2 * 18.6);
+
+  function stage(t) {
     if (t < T_OPEN) return null;
 
-    if (t < T_OUT) {                       /* Aussteigen */
-      var u = seg(t, T_OPEN, T_OUT);
+    var u;
+
+    if (t < T_OUT) {                                   /* Aussteigen, Profil */
+      u = seg(t, T_OPEN, T_OUT);
       return {
-        x: lerp(CAR_X - 6, from, u),
-        gy: lerp(GROUND + 2, NEAR, u),
-        crouch: 1 - u, scale: 1.06, alpha: 1, walk: false
+        mode: 'side', x: lerp(CAR_X - 6, X_OUT, u), gy: NEAR,
+        crouch: 1 - u, scale: SCALE, narrow: 1, alpha: 1, phase: 0
       };
     }
 
-    /* Die Tiefe läuft über den ganzen Weg mit, nicht erst am Ende — sonst
+    if (t < T_TURN) {                                  /* ein paar Schritte */
+      u = seg(t, T_OUT, T_TURN);
+      var xs = lerp(X_OUT, X_TURN, u);
+      return {
+        mode: 'side', x: xs, gy: NEAR, crouch: 0, scale: SCALE, narrow: 1,
+        alpha: 1, phase: (xs - X_OUT) / SIDE_SPAN * Math.PI
+      };
+    }
+
+    if (t < T_BACK) {                                  /* Drehung */
+      u = seg(t, T_TURN, T_BACK);
+      var xt = lerp(X_TURN, X_PIVOT, u);
+      return {
+        mode: 'back', x: xt, gy: NEAR, crouch: 0, scale: SCALE,
+        narrow: lerp(TURN_START, 1, u), alpha: 1,
+        phase: PH_TURN + (xt - X_TURN) / BACK_SPAN * Math.PI
+      };
+    }
+
+    /* Die Tiefe läuft über den ganzen Rückweg mit, nicht erst am Ende — sonst
        wäre es kein schräger Weg, sondern ein Knick kurz vor der Tür. */
-    var v = seg(t, T_OUT, T_GONE);
-    var d = v * v * 0.35 + v * 0.65;       /* hinten wird der Weg kürzer */
+    u = seg(t, T_BACK, T_GONE);
+    var d = u * u * 0.35 + u * 0.65;                   /* hinten wird es kürzer */
+    var xb = lerp(X_PIVOT, X_DOOR, u);
     return {
-      x: lerp(from, to, v),
+      mode: 'back', x: xb,
       gy: lerp(NEAR, GROUND - 3, d),
-      crouch: 0,
-      scale: lerp(1.06, 0.68, d),
+      crouch: 0, scale: lerp(SCALE, 0.7, d), narrow: 1,
       alpha: 1 - seg(t, T_ARRIVE + 0.15, T_GONE),
-      walk: true,
-      from: from
+      phase: PH_TURN + (xb - X_TURN) / BACK_SPAN * Math.PI
     };
   }
 
@@ -396,7 +502,7 @@
     if (t > T_STOP - 0.1 && t < T_STOP + 0.35) {
       bounce = Math.sin((t - T_STOP + 0.1) / 0.45 * Math.PI * 2) * 1.6;
     }
-    /* Türen auf, und wieder zu, sobald beide draußen sind. */
+    /* Tür auf, und wieder zu, sobald er draußen ist. */
     var carDoor = seg(t, T_STOP, T_OPEN) - seg(t, T_OUT + 0.2, T_OUT + 0.6);
     var gymDoor = seg(t, T_ARRIVE - 0.35, T_ARRIVE + 0.15);
 
@@ -405,16 +511,17 @@
     facade(ctx, gymDoor);
     car(ctx, carX, Math.max(0, carDoor), bounce);
 
-    var st = stage(t, 100, 258);
+    var st = stage(t);
     if (!st) return;
 
-    /* Schrittfrequenz aus dem zurückgelegten Weg — so rutschen die Füße
-       nicht über den Boden. */
-    var phase = st.walk ? (st.x - st.from) / 21 * Math.PI : 0;
-    var pose = backPose(st.x, st.gy, phase, st.scale, st.crouch);
-
     if (st.alpha < 1) ctx.globalAlpha = st.alpha;
-    drawBack(ctx, pose, metrics(st.scale), heroLook(), C.green);
+    if (st.mode === 'side') {
+      drawSide(ctx, sidePose(st.x, st.gy, st.phase, st.scale, st.crouch),
+        sideThickness(st.scale), heroLook(), C.green, st.scale);
+    } else {
+      drawBack(ctx, backPose(st.x, st.gy, st.phase, st.scale, st.crouch),
+        metrics(st.scale, st.narrow), heroLook(), C.green);
+    }
     ctx.globalAlpha = 1;
   }
 
@@ -423,7 +530,7 @@
   var CAPTIONS = [
     { at: 0, text: 'Feierabend. Zeit fürs Studio.' },
     { at: T_OUT, text: 'Tasche geschnappt.' },
-    { at: T_ARRIVE, text: 'Willkommen bei MacFit.' }
+    { at: T_BACK, text: 'Willkommen bei MacFit.' }
   ];
 
   function play(onDone) {
