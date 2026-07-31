@@ -31,6 +31,9 @@
     MF.ui.avatar.update(avatarSvg);
 
     var info = el('div.body-info');
+    if (s.player && s.player.name) {
+      info.appendChild(el('div.body-info__name', { text: s.player.name }));
+    }
     info.appendChild(el('div.body-info__mass', { text: util.formatKg(MF.game.stats.muscleMass()) }));
     info.appendChild(el('div.body-info__label', { text: 'Muskelmasse' }));
     info.appendChild(el('div.body-info__title', { text: MF.game.progression.currentTitle() }));
@@ -278,11 +281,22 @@
     }
     panel.appendChild(saveBox);
 
-    var resetBtn = el('button.btn.btn--danger', { type: 'button', text: 'Spielstand zurücksetzen' });
+    /* Spieler zurücksetzen: löscht den Stand und führt direkt in die Anlage —
+       sonst stünde man ohne Namen im Spiel. */
+    var who = state().player;
+    if (who && who.name) {
+      panel.appendChild(el('div.savebox', null, [
+        el('span.savebox__text', { text: 'Spieler: ' + who.name }),
+        el('span.savebox__text', { text: MF.data.outfits.get(who.outfit).name })
+      ]));
+    }
+
+    var resetBtn = el('button.btn.btn--danger', { type: 'button', text: 'Spieler zurücksetzen' });
     util.onTap(resetBtn, function () {
       MF.ui.modal.confirm({
-        title: 'Alles löschen?',
-        text: 'Tag, Level, Masse und Geld sind danach weg. Das lässt sich nicht rückgängig machen.',
+        title: 'Spieler löschen?',
+        text: 'Name, Tag, Level, Masse und Geld sind danach weg. Danach legst du einen '
+            + 'neuen Spieler an. Das lässt sich nicht rückgängig machen.',
         confirmLabel: 'Löschen',
         onConfirm: function () {
           MF.core.storage.reset();
@@ -290,7 +304,9 @@
           MF.game.state.saveNow();
           MF.ui.hud.render();
           MF.ui.router.go('gym');
-          MF.ui.toast.show('Neuer Spielstand angelegt.', 'good');
+          MF.ui.create.show(function (player) {
+            MF.ui.toast.show('Willkommen bei MacFit, ' + player.name + '.', 'good');
+          });
         }
       });
     });

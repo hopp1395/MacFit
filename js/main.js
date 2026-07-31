@@ -22,6 +22,24 @@
        Schließen kein pagehide liefern. */
     MF.game.state.startAutosave(15);
 
+    document.body.classList.add('is-ready');
+
+    /* Vorspann zuerst — Dialoge kämen sonst hinter dem Film zu liegen und
+       wären beim Wegtippen schon quittiert. */
+    MF.ui.intro.play(function () { afterIntro(s); });
+  }
+
+  /* Erst der Film, dann die Anlage, dann die Hinweise — in dieser Reihenfolge,
+     sonst lägen Dialoge unsichtbar hinter dem Vorspann. */
+  function afterIntro(s) {
+    if (MF.ui.create.needed()) {
+      MF.ui.create.show(function () { afterCreate(s); });
+      return;
+    }
+    afterCreate(s);
+  }
+
+  function afterCreate(s) {
     if (!s.seenIntro) {
       s.seenIntro = true;
       MF.game.state.saveNow();
@@ -42,8 +60,6 @@
         actions: [{ label: 'Verstanden', tone: 'primary' }]
       });
     }
-
-    document.body.classList.add('is-ready');
   }
 
   function wireEvents() {

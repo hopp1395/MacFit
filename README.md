@@ -9,6 +9,16 @@ Du bist neu im Gym "MacFit" und fängst schmal an. Du trainierst an Geräten, wi
 steigst Level auf und schaltest dabei mehr Geräte und mehr Zeug im Shop frei — von Whey und
 Creatin bis zu Substanzen, die schnelle Gains bringen und dafür deine Gesundheit ruinieren.
 
+## Start
+
+Jeder Start beginnt mit einem kurzen Vorspann: du fährst mit dem Sportwagen vor dem Studio
+vor, steigst aus, nimmst die Sporttasche und gehst rein. Antippen überspringt ihn.
+
+Beim allerersten Mal folgt danach die **Spieleranlage** — Name und Trainingsklamotten. Die
+Farbe siehst du im Vorspann, an den Geräten und am Avatar wieder. Einen bestehenden Spieler
+löschst du unter **Körper → Einstellungen → Spieler zurücksetzen**; danach legst du direkt
+einen neuen an.
+
 ## Steuerung
 
 Ein Satz ist ein Timing-Spiel: ein Marker läuft über eine Leiste, du tippst irgendwo auf die
@@ -51,9 +61,10 @@ globalen `window.MacFit`.
 index.html          Grundgerüst + Skripte in Ladereihenfolge
 css/                base (Reset/Farben) · layout (Gerüst) · components (Bausteine)
 js/core/            util, events, storage, ticker, haptics
-js/data/            muscles, exercises, supplements, levels — reine Spieldaten
-js/game/            state, stats, training, progression, supplements, economy, day
-js/ui/              router, hud, avatar, screens, toast, modal, report
+js/data/            muscles, exercises, supplements, levels, outfits, scenes — reine Spieldaten
+js/game/            state, stats, fitness, training, progression, supplements, economy, day
+js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create
+js/ui/pixel|figure|scene   Pixel-Grafik: Palette, Figuren-Rig, Szenenaufbau
 js/main.js          Bootstrap
 ```
 
@@ -61,7 +72,7 @@ Regel: `ui/` ruft `game/` auf, `game/` kennt die UI nie und meldet sich nur übe
 Balancing-Werte stehen ausschließlich in `js/data/`.
 
 Der Spielstand liegt im `localStorage` unter `macfit.save.v1` und wird nach jedem Satz
-gespeichert. Zurücksetzen geht im Tab "Körper".
+gespeichert. Spieler zurücksetzen geht im Tab "Körper".
 
 ## Konsolen-Helfer
 

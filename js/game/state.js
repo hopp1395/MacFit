@@ -41,6 +41,9 @@
         peakMass: 0
       },
       history: [],           /* [{ day, mass }] — letzte 40 Tage */
+      /* created bleibt false, bis die Anlage durchlaufen ist. Alte Spielstände
+         ohne diesen Block laufen dadurch einmalig durch die Anlage. */
+      player: { name: '', outfit: 'blau', created: false },
       settings: { haptics: true, muscle: 'brust', weight: 1 },
       seenIntro: false,
       lastReport: null
@@ -86,6 +89,9 @@
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];
+    });
+    Object.keys(fresh.player).forEach(function (k) {
+      if (loaded.player[k] === undefined) loaded.player[k] = fresh.player[k];
     });
 
     return loaded;

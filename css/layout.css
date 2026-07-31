@@ -228,6 +228,71 @@ body[data-screen="session"] #hud {
   pointer-events: auto;
 }
 
+/* Vorspann liegt über allem — auch über den Dialogen. */
+#intro-root {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+}
+
+.cine {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background: #0b0910;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 0 0 calc(var(--safe-bottom) + 10px);
+  opacity: 1;
+  transition: opacity .4s ease;
+}
+
+.cine.is-out { opacity: 0; }
+
+.cine__stage {
+  width: 100%;
+  max-width: 720px;
+  line-height: 0;
+  border-top: 2px solid #191521;
+  border-bottom: 2px solid #191521;
+}
+
+.pix--cine {
+  width: 100%;
+  height: auto;
+}
+
+.cine__cap {
+  min-height: 1.3em;
+  padding: 0 20px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  opacity: 0;
+}
+
+.cine__cap.is-in {
+  animation: cine-cap .5s ease forwards;
+}
+
+@keyframes cine-cap {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.cine__skip {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 12px);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--text-faint);
+}
+
 /* ---------- Breitere Displays -------------------------------------------- */
 
 @media (min-width: 560px) {

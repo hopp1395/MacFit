@@ -176,7 +176,10 @@
       surface.clear();
       backdrop(ctx, 220, 128, horizon);
       drawExtras(ctx, extras, time);
-      drawScene(ctx, scene, phase, { cx: 110, floorY: 122, scale: 0.94 });
+      drawScene(ctx, scene, phase, {
+        cx: 110, floorY: 122, scale: 0.94,
+        colors: MF.data.outfits.look(MF.game.state.get().player.outfit)
+      });
       surface.present();
     }
 

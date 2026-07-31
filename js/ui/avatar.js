@@ -107,9 +107,10 @@
     px.rect(ctx, CX - 4, 13, 2, 2, C.ink);
     px.rect(ctx, CX + 2, 13, 2, 2, C.ink);
 
-    /* Shorts */
+    /* Shorts in der gewählten Farbe */
+    var outfit = MF.data.outfits.get(s.player ? s.player.outfit : 'blau');
     px.rect(ctx, CX - 11, hipY - 4, 22, 12, C.ink);
-    px.rect(ctx, CX - 10, hipY - 3, 20, 10, C.jeans);
+    px.rect(ctx, CX - 10, hipY - 3, 20, 10, outfit.shirt);
     px.rect(ctx, CX - 1, hipY - 3, 2, 10, C.ink);
 
     /* --- Licht und Definition ------------------------------------------- */
