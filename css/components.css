@@ -1393,8 +1393,8 @@
 }
 
 .posebtn {
-  min-height: 52px;
-  padding: 7px 8px;
+  min-height: 46px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
   gap: 2px;

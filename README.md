@@ -78,11 +78,29 @@ Titelmusik.
 
 ## Erfolge teilen
 
-Im Tab **Körper** gibt es „Erfolge teilen“. Du wählst eine Pose — Doppelter Bizeps,
-Lat-Spreizen, Most Muscular oder Bauch und Beine — und bekommst ein fertiges Bild: deine
-Figur in dieser Pose, gebaut aus deinen aktuellen Muskelwerten, darunter Fitness-Index,
-Rang, Masse, Level und Tag. Ganz unten steht der Einladungslink, damit auch ein
-weitergeleiteter Screenshot noch zum Spiel führt.
+Im Tab **Körper** gibt es „Erfolge teilen“. Du wählst eine Pose und bekommst ein fertiges
+Bild: deine Figur in dieser Pose, gebaut aus deinen aktuellen Muskelwerten, darunter
+Fitness-Index, Rang, Masse, Level und Tag. Ganz unten steht der Einladungslink, damit auch
+ein weitergeleiteter Screenshot noch zum Spiel führt.
+
+Zur Wahl stehen die **sieben Pflichtposen** des Wettkampfs plus Most Muscular:
+
+| Pose | Ansicht | Zeigt |
+|---|---|---|
+| Doppelbizeps vorne | vorn | Arme, Latissimus, Symmetrie |
+| Latissimus vorne | vorn | V-Form und Breite |
+| Seitliche Brust | Profil | Brustvolumen, Schultern, Beine |
+| Doppelbizeps hinten | hinten | Rückendichte, Beinbeuger, Waden |
+| Latissimus hinten | hinten | maximale Rückenbreite |
+| Seitlicher Trizeps | Profil | Trizeps, seitliche Schulter, Schenkel |
+| Bauch und Oberschenkel | vorn | Bauch, Rumpfsymmetrie, Quadrizeps |
+| Most Muscular | vorn | die achte Pose für Masse |
+
+Drei Ansichten, drei Zeichenwege: Vorder- und Rückansicht teilen sich Skelett und
+Silhouette und unterscheiden sich nur in der Ausarbeitung — vorn Brust und Bauch, hinten
+Trapez, Rückenrinne und Beinbeuger. Das Profil wird eigens gezeichnet, streng von hinten
+nach vorn, weil dort der Arm auf dem Rumpf liegt und beide sonst zu einer Masse
+verschmelzen.
 
 Geteilt wird über das Teilen-Menü des Geräts — dort stehen WhatsApp, Signal, Mail und alles
 andere, was installiert ist. Ein Knopf, drei Stufen: Bild und Text zusammen, sonst Text im
