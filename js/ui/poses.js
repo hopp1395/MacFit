@@ -17,8 +17,12 @@
   var CX = 90;
   var FOOT = 168, KNEE = 140, HIP = 114, SHOULDER = 70, HEAD = 52, HEAD_R = 11;
 
-  /* elbow/hand: [Abstand von der Mitte nach außen, Abstand von der Schulter
-     nach unten]. Negative y heißt über der Schulter.
+  /* hand: [Abstand von der Mitte nach außen, Abstand von der Schulter nach
+     unten]. Negative y heißt über der Schulter. Die Hand ist der Punkt, auf
+     den es ankommt — Fäuste am Kopf, Hände an der Hüfte.
+
+     elbow gibt nur noch die Richtung vor, in die der Ellenbogen ausbricht;
+     wo er tatsächlich landet, rechnet elbowFor aus den Knochenlängen.
 
      Wichtig ist, dass sich die Umrisse deutlich unterscheiden — beim ersten
      Anlauf lagen die Fäuste bei Doppelbizeps und Bauch/Beine fast gleich, und
@@ -31,11 +35,14 @@
     },
     {
       id: 'lat', name: 'Lat-Spreizen', hint: 'Hände an die Hüfte, Rücken breit',
-      elbow: [31, 15], hand: [12, 43], flex: 1.06, stance: 15, shrug: 0, lat: 1.34
+      /* Fäuste an den unteren Rippen statt an der Hüfte: mit richtigen
+         Knochenlängen ist der Arm sonst fast durchgestreckt und der
+         Ellenbogen stellt sich nicht mehr auf. */
+      elbow: [31, 15], hand: [14, 34], flex: 1.06, stance: 15, shrug: 0, lat: 1.34
     },
     {
       id: 'crab', name: 'Most Muscular', hint: 'Alles nach vorn',
-      elbow: [23, 23], hand: [5, 39], flex: 1.22, stance: 13, shrug: 5
+      elbow: [23, 23], hand: [7, 32], flex: 1.22, stance: 13, shrug: 5
     },
     {
       id: 'abs', name: 'Bauch und Beine', hint: 'Hände hinter den Kopf',
@@ -75,7 +82,11 @@
     var k = 1.35;
 
     var waistHalf = (7 + f('bauch') * 2.5) * k * 0.5;
-    var thighW = (7 + f('beine') * 6) * k;
+    /* 0.72, nicht 1.0: beim Umbenennen hatten nur die Rumpfwerte den halben
+       Faktor bekommen, die Beine blieben auf voller Breite stehen. Die Beine
+       spannten dadurch doppelt so weit wie der Rumpf. Ganz halbieren geht
+       aber auch nicht — dann sind die Schenkel dünner als die Oberarme. */
+    var thighW = (7 + f('beine') * 7.5) * k * 0.72;
 
     return {
       shoulderSpan: (9 + f('schultern') * 8) * k,
@@ -83,14 +94,53 @@
          V-Form. Beide Werte sind halbe Breiten. */
       latHalf: (9 + f('ruecken') * 11) * k * 0.5 * (pose.lat || 1),
       waistHalf: waistHalf,
-      hipHalf: waistHalf + thighW * 0.30,
+      /* Der Zuschlag ist ein halbes Maß, thighW eine ganze Strichstärke —
+         deshalb 0.15 und nicht 0.30. Sonst stehen die Schenkel neben dem
+         Rumpf statt darunter. */
+      hipHalf: waistHalf + thighW * 0.15,
       chestR: (5 + f('brust') * 5) * k,
       armW: (4 + f('bizeps') * 5) * k * (pose.flex || 1),
       foreW: (3.5 + f('trizeps') * 3) * k,
       thighW: thighW,
-      calfW: (5 + f('waden') * 4) * k,
+      calfW: (5 + f('waden') * 4) * k * 0.72,
       abs: f('bauch')
     };
+  }
+
+  /* Knochenlängen in Bildpunkten. Der Unterarm ist etwas kürzer als der
+     Oberarm — so ist der Arm gebaut. */
+  var UPPER = 30, FORE = 26;
+
+  /* Schulter und Hand stehen fest, der Ellenbogen ergibt sich daraus: die
+     übliche Zwei-Knochen-Rechnung.
+
+     Vorher stand der Ellenbogen relativ zur Schulter, die Hand aber relativ
+     zur Mitte. Mit den Schultern wanderte deshalb nur der Ellenbogen nach
+     außen, und der Unterarm wurde mitgezogen — bei ausgereizten Werten war er
+     anderthalb mal so lang wie der Oberarm.
+
+     bend gibt an, zu welcher Seite der Ellenbogen ausbricht. */
+  function elbowFor(shoulder, hand, bend) {
+    var dx = hand[0] - shoulder[0], dy = hand[1] - shoulder[1];
+    var d = Math.sqrt(dx * dx + dy * dy) || 0.001;
+    /* Weiter als der Arm reicht, geht nicht — dann ist er durchgestreckt. */
+    var reach = Math.min(d, UPPER + FORE - 0.5);
+    var a = (UPPER * UPPER - FORE * FORE + reach * reach) / (2 * reach);
+    var h = Math.sqrt(Math.max(0, UPPER * UPPER - a * a));
+    var ux = dx / d, uy = dy / d;
+    return [
+      shoulder[0] + ux * a + bend * uy * h,
+      shoulder[1] + uy * a - bend * ux * h
+    ];
+  }
+
+  /* Aus welcher Richtung der Ellenbogen ausbricht, steht weiter in der
+     Posentabelle: die Seite, auf der der dort eingetragene Punkt liegt. Nur
+     die Länge wird neu gerechnet, die Haltung bleibt. */
+  function bendOf(pose, span) {
+    var hx = pose.hand[0] - span, hy = pose.hand[1];      /* Hand ab Schulter */
+    var cross = hx * pose.elbow[1] - hy * pose.elbow[0];
+    return cross > 0 ? -1 : 1;
   }
 
   function joints(pose, w) {
@@ -100,11 +150,13 @@
 
     for (var i = 0; i < 2; i++) {
       side = i ? 1 : -1;
+      var shoulder = [CX + side * w.shoulderSpan, sy];
+      var hand = [CX + side * pose.hand[0], sy + pose.hand[1]];
       out.arms.push({
         side: side,
-        shoulder: [CX + side * w.shoulderSpan, sy],
-        elbow: [CX + side * (w.shoulderSpan + pose.elbow[0]), sy + pose.elbow[1]],
-        hand: [CX + side * pose.hand[0], sy + pose.hand[1]]
+        shoulder: shoulder,
+        elbow: elbowFor(shoulder, hand, side * bendOf(pose, w.shoulderSpan)),
+        hand: hand
       });
       out.legs.push({
         side: side,
