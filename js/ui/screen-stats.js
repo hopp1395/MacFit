@@ -270,6 +270,48 @@
     ]);
   }
 
+  /* Profil mitnehmen. Der Spielstand haengt sonst an genau diesem Browser auf
+     genau diesem Geraet — ein Handywechsel oder ein geleerter Speicher kostet
+     alles. */
+  function transferBox() {
+    var box = el('div.savebox');
+    box.appendChild(el('div.savebox__head', null, [
+      el('strong', { text: '💾 Profil sichern und übertragen' })
+    ]));
+    box.appendChild(el('span.savebox__text', {
+      text: 'Legt eine Datei mit allem an: Fortschritt, Geld, Kuren, Statistik und '
+          + 'Mitgliedskarte samt Foto. Damit spielst du auf einem anderen Gerät weiter '
+          + 'oder holst dich nach einem geleerten Browserspeicher zurück.'
+    }));
+
+    var row = el('div.savebox__row');
+
+    var saveBtn = el('button.btn.btn--ghost', { type: 'button', text: '⬇ Datei speichern' });
+    util.onTap(saveBtn, function () {
+      var res = MF.ui.transfer.exportProfile(false);
+      MF.ui.toast.show(
+        res === 'error' ? 'Die Datei ließ sich nicht anlegen.' : 'Profil gespeichert: ' + MF.ui.transfer.filename(),
+        res === 'error' ? 'bad' : 'good'
+      );
+    });
+    row.appendChild(saveBtn);
+
+    /* Am Handy landet ein Download irgendwo im Dateisystem — das Teilen-Blatt
+       ist dort der brauchbarere Weg. */
+    if (MF.ui.transfer.canSendFile()) {
+      var sendBtn = el('button.btn.btn--ghost', { type: 'button', text: '📤 Profil senden' });
+      util.onTap(sendBtn, function () { MF.ui.transfer.exportProfile(true); });
+      row.appendChild(sendBtn);
+    }
+
+    row.appendChild(MF.ui.transfer.pickButton('transfer-file', '📥 Profil laden', function () {
+      MF.ui.router.refresh('stats');
+    }));
+
+    box.appendChild(row);
+    return box;
+  }
+
   function settingsPanel() {
     var s = state();
     var panel = el('section');
@@ -341,6 +383,7 @@
       saveBox.appendChild(saveBtn);
     }
     panel.appendChild(saveBox);
+    panel.appendChild(transferBox());
 
     /* Spieler zurücksetzen: löscht den Stand und führt direkt in die Anlage —
        sonst stünde man ohne Namen im Spiel. */

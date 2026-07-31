@@ -29,20 +29,26 @@
 
     /* Vorspann zuerst — Dialoge kämen sonst hinter dem Film zu liegen und
        wären beim Wegtippen schon quittiert. */
-    MF.ui.intro.play(function () { afterIntro(s); });
+    MF.ui.intro.play(afterIntro);
   }
 
   /* Erst der Film, dann die Anlage, dann die Hinweise — in dieser Reihenfolge,
-     sonst lägen Dialoge unsichtbar hinter dem Vorspann. */
-  function afterIntro(s) {
+     sonst lägen Dialoge unsichtbar hinter dem Vorspann.
+
+     Der Spielstand wird hier bewusst jedes Mal neu geholt: wer in der Anlage
+     ein Profil importiert, hat danach ein anderes Objekt im Spiel, und ein
+     festgehaltenes würde ins Leere schreiben. */
+  function afterIntro() {
     if (MF.ui.create.needed()) {
-      MF.ui.create.show(function () { afterCreate(s); });
+      MF.ui.create.show(afterCreate);
       return;
     }
-    afterCreate(s);
+    afterCreate();
   }
 
-  function afterCreate(s) {
+  function afterCreate() {
+    var s = MF.game.state.get();
+
     if (!s.seenIntro) {
       s.seenIntro = true;
       MF.game.state.saveNow();

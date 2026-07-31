@@ -111,6 +111,29 @@
       })
     ]);
 
+    /* Wer schon woanders trainiert hat, soll hier nicht bei Tag 1 anfangen
+       muessen. Der Knopf steht bewusst im Dialog und nicht in den Aktionen:
+       ein Dateifeld braucht ein echtes <label>, ein nachgebauter Klick auf ein
+       verstecktes Feld geht am Handy oft ins Leere. */
+    if (!retrofit) {
+      body.appendChild(el('div.create__sep', { text: 'oder' }));
+      body.appendChild(el('div.create__import', null, [
+        MF.ui.transfer.pickButton('create-import', '📥 Vorhandenes Profil laden', function () {
+          if (close) close();
+          /* Steckt in der Datei ein Stand ohne Karte, muss sie nachgetragen
+             werden — dann geht es hier gleich weiter. */
+          if (needed()) { show(done); return; }
+          MF.ui.hud.render();
+          MF.ui.router.refresh();
+          done(MF.game.state.get().player);
+        }),
+        el('p.create__note', {
+          text: 'Du hast dein Profil auf einem anderen Gerät gesichert? '
+              + 'Lade die Datei, dann geht es dort weiter, wo du aufgehört hast.'
+        })
+      ]));
+    }
+
     if (retrofit) {
       body.insertBefore(el('p.create__note.create__note--keep', {
         text: 'Du trainierst schon bei uns — die Karte wird nur nachgetragen. '

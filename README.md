@@ -35,6 +35,24 @@ entfernen kannst du es jederzeit im Tab **Körper**, ganz oben auf der Karte.
 Einen bestehenden Spieler löschst du unter **Körper → Einstellungen → Spieler zurücksetzen**;
 danach wird direkt eine neue Karte ausgestellt.
 
+## Profil mitnehmen
+
+Der Spielstand liegt im `localStorage` und hängt damit an genau einem Browser auf genau einem
+Gerät. Unter **Körper → Einstellungen → Profil sichern und übertragen** legst du eine
+JSON-Datei mit allem an: Tag, Level, XP, Geld, Muskelwerte, Gesundheit, laufende Kuren,
+Statistik, Verlauf, Einstellungen und die Mitgliedskarte samt Foto.
+
+Zurück geht es über „Profil laden" an derselben Stelle — oder gleich bei der
+**Neuanmeldung**: dort steht unter der Karte ein „Vorhandenes Profil laden", damit ein Umzug
+nicht bei Tag 1 anfängt. Steht auf dem Gerät schon ein Spieler, wird vorher gefragt.
+
+Angenommen wird die Exportdatei und ein nackter Spielstand, wie er im Browserspeicher steht.
+Fehlende Felder aus einer älteren Version werden ergänzt, das Level wird aus den XP neu
+bestimmt. Dateien aus einer neueren Spielversion werden abgelehnt statt halb geladen.
+
+Am Handy gibt es zusätzlich „Profil senden": ein Download landet dort irgendwo im
+Dateisystem, das Teilen-Menü bringt die Datei dagegen direkt in Mail, Cloud oder Messenger.
+
 ## Steuerung
 
 Ein Satz ist ein Timing-Spiel: ein Marker läuft über eine Leiste, du tippst irgendwo auf die
@@ -110,7 +128,7 @@ js/core/            util, events, storage, ticker, haptics, audio (Musik + Gerä
 js/data/            muscles, exercises, supplements, levels, outfits, scenes — reine Spieldaten
 js/game/            state, stats, fitness, training, progression, supplements, economy, day
 js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create,
-                    membercard, poses, share
+                    membercard, poses, share, transfer
 js/ui/pixel|figure|scene   Pixel-Grafik: Palette, Figuren-Rig, Szenenaufbau
 js/main.js          Bootstrap
 ```

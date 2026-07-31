@@ -1466,6 +1466,48 @@
   line-height: 1.45;
 }
 
+/* Trenner zwischen Anlage und Import: eine Linie mit "oder" in der Mitte. */
+.create__sep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+.create__sep::before,
+.create__sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.create__import {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.create__import .filepick { align-self: flex-start; }
+
+/* Dateiauswahl: das echte Feld bleibt unsichtbar, sichtbar ist das <label>.
+   Am Handy oeffnet erst das zuverlaessig Dateien, Kamera oder Galerie. */
+.filepick { display: inline-flex; }
+
+.savebox__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.savebox__row .btn { align-self: flex-start; margin-top: 0; }
+
 .create__label {
   font-size: 11px;
   font-weight: 800;
