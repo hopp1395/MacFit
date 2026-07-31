@@ -1,110 +1,132 @@
-/* Die Figur. Jede Muskelpartie ist ein eigenes SVG-Element, das anhand seiner
-   Groesse skaliert wird — kein Bildmaterial, skaliert auf jedem Display scharf. */
+/* Die Figur im Körper-Bildschirm — Vorderansicht, Pixel-Sprite.
+   Jede Partie wird aus ihrem Muskelwert breiter gezeichnet, die Ermüdung
+   färbt sie dunkler ein. Bei schlechter Gesundheit wird der Hautton fahl. */
 (function (MF) {
   'use strict';
 
+  var px = MF.ui.pixel;
+  var C = px.colors;
   var util = MF.core.util;
 
-  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var W = 64, H = 116;
+  var CX = 32;
 
-  /* Wie stark eine Partie zwischen "untrainiert" und "maximal" waechst. */
-  var SCALE = {
-    schultern: { x: [0.84, 1.42], y: [0.88, 1.28] },
-    brust:     { x: [0.84, 1.38], y: [0.88, 1.34] },
-    ruecken:   { x: [0.88, 1.34], y: [1.00, 1.00] },
-    bauch:     { x: [0.90, 1.20], y: [0.96, 1.06] },
-    bizeps:    { x: [0.78, 1.55], y: [0.88, 1.30] },
-    trizeps:   { x: [0.80, 1.50], y: [0.88, 1.26] },
-    beine:     { x: [0.84, 1.40], y: [0.94, 1.10] },
-    waden:     { x: [0.84, 1.45], y: [0.90, 1.20] }
-  };
-
-  var MARKUP = [
-    '<svg viewBox="0 0 100 190" class="avatar__svg" aria-hidden="true">',
-    '  <g class="avatar__body">',
-    /* Ruecken/Torso liegt hinten und bestimmt die V-Form */
-    '    <path class="avatar__part avatar__part--torso" data-muscle="ruecken"',
-    '          d="M30 43 L70 43 L61 97 L39 97 Z" />',
-    '    <rect class="avatar__skin" x="45" y="26" width="10" height="10" rx="4" />',
-    '    <circle class="avatar__skin avatar__head" cx="50" cy="19" r="10" />',
-    /* Beine */
-    '    <rect class="avatar__skin" x="37" y="93" width="26" height="13" rx="6" />',
-    '    <ellipse class="avatar__part" data-muscle="beine" cx="42" cy="126" rx="9.5" ry="22" />',
-    '    <ellipse class="avatar__part" data-muscle="beine" cx="58" cy="126" rx="9.5" ry="22" />',
-    '    <circle class="avatar__skin" cx="42" cy="148" r="5.5" />',
-    '    <circle class="avatar__skin" cx="58" cy="148" r="5.5" />',
-    '    <ellipse class="avatar__part" data-muscle="waden" cx="42" cy="161" rx="7" ry="13" />',
-    '    <ellipse class="avatar__part" data-muscle="waden" cx="58" cy="161" rx="7" ry="13" />',
-    '    <ellipse class="avatar__skin" cx="41" cy="180" rx="6.5" ry="4" />',
-    '    <ellipse class="avatar__skin" cx="59" cy="180" rx="6.5" ry="4" />',
-    /* Arme */
-    '    <ellipse class="avatar__part" data-muscle="trizeps" cx="27" cy="75" rx="5.5" ry="10" />',
-    '    <ellipse class="avatar__part" data-muscle="trizeps" cx="73" cy="75" rx="5.5" ry="10" />',
-    '    <ellipse class="avatar__part" data-muscle="bizeps" cx="23" cy="63" rx="6.5" ry="11" />',
-    '    <ellipse class="avatar__part" data-muscle="bizeps" cx="77" cy="63" rx="6.5" ry="11" />',
-    '    <ellipse class="avatar__skin" cx="21" cy="88" rx="5" ry="12" />',
-    '    <ellipse class="avatar__skin" cx="79" cy="88" rx="5" ry="12" />',
-    '    <circle class="avatar__skin" cx="20" cy="102" r="4.5" />',
-    '    <circle class="avatar__skin" cx="80" cy="102" r="4.5" />',
-    /* Rumpf vorne */
-    '    <ellipse class="avatar__part" data-muscle="bauch" cx="50" cy="83" rx="11" ry="13" />',
-    '    <g class="avatar__abs">',
-    '      <line x1="50" y1="74" x2="50" y2="92" />',
-    '      <line x1="43" y1="80" x2="57" y2="80" />',
-    '      <line x1="43" y1="87" x2="57" y2="87" />',
-    '    </g>',
-    '    <ellipse class="avatar__part" data-muscle="brust" cx="41" cy="58" rx="10.5" ry="8" />',
-    '    <ellipse class="avatar__part" data-muscle="brust" cx="59" cy="58" rx="10.5" ry="8" />',
-    '    <ellipse class="avatar__part" data-muscle="schultern" cx="28" cy="47" rx="10" ry="9" />',
-    '    <ellipse class="avatar__part" data-muscle="schultern" cx="72" cy="47" rx="10" ry="9" />',
-    '  </g>',
-    '</svg>'
-  ].join('\n');
-
-  /* Farbe zwischen frisch und ausgepowert mischen. */
   function mix(a, b, t) {
     var out = '#';
     for (var i = 0; i < 3; i++) {
       var av = parseInt(a.substr(1 + i * 2, 2), 16);
       var bv = parseInt(b.substr(1 + i * 2, 2), 16);
-      var v = Math.round(av + (bv - av) * t);
+      var v = Math.round(av + (bv - av) * util.clamp(t, 0, 1));
       out += ('0' + v.toString(16)).slice(-2);
     }
     return out;
   }
 
   function create(container) {
-    container.innerHTML = MARKUP;
-    return container.querySelector('.avatar__svg');
+    return px.create(container, W, H, 'pix--avatar');
   }
 
-  function update(svg) {
-    if (!svg) return;
+  function update(surface) {
+    if (!surface || !surface.ctx) return;
+    var ctx = surface.ctx;
     var s = MF.game.state.get();
+    var m = s.muscles;
     var health = MF.game.stats.healthAvg();
 
-    var parts = svg.querySelectorAll('.avatar__part');
-    Array.prototype.forEach.call(parts, function (node) {
-      var id = node.getAttribute('data-muscle');
-      var m = s.muscles[id];
-      var spec = SCALE[id];
-      if (!m || !spec) return;
-
-      var f = util.clamp(m.size / 100, 0, 1);
-      var sx = util.lerp(spec.x[0], spec.x[1], f);
-      var sy = util.lerp(spec.y[0], spec.y[1], f);
-      node.style.transform = 'scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')';
-      node.style.fill = mix('#e0a273', '#b4705a', util.clamp(m.fatigue, 0, 1));
-    });
-
-    /* Bauchmuskeln werden erst mit der Groesse sichtbar. */
-    var abs = svg.querySelector('.avatar__abs');
-    if (abs) {
-      abs.style.opacity = util.clamp((s.muscles.bauch.size - 22) / 55, 0, 0.75).toFixed(2);
+    function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
+    function tone(id) {
+      /* Müde Partien werden dunkler. */
+      return mix(skin, C.skinDark, m[id].fatigue * 0.75);
     }
 
-    svg.classList.toggle('is-unhealthy', health < 55);
-    svg.classList.toggle('is-critical', health < 30);
+    /* Schlechte Werte = fahler Teint. */
+    var skin = health < 60 ? mix(C.skin, C.steel, (60 - health) / 90) : C.skin;
+    var skinLit = mix(skin, C.skinLit, 0.7);
+
+    surface.clear();
+
+    /* Boden-Schatten */
+    px.disc(ctx, CX, 108, 17, C.wallDark);
+    px.disc(ctx, CX, 108, 13, C.wall);
+
+    /* --- Maße aus den Muskelwerten ------------------------------------- */
+    var shoulderW = 9 + f('schultern') * 8;
+    var chestW = 5 + f('brust') * 5;
+    var waistW = 7 + f('bauch') * 4;
+    var armW = 4 + f('bizeps') * 5;
+    var foreW = 3.5 + f('trizeps') * 3;
+    var thighW = 7 + f('beine') * 6;
+    var calfW = 5 + f('waden') * 4;
+    var backW = 11 + f('ruecken') * 9;
+
+    var shoulderY = 30, hipY = 64, kneeY = 86, footY = 104;
+
+    /* --- Kontur --------------------------------------------------------- */
+    /* Beine */
+    px.capsule(ctx, [CX - 7, hipY], [CX - 8, kneeY], thighW + 2, C.ink);
+    px.capsule(ctx, [CX + 7, hipY], [CX + 8, kneeY], thighW + 2, C.ink);
+    px.capsule(ctx, [CX - 8, kneeY], [CX - 9, footY], calfW + 2, C.ink);
+    px.capsule(ctx, [CX + 8, kneeY], [CX + 9, footY], calfW + 2, C.ink);
+    /* Rumpf */
+    px.capsule(ctx, [CX, shoulderY], [CX, hipY - 2], backW + 2, C.ink);
+    /* Arme */
+    px.capsule(ctx, [CX - shoulderW, shoulderY], [CX - shoulderW - 4, 50], armW + 2, C.ink);
+    px.capsule(ctx, [CX + shoulderW, shoulderY], [CX + shoulderW + 4, 50], armW + 2, C.ink);
+    px.capsule(ctx, [CX - shoulderW - 4, 50], [CX - shoulderW - 6, 68], foreW + 2, C.ink);
+    px.capsule(ctx, [CX + shoulderW + 4, 50], [CX + shoulderW + 6, 68], foreW + 2, C.ink);
+    /* Schultern und Kopf */
+    px.disc(ctx, CX - shoulderW, shoulderY, (shoulderW * 0.42) + 2, C.ink);
+    px.disc(ctx, CX + shoulderW, shoulderY, (shoulderW * 0.42) + 2, C.ink);
+    px.disc(ctx, CX, 13, 9, C.ink);
+
+    /* --- Flächen -------------------------------------------------------- */
+    px.capsule(ctx, [CX - 7, hipY], [CX - 8, kneeY], thighW, tone('beine'));
+    px.capsule(ctx, [CX + 7, hipY], [CX + 8, kneeY], thighW, tone('beine'));
+    px.capsule(ctx, [CX - 8, kneeY], [CX - 9, footY], calfW, tone('waden'));
+    px.capsule(ctx, [CX + 8, kneeY], [CX + 9, footY], calfW, tone('waden'));
+
+    px.capsule(ctx, [CX, shoulderY], [CX, hipY - 2], backW, tone('ruecken'));
+    /* Taille schmaler als der Brustkorb — das macht die V-Form. */
+    px.capsule(ctx, [CX, hipY - 12], [CX, hipY - 2], waistW, tone('bauch'));
+
+    px.capsule(ctx, [CX - shoulderW, shoulderY], [CX - shoulderW - 4, 50], armW, tone('bizeps'));
+    px.capsule(ctx, [CX + shoulderW, shoulderY], [CX + shoulderW + 4, 50], armW, tone('bizeps'));
+    px.capsule(ctx, [CX - shoulderW - 4, 50], [CX - shoulderW - 6, 68], foreW, tone('trizeps'));
+    px.capsule(ctx, [CX + shoulderW + 4, 50], [CX + shoulderW + 6, 68], foreW, tone('trizeps'));
+
+    px.disc(ctx, CX - shoulderW, shoulderY, shoulderW * 0.42, tone('schultern'));
+    px.disc(ctx, CX + shoulderW, shoulderY, shoulderW * 0.42, tone('schultern'));
+
+    /* Brust */
+    px.disc(ctx, CX - chestW * 0.85, 38, chestW, tone('brust'));
+    px.disc(ctx, CX + chestW * 0.85, 38, chestW, tone('brust'));
+
+    /* Kopf */
+    px.disc(ctx, CX, 13, 8, skin);
+    px.disc(ctx, CX, 10, 7.5, C.shadow);
+    px.rect(ctx, CX - 4, 13, 2, 2, C.ink);
+    px.rect(ctx, CX + 2, 13, 2, 2, C.ink);
+
+    /* Shorts */
+    px.rect(ctx, CX - 11, hipY - 4, 22, 12, C.ink);
+    px.rect(ctx, CX - 10, hipY - 3, 20, 10, C.jeans);
+    px.rect(ctx, CX - 1, hipY - 3, 2, 10, C.ink);
+
+    /* --- Licht und Definition ------------------------------------------- */
+    px.capsule(ctx, [CX - 3, shoulderY + 3], [CX - 3, hipY - 12], backW * 0.22, skinLit);
+    px.disc(ctx, CX - shoulderW - 1, shoulderY - 1, shoulderW * 0.18, skinLit);
+    px.disc(ctx, CX + shoulderW - 1, shoulderY - 1, shoulderW * 0.18, skinLit);
+
+    /* Bauchmuskeln zeichnen sich erst ab einer gewissen Größe ab. */
+    if (m.bauch.size > 26) {
+      var rows = m.bauch.size > 55 ? 3 : 2;
+      for (var r = 0; r < rows; r++) {
+        px.rect(ctx, CX - 4, hipY - 14 + r * 4, 3, 2, mix(tone('bauch'), C.ink, 0.35));
+        px.rect(ctx, CX + 1, hipY - 14 + r * 4, 3, 2, mix(tone('bauch'), C.ink, 0.35));
+      }
+    }
+
+    surface.present();
   }
 
   MF.ui.avatar = {

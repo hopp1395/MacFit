@@ -11,6 +11,7 @@
 
   var ticker = null;
   var run = null;          /* laufender Satz */
+  var scene = null;        /* Pixel-Szene mit Gerät und Figur */
   var nodes = {};
   var trackWidth = 0;
 
@@ -64,12 +65,16 @@
 
     container.appendChild(el('div.session__feedback', { id: 'session-feedback', text: '' }));
 
+    /* Die Szene ist zugleich die Tippfläche — Blick und Daumen bleiben zusammen. */
+    var stage = el('div.stage', { id: 'session-stage' });
     var tap = el('button.taparea', { id: 'session-tap', type: 'button' }, [
-      el('span.taparea__label', { text: 'TIPPEN' }),
-      el('span.taparea__hint', { text: 'in der grünen Zone' })
+      stage,
+      el('span.taparea__hint', { text: 'Tippen, wenn der Marker in der grünen Zone ist' })
     ]);
     util.onTap(tap, onTap);
     container.appendChild(tap);
+
+    scene = MF.ui.scene.mountSession(stage, ex.id);
 
     nodes = {
       rep: util.byId('session-rep'),
@@ -169,6 +174,9 @@
 
     if (!trackWidth) measure();
     nodes.marker.style.transform = 'translate3d(' + (run.pos * trackWidth).toFixed(1) + 'px,0,0)';
+
+    /* Die Figur folgt dem Marker: rechts = Gewicht runter, links = drücken. */
+    if (scene) scene.update(run.pos, dt);
   }
 
   function onTap() {
@@ -199,6 +207,8 @@
     nodes.track.classList.remove('is-perfect', 'is-ok', 'is-miss');
     void nodes.track.getBoundingClientRect();
     nodes.track.classList.add('is-' + kind);
+
+    if (scene) scene.flash(kind);
 
     updateScores();
 
@@ -249,6 +259,7 @@
   function showResult(result) {
     var container = util.byId('screen-session');
     util.clear(container);
+    scene = null;
 
     var s = state();
     var panel = el('div.result');
@@ -319,6 +330,7 @@
   function leave() {
     if (ticker) ticker.stop();
     run = null;
+    scene = null;
   }
 
   window.addEventListener('resize', measure);

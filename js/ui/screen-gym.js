@@ -147,6 +147,11 @@
   function render(container) {
     util.clear(container);
 
+    /* Blick in die Halle — hier trainieren andere weiter, während du wählst. */
+    var hall = el('div.hall');
+    container.appendChild(hall);
+    MF.ui.scene.mountAmbient(hall);
+
     container.appendChild(el('div.section-title', { text: 'Intensität' }));
     container.appendChild(intensityControl());
     container.appendChild(el('p.hint', {
@@ -177,7 +182,12 @@
     container.appendChild(sleepPanel());
   }
 
-  MF.ui.router.register('gym', { elementId: 'screen-gym', render: render });
+  MF.ui.router.register('gym', {
+    elementId: 'screen-gym',
+    render: render,
+    /* Beim Verlassen die Animation anhalten — sonst läuft sie unsichtbar weiter. */
+    leave: function () { MF.ui.scene.stopAmbient(); }
+  });
 
   /* Der Satz-Screen braucht die zuletzt gewaehlte Intensitaet. */
   MF.ui.gym = { weight: function () { return weightIndex; } };

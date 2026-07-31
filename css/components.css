@@ -537,40 +537,80 @@
 .session__feedback.is-ok { color: var(--warn); }
 .session__feedback.is-miss { color: var(--bad); }
 
-/* Die grosse Tippfläche — bewusst die halbe untere Bildschirmhaelfte. */
+/* Die grosse Tippfläche — zugleich die Bühne mit Gerät und Figur. */
 .taparea {
   flex: 1 1 auto;
-  min-height: 160px;
+  min-height: 0;
   width: 100%;
+  padding: 0;
   border-radius: var(--radius);
-  background:
-    radial-gradient(circle at 50% 45%, rgba(255, 122, 41, .18), transparent 62%),
-    var(--bg-card);
-  border: 1px dashed var(--line);
+  background: var(--bg-card);
+  border: 2px solid var(--line);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+  align-items: stretch;
+  justify-content: flex-end;
   margin-bottom: var(--safe-bottom);
+  position: relative;
 }
 
-.taparea:active {
-  background:
-    radial-gradient(circle at 50% 45%, rgba(255, 122, 41, .32), transparent 62%),
-    var(--bg-card-hi);
-}
+.taparea:active { border-color: var(--accent); }
 
-.taparea__label {
-  font-size: 25px;
-  font-weight: 900;
-  letter-spacing: .14em;
-  color: var(--accent);
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
 }
 
 .taparea__hint {
-  font-size: 12px;
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  font-size: 11px;
   color: var(--text-faint);
+  background: rgba(10, 12, 16, .55);
+  text-align: center;
+}
+
+/* ---------- Pixel-Grafik -------------------------------------------------- */
+
+/* Entscheidend: beim Hochskalieren nicht glätten, sonst ist der Retro-Look weg. */
+.pix {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+.pix--scene {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.pix--ambient {
+  width: 100%;
+  height: auto;
+}
+
+.pix--avatar {
+  width: 100%;
+  height: auto;
+  max-height: 250px;
+  object-fit: contain;
+}
+
+.pix--scene.is-perfect { filter: brightness(1.35) saturate(1.15); }
+.pix--scene.is-ok { filter: brightness(1.15); }
+.pix--scene.is-miss { filter: saturate(.35) brightness(.85); }
+
+/* Blick in die Halle über der Geräteliste */
+.hall {
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  line-height: 0;
+  background: var(--bg-card);
 }
 
 /* ---------- Ergebnis eines Satzes ---------------------------------------- */
@@ -692,45 +732,9 @@
   flex: 0 0 40%;
   max-width: 150px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
 }
-
-.avatar__svg {
-  width: 100%;
-  height: auto;
-  max-height: 260px;
-  overflow: visible;
-}
-
-.avatar__part,
-.avatar__skin {
-  fill: #e0a273;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform .5s cubic-bezier(.3, 1.4, .5, 1), fill .5s;
-}
-
-.avatar__part--torso {
-  fill: #c98a5f;
-  transform-origin: center top;
-}
-
-.avatar__head { fill: #e8b184; }
-
-.avatar__abs {
-  stroke: rgba(90, 45, 20, .8);
-  stroke-width: 1.1;
-  stroke-linecap: round;
-  opacity: 0;
-  transition: opacity .5s;
-}
-
-.avatar__svg.is-unhealthy .avatar__part,
-.avatar__svg.is-unhealthy .avatar__skin { filter: saturate(.6) brightness(.92); }
-
-.avatar__svg.is-critical .avatar__part,
-.avatar__svg.is-critical .avatar__skin { filter: saturate(.35) brightness(.82); }
 
 .body-info {
   flex: 1 1 auto;
