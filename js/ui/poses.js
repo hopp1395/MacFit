@@ -17,6 +17,7 @@
 
   var px = MF.ui.pixel;
   var C = px.colors;
+  var SP = MF.ui.sprites;
   var util = MF.core.util;
 
   var W = 180, H = 180;
@@ -139,17 +140,6 @@
   function get(id) {
     for (var i = 0; i < POSES.length; i++) if (POSES[i].id === id) return POSES[i];
     return POSES[0];
-  }
-
-  function mix(a, b, t) {
-    var out = '#';
-    for (var i = 0; i < 3; i++) {
-      var av = parseInt(a.substr(1 + i * 2, 2), 16);
-      var bv = parseInt(b.substr(1 + i * 2, 2), 16);
-      var v = Math.round(av + (bv - av) * util.clamp(t, 0, 1));
-      out += ('0' + v.toString(16)).slice(-2);
-    }
-    return out;
   }
 
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -283,8 +273,32 @@
      und läuft keilförmig zur Taille aus. Eine gleichmäßig breite Kapsel ergibt
      dagegen eine Tonne mit runden Enden. */
   function torsoW(w, u) {
-    if (u < 0.14) return lerp(w.latHalf * 0.86, w.latHalf, u / 0.14);
-    return lerp(w.latHalf, w.waistHalf, (u - 0.14) / 0.86);
+    /* Die Achselhöhle: direkt unter dem Deltamuskel zieht sich der Rumpf kurz
+       ein, bevor der Latissimus ausfächert. Diese Einbuchtung ist der Grund für
+       den Polygonzug — ein Stapel Kapseln kann sie nicht abbilden, weil die
+       Vereinigung konvexer Formen immer konvex bleibt. */
+    if (u < 0.08) return lerp(w.latHalf * 0.92, w.latHalf * 0.78, u / 0.08);
+    if (u < 0.30) return lerp(w.latHalf * 0.78, w.latHalf, (u - 0.08) / 0.22);
+    /* Von der breitesten Stelle keilförmig zur Taille, zum Schluss etwas
+       schneller — das gibt die Kerbe über dem Hüftknochen. */
+    if (u < 0.86) return lerp(w.latHalf, w.waistHalf * 1.06, (u - 0.30) / 0.56);
+    return lerp(w.waistHalf * 1.06, w.waistHalf, (u - 0.86) / 0.14);
+  }
+
+  /* Der Rumpf als ein geschlossener Umriss statt als Stapel waagerechter
+     Kapseln. Links von oben nach unten, rechts zurück. */
+  function torsoOutline(sy, w) {
+    var y0 = sy - 2, y1 = HIP + 2;
+    var N = 15, i, u, hw;
+    var left = [], right = [];
+    for (i = 0; i < N; i++) {
+      u = i / (N - 1);
+      hw = torsoW(w, u);
+      left.push([CX - hw, y0 + u * (y1 - y0)]);
+      right.push([CX + hw, y0 + u * (y1 - y0)]);
+    }
+    right.reverse();
+    return left.concat(right);
   }
 
   /* Trapezmuskel: die Schräge vom Hals zur Schulter. Ohne sie hat der Rumpf
@@ -300,17 +314,8 @@
     }
   }
 
-  /* Als Stapel waagerechter Kapseln — anders lässt sich mit den vorhandenen
-     Grundformen keine sich verjüngende Fläche zeichnen. */
-  function torso(ctx, sy, w, color, extra) {
-    var y0 = sy - 2, y1 = HIP + 2;
-    var N = 13, h = (y1 - y0) / N, i, u, hw, y;
-    for (i = 0; i < N; i++) {
-      u = i / (N - 1);
-      hw = torsoW(w, u) + (extra || 0);
-      y = y0 + i * h;
-      px.capsule(ctx, [CX - hw, y], [CX + hw, y], h + 1.6 + (extra || 0) * 2, color);
-    }
+  function torso(ctx, sy, w, color, ink) {
+    px.poly(ctx, torsoOutline(sy, w), color, ink, 3);
   }
 
   /* ---------- Vorder- und Rückansicht -------------------------------------- */
@@ -330,15 +335,15 @@
     px.capsule(ctx, l.hip, thighEnd, w.thighW + e, color);           /* Schenkel */
   }
 
-  function shoeOf(ctx, l, w, color) {
+  /* Schuh als Raster. Feste Größe: ein Fuß wächst nicht mit der Wade, vorher
+     hing seine Breite aber an calfW. Die Kontur steckt im Raster selbst,
+     deshalb wird er nur einmal gezeichnet und nicht im Konturdurchgang. */
+  function shoeOf(ctx, l, ramp) {
     if (l.ball) {
-      /* Nur der Ballen steht auf — ein kurzer Klotz vor dem Fußpunkt, der bis
-         auf den Boden reicht. Die angehobene Ferse ergibt sich daraus, dass
-         das Schienbein schon oberhalb endet. */
-      px.rect(ctx, l.foot[0] - w.calfW * 0.5, FOOT - 4, w.calfW * 1.1, 5, color);
+      px.stamp(ctx, SP.shoeBall, l.foot[0] - 4, FOOT - 4, ramp);
       return;
     }
-    px.rect(ctx, l.foot[0] - w.calfW * 0.9, FOOT - 1, w.calfW * 1.8, 5, color);
+    px.stamp(ctx, SP.shoeFront, l.foot[0] - 8, FOOT - 5, ramp);
   }
 
   /* Beide Ansichten teilen sich Skelett, Silhouette und Flächen. Unterschiedlich
@@ -359,17 +364,14 @@
     for (i = 0; i < 2; i++) {
       l = j.legs[i];
       legShape(ctx, l, w, C.ink, 2);
-      shoeOf(ctx, l, w, C.ink);
 
       a = j.arms[i];
       px.capsule(ctx, a.shoulder, a.elbow, w.armW + 2, C.ink);
       pk = peakOf(a, w);
       px.disc(ctx, pk[0], pk[1], w.armW * 0.5 * a.flex + 1, C.ink);
       px.capsule(ctx, a.elbow, a.hand, w.foreW + 2, C.ink);
-      px.disc(ctx, a.hand[0], a.hand[1], w.foreW * 0.7 + 1.5, C.ink);
       px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulderSpan * 0.44 + 2, C.ink);
     }
-    torso(ctx, sy, w, C.ink, 1.4);
     traps(ctx, sy, w, C.ink, 2);
     px.capsule(ctx, [CX, HEAD + 5], [CX, sy], 11, C.ink);          /* Hals */
     px.disc(ctx, CX, HEAD, HEAD_R + 1.5, C.ink);
@@ -378,13 +380,16 @@
     for (i = 0; i < 2; i++) {
       l = j.legs[i];
       legShape(ctx, l, w, col.skin, 0);
-      shoeOf(ctx, l, w, C.shadow);
+      shoeOf(ctx, l, col.ramp);
     }
 
     /* Hals vor dem Rumpf, sonst steht sein unteres Ende als dunkler Fleck
        mitten auf der Brust. */
     px.capsule(ctx, [CX, HEAD + 6], [CX, sy - 2], 8, col.skinDark);
-    torso(ctx, sy, w, col.skin);
+    /* Kontur und Fläche in einem Zug auf demselben Pfad — beim Polygon geht das
+       nicht getrennt, ein aufgeblasener Umriss wäre an den spitzen Ecken der
+       Achselhöhle fehleranfällig. */
+    torso(ctx, sy, w, col.skin, C.ink);
     traps(ctx, sy, w, col.skin);
 
     for (i = 0; i < 2; i++) {
@@ -393,28 +398,21 @@
       pk = peakOf(a, w);
       px.disc(ctx, pk[0], pk[1], w.armW * 0.5 * a.flex, col.skin);
       px.capsule(ctx, a.elbow, a.hand, w.foreW, col.skin);
-      px.disc(ctx, a.hand[0], a.hand[1], w.foreW * 0.7, col.skin);
+      px.stamp(ctx, SP.fist, a.hand[0] - 4, a.hand[1] - 4, col.ramp);
       px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulderSpan * 0.44, col.skin);
     }
 
-    /* Kopf. Von hinten sieht man Haar und einen Streifen Nacken, kein
-       Gesicht — sonst dreht sich die Figur im Kopf des Betrachters zurück. */
-    px.disc(ctx, CX, HEAD, HEAD_R, col.skin);
-    if (back) {
-      px.disc(ctx, CX, HEAD - 1, HEAD_R * 0.95, C.shadow);
-    } else {
-      /* Flacher Haarschnitt als Kappe, keine Scheibe: eine Scheibe in
-         Kopfgröße lässt vom Gesicht nur einen Streifen Kinn übrig, und der
-         Kopf wird zum schwarzen Klumpen. */
-      px.capsule(ctx,
-        [CX - HEAD_R * 0.5, HEAD - HEAD_R * 0.45],
-        [CX + HEAD_R * 0.5, HEAD - HEAD_R * 0.45],
-        HEAD_R * 0.95, C.shadow);
-      /* Beide Augen wandern mit dem Blick — mehr Kopfdrehung gibt eine
-         Vorderansicht nicht her. */
-      var eye = (pose.look || 0) * 2;
-      px.rect(ctx, CX - 4 + eye, HEAD + 1, 2, 2, C.ink);
-      px.rect(ctx, CX + 2 + eye, HEAD + 1, 2, 2, C.ink);
+    /* Kopf als handgezeichnetes Raster auf der Ink-Scheibe. Von hinten nur
+       Haar und ein Streifen Nacken — ein Gesicht dort würde die Figur im Kopf
+       des Betrachters zurückdrehen. */
+    px.stamp(ctx, back ? SP.headBack : SP.headFront, CX - 9, HEAD - 9, col.ramp);
+    /* Die Blickrichtung setzt nur die Pupillen um, mehr gibt eine
+       Vorderansicht nicht her. */
+    if (!back && pose.look) {
+      px.rect(ctx, CX - 5, HEAD, 3, 2, col.skin);
+      px.rect(ctx, CX + 3, HEAD, 3, 2, col.skin);
+      px.rect(ctx, CX - 4 + pose.look * 2, HEAD, 2, 2, C.ink);
+      px.rect(ctx, CX + 3 + pose.look * 2, HEAD, 2, 2, C.ink);
     }
 
     /* Hose in der gewählten Farbe. Breite aus der Hüfte, nicht aus der Taille —
@@ -429,19 +427,41 @@
     if (back) backDetail(ctx, sy, w, j, col);
     else frontDetail(ctx, sy, w, j, col);
 
+    /* Licht kommt von oben links. Jedes Glied bekommt deshalb erst einen
+       Schattenstreifen auf der abgewandten Seite und dann ein Licht auf der
+       zugewandten — zwei Stufen der Rampe auseinander. Das ist der Schritt, den
+       die alte Palette nicht hergab: dort waren nur drei Hauttöne vorhanden,
+       und der mittlere war schon der Grundton. */
     for (i = 0; i < 2; i++) {
       a = j.arms[i];
+      px.capsule(ctx, [a.shoulder[0] + a.side * w.armW * 0.3, a.shoulder[1] + 2],
+        [a.elbow[0] + a.side * w.armW * 0.3, a.elbow[1]], w.armW * 0.3, col.soft);
+      px.capsule(ctx, [a.elbow[0] + a.side * w.foreW * 0.25, a.elbow[1] + 1],
+        [a.hand[0] + a.side * w.foreW * 0.25, a.hand[1]], w.foreW * 0.3, col.soft);
+
       pk = peakOf(a, w);
+      /* Nur ein Licht je Muskel. Ein zweites, noch helleres darin sah aus wie
+         eine angeschaltete Glühbirne statt wie eine Wölbung. */
       px.disc(ctx, pk[0] - a.side * 1, pk[1] - 1, w.armW * 0.3 * a.flex, col.skinLit);
       px.disc(ctx, a.shoulder[0] - a.side * 1.5, a.shoulder[1] - 2,
         w.shoulderSpan * 0.2, col.skinLit);
 
+      /* Erst unterhalb des Hosensaums: weiter oben angesetzt malten Schatten-
+         und Lichtstreifen als dunkle und helle Balken über die Hose. */
       l = j.legs[i];
-      px.capsule(ctx, [l.hip[0] - l.side * 1, l.hip[1] + 4],
-        [l.knee[0] - l.side * 1, l.knee[1] - 4],
-        w.thighW * (l.locked ? 0.36 : 0.28), col.skinLit);
-      px.capsule(ctx, [l.knee[0], l.knee[1] + 3], [l.foot[0], l.foot[1] - 8],
-        w.calfW * (l.ball ? 0.42 : 0.3), col.skinLit);
+      var thighTop = HIP + 12;
+      px.capsule(ctx, [l.hip[0] + l.side * w.thighW * 0.3, thighTop],
+        [l.knee[0] + l.side * w.thighW * 0.26, l.knee[1] - 2],
+        w.thighW * 0.3, col.soft);
+      px.capsule(ctx, [l.knee[0] + l.side * w.calfW * 0.28, l.knee[1] + 3],
+        [l.foot[0] + l.side * w.calfW * 0.2, l.foot[1] - 6],
+        w.calfW * 0.28, col.soft);
+
+      px.capsule(ctx, [l.hip[0] - l.side * 1.5, thighTop],
+        [l.knee[0] - l.side * 1.5, l.knee[1] - 4],
+        w.thighW * (l.locked ? 0.3 : 0.22), col.skinLit);
+      px.capsule(ctx, [l.knee[0] - l.side, l.knee[1] + 3], [l.foot[0] - l.side, l.foot[1] - 8],
+        w.calfW * (l.ball ? 0.34 : 0.24), col.skinLit);
 
       /* Durchgestreckt zeichnet sich die Trennung der Schenkelköpfe ab. */
       if (l.locked) {
@@ -594,14 +614,14 @@
     var fHip = [hip[0] + FAR, hip[1]];
     var fShoulder = [shoulder[0] + FAR, shoulder[1]];
 
-    /* Fuß im Profil: ein Riegel nach vorn, kein Klotz unter dem Bein. Steht
-       das Bein auf dem Ballen, reicht nur der Vorderfuß auf den Boden. */
-    function shoe(p, ball, color) {
+    /* Fuß im Profil als Raster, Zehen nach vorn. Steht das Bein auf dem
+       Ballen, reicht nur der Vorderfuß auf den Boden. */
+    function shoe(p, ball, ramp) {
       if (ball) {
-        px.rect(ctx, p[0] - 1, FOOT - 4, 11, 5, color);
+        px.stamp(ctx, SP.shoeBall, p[0] - 2, FOOT - 4, ramp);
         return;
       }
-      px.rect(ctx, p[0] - w.calfW * 0.6, FOOT - 1, w.calfW * 0.6 + 10, 5, color);
+      px.stamp(ctx, SP.shoeSide, p[0] - 4, FOOT - 3, ramp);
     }
 
     px.capsule(ctx, [CX - 20, FOOT + 3], [CX + 24, FOOT + 3], 8, C.wallDark);
@@ -619,7 +639,9 @@
     /* Abgewandte Körperhälfte: dunkler, das schafft die Tiefe. */
     limb(fHip, fKnee, w.thighW * 0.92, col.skinDark);
     limb(fKnee, fFoot, w.calfW * 0.92, col.skinDark);
-    shoe(fFoot, 0, C.ink);
+    /* Der ferne Schuh bleibt ein dunkler Riegel — als Raster gezeichnet würde
+       er mit seiner Kontur nach vorn drängen statt hinten zu bleiben. */
+    px.rect(ctx, fFoot[0] - 4, FOOT - 3, 15, 6, C.ink);
     limb(fShoulder, fElbow, w.armW * 0.9, col.skinDark);
     limb(fElbow, fHand, w.foreW * 0.9, col.skinDark);
     px.disc(ctx, fHand[0], fHand[1], w.foreW * 0.66, col.skinDark);
@@ -630,18 +652,15 @@
     profileTorso(ctx, d, backX, C.ink, 1.4);
     profileTorso(ctx, d, backX, col.skin);
 
-    /* Kopf im Profil: Haar über Hinterkopf und Scheitel, vorn Nase und Auge. */
+    /* Kopf im Profil als Raster: Haar über Hinterkopf und Scheitel, vorn Stirn,
+       Auge, Nasenrücken und Kinn. */
     px.disc(ctx, head[0], head[1], HEAD_R + 1.5, C.ink);
-    px.disc(ctx, head[0], head[1], HEAD_R, col.skin);
-    px.capsule(ctx, [head[0] - HEAD_R * 0.55, head[1] - HEAD_R * 0.3],
-      [head[0] + HEAD_R * 0.15, head[1] - HEAD_R * 0.55], HEAD_R * 0.8, C.shadow);
-    px.rect(ctx, head[0] + HEAD_R - 1, head[1] + 1, 3, 2, col.skin);   /* Nase */
-    px.rect(ctx, head[0] + 3, head[1] + 1, 2, 2, C.ink);               /* Auge */
+    px.stamp(ctx, SP.headSide, head[0] - 9, head[1] - 9, col.ramp);
 
     /* Nahes Bein vor dem Rumpf, danach der nahe Arm ganz vorn. */
     limb(hip, knee, w.thighW, col.skin);
     limb(knee, foot, w.calfW, col.skin);
-    shoe(foot, s.ball, C.shadow);
+    shoe(foot, s.ball, col.ramp);
 
     /* Hose erst jetzt: vor dem nahen Bein gezeichnet blitzte sie nur links und
        rechts daneben hervor. Sie liegt über dem Schenkelansatz, nicht darunter.
@@ -657,9 +676,8 @@
     limb(shoulder, elbow, w.armW, col.skin);
     limb(elbow, hand, w.foreW, col.skin);
     /* Beide Hände treffen sich an einem Punkt — geschlossen, nicht zwei Fäuste
-       nebeneinander. Deshalb eine gemeinsame Faust. */
-    px.disc(ctx, hand[0], hand[1], w.foreW * 0.62 + 1.5, C.ink);
-    px.disc(ctx, hand[0], hand[1], w.foreW * 0.62, col.skin);
+       nebeneinander. Deshalb nur eine gemeinsame Faust. */
+    px.stamp(ctx, SP.fist, hand[0] - 4, hand[1] - 4, col.ramp);
 
     /* 3. Was die Pose ausmacht. */
     px.disc(ctx, shoulder[0] - 1.5, shoulder[1] - 2, w.shoulderSpan * 0.26, col.skinLit);
@@ -708,29 +726,35 @@
     var health = MF.game.stats.healthAvg();
     var o = opts || {};
 
-    /* Schlechte Werte = fahler Teint, genau wie beim Avatar. */
-    var skin = health < 60 ? mix(C.skin, C.steel, (60 - health) / 90) : C.skin;
+    /* Schattiert wird über Rampenstufen. Gemischte Zwischentöne hatte vorher
+       quantize() auf die Bodenfarben geschoben — die Latissimuskanten lagen auf
+       'floor', die Rückenrinne auf 'floorDark'.
+
+       Schlechte Gesundheit schaltet auf die fahle Rampe und senkt bei sehr
+       schlechten Werten zusätzlich die Grundstufe. Vorher wurde der Hautton
+       Richtung 'steel' gemischt, was bis Gesundheit 30 gar nichts tat und
+       darunter auf einen Braunton sprang. */
+    var sk = health < 30 ? px.ramp('pale', 2)
+           : health < 55 ? px.ramp('pale', 3)
+           : px.ramp('skin', 4);
+
     var col = {
-      skin: skin,
-      skinLit: mix(skin, C.skinLit, 0.7),
-      skinDark: mix(skin, C.skinDark, 0.8),
-      edge: mix(skin, C.ink, 0.42),
-      deep: mix(skin, C.ink, 0.6)
+      skin: sk(0),
+      skinLit: sk(1),
+      glow: sk(2),
+      soft: sk(-1),     /* weiche Schattierung auf Flächen  */
+      skinDark: sk(-2), /* abgewandte Körperhälfte, Hals    */
+      edge: sk(-2),     /* Muskelkanten                     */
+      deep: sk(-3),     /* Rinnen und Kerben                */
+      ramp: sk
     };
 
     var w = widths(pose);
 
-    if (pose.view === 'side') {
-      drawProfile(ctx, pose, w, col, o);
-    } else {
-      drawUpright(ctx, pose, w, col, o);
-
-      /* Fahler Teint verdient einen Hinweis — die Pose lügt sonst über den
-         Zustand, den der Körper-Bildschirm anzeigt. */
-      if (health < 45) {
-        px.dither(ctx, CX - w.latHalf, SHOULDER, w.latHalf * 2, HIP - SHOULDER, C.steel, 4);
-      }
-    }
+    /* Das aufgelegte Raster in Stahlgrau ist weg: die fahle Rampe färbt jetzt
+       den ganzen Körper, statt ihm ein graues Netz überzuwerfen. */
+    if (pose.view === 'side') drawProfile(ctx, pose, w, col, o);
+    else drawUpright(ctx, pose, w, col, o);
   }
 
   /* Die Kür der Golden Era gibt es nicht ab Tag eins — sie ist die Belohnung

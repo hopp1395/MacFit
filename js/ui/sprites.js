@@ -10,7 +10,7 @@
    ein Rampenversatz — Zahlen gehen dadurch den Hautton mit, auch den fahlen
    bei schlechter Gesundheit:
 
-     .  nichts          k  Kontur (ink)      K  Haar (shadow)     s  Sohle
+     .  nichts   k  Kontur (ink)   K  Haar   H  Haarglanz   s  Sohle
      a -3   b -2   c -1   d  Grundton   e +1   f +2
 
    Die Köpfe sind 19 x 19 und liegen genau auf der Hautscheibe mit Radius 9,5;
@@ -19,7 +19,7 @@
   'use strict';
 
   var KEY = {
-    '.': null, 'k': 'ink', 'K': 'shadow', 's': 'steelDark',
+    '.': null, 'k': 'ink', 'K': 'shadow', 'H': 'steelDark', 's': 'steelDark',
     'a': -3, 'b': -2, 'c': -1, 'd': 0, 'e': 1, 'f': 2
   };
 
@@ -55,11 +55,11 @@
   var HEAD_BACK = sprite([
     '......KKKKKKK......',
     '....KKKKKKKKKKK....',
-    '...KKKKKKKKKKKKK...',
-    '..KKKKKKKKKKKKKKK..',
-    '.KKKKKKKKKKKKKKKKK.',
-    '.KKKKKKKKKKKKKKKKK.',
-    'KKKKKKKKKKKKKKKKKKK',
+    '...KKKKHHKKKKKKK...',
+    '..KKKHHHKKKKKKKKK..',
+    '.KKKKHHKKKKKKKKKKK.',
+    '.KKKKHKKKKKKKKKKKK.',
+    'KKKKHKKKKKKKKKKKKKK',
     'KKKKKKKKKKKKKKKKKKK',
     'KKKKKKKKKKKKKKKKKKK',
     'KdKKKKKKKKKKKKKKKdK',
@@ -112,13 +112,17 @@
     '..kkkkk..'
   ]);
 
+  /* Von vorn sieht man Spann und Sohle. Ohne die beiden Zeilen Spann sass der
+     Schuh als flache Platte unter dem Bein statt am Knoechel. */
   var SHOE_FRONT = sprite([
-    '.kkkkkkkkkkk.',
-    'kKKKKKKKKKKKk',
-    'kKKKKKKKKKKKk',
-    'kKKKKKKKKKKKk',
-    'ksssssssssssk',
-    '.kkkkkkkkkkk.'
+    '.....kkkkkkk.....',
+    '...kkKKKKKKKkk...',
+    '.kkKKKKKKKKKKKkk.',
+    'kKKKKKKKKKKKKKKKk',
+    'kKKKKKKKKKKKKKKKk',
+    'kKKKKKKKKKKKKKKKk',
+    'ksssssssssssssssk',
+    '.kkkkkkkkkkkkkkk.'
   ]);
 
   /* Im Profil zeigt der Fuß nach rechts; für die andere Richtung wird beim
