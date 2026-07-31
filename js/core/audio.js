@@ -320,6 +320,52 @@
     src.start(at); src.stop(at + dur + 0.02);
   }
 
+  /* Rauschen durch ein wanderndes Band: Reifen, Schiebetuer, Zischen.
+     Die Rauschtabelle ist nur eine halbe Sekunde lang, deshalb in Schleife. */
+  function sweep(at, fromHz, toHz, dur, vol, q) {
+    var src = ctx.createBufferSource();
+    src.buffer = noise();
+    src.loop = true;
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(fromHz, at);
+    bp.frequency.exponentialRampToValueAtTime(Math.max(60, toHz), at + dur);
+    bp.Q.value = q || 2;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + dur * 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    src.connect(bp); bp.connect(g); g.connect(sfxBus);
+    src.start(at); src.stop(at + dur + 0.02);
+  }
+
+  /* Motor: zwei Stimmen eine Oktave auseinander, Tonhoehe in Rastern. Der
+     Tiefpass nimmt die Schaerfe raus — ein nackter Saegezahn saegt zu sehr. */
+  function engine(at, fromMidi, toMidi, dur, vol) {
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 1100;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + dur * 0.3);
+    g.gain.setValueAtTime(vol, at + dur * 0.72);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    lp.connect(g); g.connect(sfxBus);
+
+    var types = ['sawtooth', 'square'];
+    var steps = Math.max(2, Math.round(dur / 0.03));
+    for (var v = 0; v < 2; v++) {
+      var o = ctx.createOscillator();
+      o.type = types[v];
+      for (var i = 0; i < steps; i++) {
+        var m = fromMidi + (toMidi - fromMidi) * (i / (steps - 1)) - v * 12;
+        o.frequency.setValueAtTime(hz(Math.round(m)), at + i * (dur / steps));
+      }
+      o.connect(lp);
+      o.start(at); o.stop(at + dur + 0.02);
+    }
+  }
+
   /* Tonhoehe, die in Stufen faellt oder steigt — das Rutschen einer Sirene
      gab es auf dem SID nicht, dort wurde in Rastern gerechnet. */
   function slide(at, fromMidi, toMidi, dur, vol, type) {
@@ -376,6 +422,44 @@
       sidArp(at + 0.24, [64, 67, 72, 76], 0.24, 0.2, 0.025);
       sidArp(at + 0.48, [67, 72, 76, 79], 0.55, 0.24, 0.02);
       chip(at + 0.48, hz(84), 0.5, 'square', 0.1, 3000);
+    },
+
+    /* Kasse: zwei Toene hoch, kurz und hell. Der Klang, den damals jedes
+       Aufsammeln hatte. */
+    coin: function (at) {
+      chip(at, hz(84), 0.05, 'square', 0.15);
+      chip(at + 0.05, hz(91), 0.14, 'square', 0.15);
+    },
+
+    /* Feierabend: drei Toene abwaerts, gedaempft — das Gegenstueck zur
+       Fanfare. */
+    sleep: function (at) {
+      chip(at, hz(69), 0.15, 'triangle', 0.2, 1200);
+      chip(at + 0.15, hz(65), 0.15, 'triangle', 0.2, 1200);
+      chip(at + 0.30, hz(60), 0.42, 'triangle', 0.2, 1200);
+    },
+
+    /* Vorspann: Wagen kommt an und bremst. */
+    drive: function (at) {
+      engine(at, 45, 33, 1.15, 0.15);
+      sweep(at + 0.8, 2600, 900, 0.36, 0.1, 4);      /* Reifen */
+    },
+    /* Vorspann: Wagen faehrt weg. */
+    driveOff: function (at) {
+      engine(at, 31, 47, 1.05, 0.15);
+    },
+    /* Autotuer: Blech und ein tiefes Zufallen. Lauter als die Geraeusche im
+       Training — hier laeuft die Titelmusik darunter und schluckt sonst alles. */
+    carDoor: function (at) {
+      clank(at, 900, 0.09, 0.45);
+      slide(at, 40, 30, 0.1, 0.32, 'triangle');
+    },
+    /* Schiebetuer des Studios: Zischen nach oben. Der Wert sieht zu hoch aus,
+       ist er aber nicht: ein Bandpass laesst vom Rauschen nur einen schmalen
+       Streifen durch, der Ausgang liegt weit unter dem Eingang. Mit kleineren
+       Werten bleibt unter der Titelmusik nichts davon uebrig. */
+    gymDoor: function (at) {
+      sweep(at, 900, 2600, 0.42, 1.5, 1);
     }
   };
 

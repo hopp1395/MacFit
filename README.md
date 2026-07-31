@@ -52,7 +52,11 @@ Hüllkurven, Tonhöhen, die in Rastern springen statt zu gleiten, und der ganze 
 durch ein 4-Bit-Raster. Gewicht auflegen klirrt, eine saubere Wiederholung antwortet mit
 einem SID-Arpeggio nach oben, eine verrissene mit einem Ton, der stufenweise abstürzt.
 Satzende und Levelaufstieg bekommen die Fanfare, die damals hinter jedem Level stand.
-Abschalten unter **Körper → Einstellungen → Geräusche**, unabhängig von der Titelmusik.
+
+Dieselben Geräusche liegen auch auf dem Rest: Motor und Reifen im Vorspann, Autotür,
+Schiebetür des Studios, Kasse beim Einkauf im Shop und eine absteigende Tonfolge beim
+Schlafengehen. Abschalten unter **Körper → Einstellungen → Geräusche**, unabhängig von der
+Titelmusik.
 
 ## Erfolge teilen
 

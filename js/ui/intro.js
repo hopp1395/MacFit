@@ -636,6 +636,24 @@
     ]
   };
 
+  /* Geraeusche zum Bild. Die Zeiten haengen an denselben Marken wie die
+     Zeichnung: Motor, solange der Wagen rollt, Tuerklappen genau dann, wenn
+     das Blatt aufschwingt, Zischen, wenn die Schiebetuer laeuft. */
+  var CUES = {
+    arrive: [
+      { at: 0, sfx: 'drive' },
+      { at: T_STOP + 0.05, sfx: 'carDoor' },
+      { at: T_OUT + 0.25, sfx: 'carDoor' },
+      { at: T_ARRIVE - 0.35, sfx: 'gymDoor' }
+    ],
+    leave: [
+      { at: 0, sfx: 'gymDoor' },
+      { at: L_AT_CAR - 0.30, sfx: 'carDoor' },
+      { at: L_IN + 0.02, sfx: 'carDoor' },
+      { at: L_OFF - 0.25, sfx: 'driveOff' }
+    ]
+  };
+
   /* mode: 'arrive' (Standard) oder 'leave' */
   function play(onDone, mode) {
     var root = util.byId('intro-root');
@@ -659,7 +677,17 @@
     }
 
     var t = 0, since = STEP, capIdx = -1, finished = false;
-    var lines = CAPTIONS[mode === 'leave' ? 'leave' : 'arrive'];
+    var key = mode === 'leave' ? 'leave' : 'arrive';
+    var lines = CAPTIONS[key];
+    var cues = CUES[key], cueIdx = 0;
+
+    /* Die Zeit laeuft nur vorwaerts, also reicht ein Zeiger in die Liste. */
+    function fireCues() {
+      while (cueIdx < cues.length && t >= cues[cueIdx].at) {
+        MF.core.audio.sfx(cues[cueIdx].sfx);
+        cueIdx++;
+      }
+    }
 
     function setCaption() {
       var idx = 0;
@@ -680,6 +708,7 @@
       if (since < STEP) return;
       since = 0;
       setCaption();
+      fireCues();
       surface.clear();
       frame(surface.ctx, t, mode);
       surface.present();
@@ -703,6 +732,7 @@
     util.onTap(box, finish);
     ticker.start();
     MF.core.audio.start();
+    fireCues();          /* der Motor laeuft schon im ersten Bild */
 
     return finish;
   }

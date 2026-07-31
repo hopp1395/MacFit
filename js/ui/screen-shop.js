@@ -145,6 +145,7 @@
       MF.ui.toast.show(res.reason, 'warn');
       return;
     }
+    MF.core.audio.sfx('coin');
     MF.ui.toast.show(def.name + ' gestartet — ' + def.days + ' Tage.', 'good');
     MF.ui.hud.render();
     MF.ui.router.refresh('shop');
