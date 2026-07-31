@@ -1,0 +1,24 @@
+Eigene Titelmusik
+=================
+
+Standardmaessig erzeugt MacFit die Titelmusik selbst — js/core/audio.js baut
+sie zur Laufzeit aus Oszillatoren zusammen. Es liegt also absichtlich keine
+Musikdatei im Projekt.
+
+Wer stattdessen ein eigenes Stueck hoeren will, legt es hier ab:
+
+    assets/theme.mp3
+
+Findet das Spiel die Datei, spielt es sie in Schleife statt des Synthesizers.
+Fehlt sie, passiert nichts weiter — dann bleibt es beim Synthesizer.
+
+Zwei Punkte dazu:
+
+* Geprueft wird die Datei erst beim Start. Das Ergebnis kommt meist zu spaet
+  fuer den allerersten Vorspann; ab dem naechsten Film laeuft sie.
+* Wer das Spiel oeffentlich stellt (GitHub Pages), veroeffentlicht die Datei
+  mit. Fuer fremde Musik braucht es dafuer die Rechte. Fuer den privaten
+  Gebrauch auf dem eigenen Geraet ist das eine andere Frage als fuer eine
+  oeffentliche Seite.
+
+Abschalten laesst sich die Musik im Spiel unter Koerper -> Einstellungen.

@@ -8,6 +8,9 @@
    nimmt ihre Strichstärken aus dem Spielstand — wer schon trainiert hat,
    steigt sichtbar breiter aus dem Auto.
 
+   Dazu läuft die Titelmusik aus core/audio.js — sie startet mit dem Film und
+   blendet mit ihm weg.
+
    Antippen bricht ab; wer das Spiel oft neu lädt, wartet nicht jedes Mal. */
 (function (MF) {
   'use strict';
@@ -686,6 +689,7 @@
       if (finished) return;
       finished = true;
       ticker.stop();
+      MF.core.audio.stop();
       box.className = 'cine is-out';
       window.setTimeout(function () {
         if (box.parentNode) box.parentNode.removeChild(box);
@@ -698,6 +702,7 @@
     surface.present();
     util.onTap(box, finish);
     ticker.start();
+    MF.core.audio.start();
 
     return finish;
   }

@@ -14,6 +14,15 @@ Creatin bis zu Substanzen, die schnelle Gains bringen und dafür deine Gesundhei
 Jeder Start beginnt mit einem kurzen Vorspann: du fährst mit dem Sportwagen vor dem Studio
 vor, steigst aus, nimmst die Sporttasche und gehst rein. Antippen überspringt ihn.
 
+Dazu läuft die **Titelmusik**: ein eigenes Stück im Stil des Dream-Trance der Neunziger —
+Klavier-Arpeggio über a-Moll–F–C–G, Flächen-Pad, ab dem zweiten Takt Kick, Offbeat-Bass und
+Leadmelodie. Es liegt keine Musikdatei im Projekt; `js/core/audio.js` erzeugt alles zur
+Laufzeit per Web Audio. Abschalten geht unter **Körper → Einstellungen → Titelmusik**.
+
+Beim allerersten Laden bleibt der Vorspann stumm — Browser lassen Ton erst nach einer
+Nutzergeste zu. Ab dem nächsten Film spielt sie. Wer lieber ein eigenes Stück hören will,
+legt es als `assets/theme.mp3` ab; siehe `assets/LIESMICH.txt`.
+
 Beim allerersten Mal wird danach deine **Mitgliedskarte** ausgestellt: Name, Trainings-
 klamotten und freiwillig ein Foto. Die Farbe siehst du im Vorspann, an den Geräten und am
 Avatar wieder.
@@ -86,7 +95,7 @@ globalen `window.MacFit`.
 ```
 index.html          Grundgerüst + Skripte in Ladereihenfolge
 css/                base (Reset/Farben) · layout (Gerüst) · components (Bausteine)
-js/core/            util, events, storage, ticker, haptics
+js/core/            util, events, storage, ticker, haptics, audio (Titelmusik)
 js/data/            muscles, exercises, supplements, levels, outfits, scenes — reine Spieldaten
 js/game/            state, stats, fitness, training, progression, supplements, economy, day
 js/ui/              router, hud, avatar, screens, toast, modal, report, intro, create,

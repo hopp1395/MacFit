@@ -287,6 +287,18 @@
     });
     panel.appendChild(hapticBtn);
 
+    var musicBtn = el('button.btn.btn--ghost', {
+      type: 'button',
+      text: (s.settings.music ? '✓ ' : '✕ ') + 'Titelmusik'
+    });
+    util.onTap(musicBtn, function () {
+      s.settings.music = !s.settings.music;
+      MF.core.audio.setEnabled(s.settings.music);
+      MF.game.state.saveSoon();
+      MF.ui.router.refresh('stats');
+    });
+    panel.appendChild(musicBtn);
+
     /* Klartext zum Speicherstand — der Punkt im HUD allein sagt zu wenig. */
     var st = MF.core.storage.status();
     var saveBox = el('div.savebox' + (st.available ? '' : '.savebox--bad'));

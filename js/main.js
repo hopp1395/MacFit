@@ -11,6 +11,8 @@
     /* Level immer aus den XP ableiten — falls sich Schwellen geaendert haben. */
     s.level = MF.data.levels.levelForXp(s.xp);
     MF.core.haptics.setEnabled(s.settings.haptics);
+    MF.core.audio.setEnabled(s.settings.music);
+    MF.core.audio.init();
 
     MF.ui.hud.render();
     MF.ui.router.initTabs();
