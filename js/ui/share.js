@@ -1,13 +1,15 @@
 /* Erfolge teilen — als Posen-Bild oder als Text.
 
    Das Bild entsteht im Browser: Pixel-Szene in niedriger Auflösung, hart
-   hochskaliert, darüber sauber gesetzte Werte. Verschickt wird es über
-   navigator.share, das am Handy die WhatsApp-Auswahl mit anbietet. Wo es das
-   nicht gibt, wird das Bild heruntergeladen und der Text über wa.me geöffnet —
-   anhängen muss man dann selbst.
+   hochskaliert, darüber sauber gesetzte Werte.
 
-   Ein Bild über wa.me anzuhängen geht nicht: der Link kann nur Text. Und ein
-   Bild-Upload bräuchte einen Server, den das Spiel bewusst nicht hat. */
+   Geteilt wird über das Teilen-Menü des Geräts — dort stehen WhatsApp, Signal,
+   Mail und alles andere Installierte. Der Ablauf in share() hat drei Stufen,
+   je nachdem was der Browser kann; die Einzelheiten stehen dort.
+
+   Ein Bild über einen wa.me-Link anzuhängen geht nicht: der Link kann nur
+   Text. Und ein Bild-Upload bräuchte einen Server, den das Spiel bewusst nicht
+   hat. */
 (function (MF) {
   'use strict';
 
