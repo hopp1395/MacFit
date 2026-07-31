@@ -136,6 +136,14 @@
   padding-bottom: var(--pad);
 }
 
+/* Das Gym passt auf einen Schirm: feste Bloecke, nur die Geraeteliste
+   gibt nach. So bleiben Auswahl und Schlafen-Knopf immer sichtbar. */
+.screen--gym {
+  overflow: hidden;
+  gap: 8px;
+  padding: 10px 10px calc(10px + var(--safe-bottom));
+}
+
 /* ---------- Tab-Leiste --------------------------------------------------- */
 
 #tabbar {

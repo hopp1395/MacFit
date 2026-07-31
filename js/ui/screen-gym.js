@@ -1,11 +1,16 @@
-/* Gym: Muskelgruppe wählen, Gerät wählen, Satz starten. */
+/* Gym: alles auf einen Bildschirm, ohne Scrollen.
+
+   Aufbau von oben nach unten — Muskelgruppe wählen, Gerät antippen, fertig.
+   Antippen einer Gerätezeile startet den Satz direkt; der Umweg über eine
+   Karte mit eigenem Knopf entfällt. Nur die Geräteliste darf im Notfall
+   scrollen, damit Auswahl und Schlafen-Knopf immer sichtbar bleiben. */
 (function (MF) {
   'use strict';
 
   var util = MF.core.util;
   var el = util.el;
 
-  var filter = 'alle';
+  var filter = 'brust';
   var weightIndex = 1;
 
   function state() { return MF.game.state.get(); }
@@ -14,15 +19,108 @@
   function difficultyDots(ex) {
     var score = (ex.speed / 1.05) * 0.6 + (1 - ex.zone / 0.30) * 0.4;
     var count = util.clamp(Math.round(score * 5), 1, 5);
-    var wrap = el('div.dots');
+    var wrap = el('span.dots');
     for (var i = 0; i < 5; i++) {
       wrap.appendChild(el('span.dot' + (i < count ? '.is-on' : '')));
     }
     return wrap;
   }
 
+  /* ---------- Muskelgruppen als Kachelraster ------------------------------ */
+
+  function muscleGrid() {
+    var s = state();
+    var weakest = MF.game.stats.weakestMuscle();
+    var grid = el('div.mgrid');
+
+    MF.data.muscles.list.forEach(function (m) {
+      var data = s.muscles[m.id];
+      var available = MF.data.exercises.byMuscle(m.id).filter(function (ex) {
+        return MF.game.training.isUnlocked(ex);
+      }).length;
+
+      var tile = el('button.mtile' + (filter === m.id ? '.is-active' : ''), { type: 'button' }, [
+        el('span.mtile__name', { text: m.name }),
+        el('span.mtile__sub', { text: available + ' Gerät' + (available === 1 ? '' : 'e') }),
+        el('span.mtile__bar', null, [
+          el('i', { style: 'width:' + (data.fatigue * 100).toFixed(0) + '%' })
+        ])
+      ]);
+
+      if (m.id === weakest.id) tile.classList.add('is-weak');
+
+      util.onTap(tile, function () {
+        filter = m.id;
+        MF.ui.router.refresh('gym');
+      });
+      grid.appendChild(tile);
+    });
+
+    return grid;
+  }
+
+  /* ---------- Geräte der gewählten Partie --------------------------------- */
+
+  function exerciseRow(ex) {
+    var s = state();
+    var unlocked = MF.game.training.isUnlocked(ex);
+    var check = MF.game.training.canTrain(ex, weightIndex);
+    var cost = MF.game.training.energyCost(ex, weightIndex);
+
+    var row = el('button.exrow', { type: 'button' });
+    if (!unlocked) row.classList.add('is-locked');
+    else if (!check.ok) row.classList.add('is-blocked');
+
+    row.appendChild(el('span.exrow__icon', { text: ex.icon }));
+    row.appendChild(el('span.exrow__body', null, [
+      el('span.exrow__name', { text: ex.name }),
+      el('span.exrow__meta', {
+        text: unlocked
+          ? '⚡ ' + cost + ' · ' + ex.reps + ' Reps'
+          : 'gesperrt'
+      })
+    ]));
+
+    if (unlocked) {
+      row.appendChild(difficultyDots(ex));
+      row.appendChild(el('span.exrow__go', { text: '▶' }));
+    } else {
+      row.appendChild(el('span.exrow__lock', { text: 'Lv ' + ex.unlockLevel }));
+    }
+
+    util.onTap(row, function () {
+      if (!unlocked) {
+        MF.ui.toast.show(ex.name + ' gibt es ab Level ' + ex.unlockLevel + '.', 'warn');
+        return;
+      }
+      if (!check.ok) {
+        MF.ui.toast.show(check.reason, 'warn');
+        return;
+      }
+      MF.ui.router.go('session', { exerciseId: ex.id, weightIndex: weightIndex });
+    });
+
+    return row;
+  }
+
+  function exerciseList() {
+    var list = MF.data.exercises.byMuscle(filter).slice();
+    list.sort(function (a, b) {
+      var ua = MF.game.training.isUnlocked(a) ? 0 : 1;
+      var ub = MF.game.training.isUnlocked(b) ? 0 : 1;
+      if (ua !== ub) return ua - ub;
+      return a.unlockLevel - b.unlockLevel;
+    });
+
+    var wrap = el('div.exlist');
+    list.forEach(function (ex) { wrap.appendChild(exerciseRow(ex)); });
+    return wrap;
+  }
+
+  /* ---------- Intensität und Tagesabschluss ------------------------------- */
+
   function intensityControl() {
-    var wrap = el('div.segmented', { id: 'gym-intensity' });
+    var wrap = el('div.segmented.segmented--compact', { id: 'gym-intensity' });
     MF.game.training.WEIGHTS.forEach(function (w, i) {
       var btn = el('button.segmented__btn' + (i === weightIndex ? '.is-active' : ''), {
         type: 'button', text: w.name
@@ -36,150 +134,56 @@
     return wrap;
   }
 
-  function muscleFilter() {
-    var row = el('div.chips');
-
-    var all = el('button.chip' + (filter === 'alle' ? '.is-active' : ''), {
-      type: 'button', text: 'Alle'
-    });
-    util.onTap(all, function () { filter = 'alle'; MF.ui.router.refresh('gym'); });
-    row.appendChild(all);
-
-    MF.data.muscles.list.forEach(function (m) {
-      var data = state().muscles[m.id];
-      var chip = el('button.chip' + (filter === m.id ? '.is-active' : ''), { type: 'button' }, [
-        el('span', { text: m.name }),
-        el('span.chip__fatigue', null, [
-          el('i', { style: 'width:' + (data.fatigue * 100).toFixed(0) + '%' })
-        ])
-      ]);
-      util.onTap(chip, function () { filter = m.id; MF.ui.router.refresh('gym'); });
-      row.appendChild(chip);
-    });
-
-    return row;
-  }
-
-  function exerciseCard(ex) {
-    var s = state();
-    var muscle = MF.data.muscles.get(ex.muscle);
-    var data = s.muscles[ex.muscle];
-    var unlocked = MF.game.training.isUnlocked(ex);
-    var check = MF.game.training.canTrain(ex, weightIndex);
-    var cost = MF.game.training.energyCost(ex, weightIndex);
-
-    var card = el('article.card' + (unlocked ? '' : '.card--locked'));
-
-    var head = el('div.card__head', null, [
-      el('div.card__icon', { text: ex.icon }),
-      el('div.card__titles', null, [
-        el('h3.card__title', { text: ex.name }),
-        el('div.card__muscle', { text: muscle.name })
-      ]),
-      unlocked ? difficultyDots(ex) : el('div.card__lock', { text: 'Lv ' + ex.unlockLevel })
-    ]);
-    card.appendChild(head);
-
-    if (unlocked) {
-      card.appendChild(el('p.card__desc', { text: ex.desc }));
-
-      card.appendChild(el('div.card__meta', null, [
-        el('span.tag', { text: '⚡ ' + cost }),
-        el('span.tag', { text: '↻ ' + ex.reps + ' Reps' }),
-        el('span.tag', { text: '💪 ' + Math.round(ex.stimulus * MF.game.training.weightAt(weightIndex).stim) + ' Reiz' })
-      ]));
-
-      var fatiguePct = Math.round(data.fatigue * 100);
-      card.appendChild(el('div.card__fatigue', null, [
-        el('span.card__fatigue-label', { text: 'Ermüdung ' + muscle.name + ': ' + fatiguePct + '%' }),
-        el('div.bar.bar--fatigue', null, [
-          el('div.bar__fill', { style: 'width:' + fatiguePct + '%' })
-        ])
-      ]));
-
-      var btn = el('button.btn.btn--primary.card__action', {
-        type: 'button',
-        text: check.ok ? 'Satz starten' : check.reason
-      });
-      if (!check.ok) btn.classList.add('is-disabled');
-      util.onTap(btn, function () {
-        if (!check.ok) {
-          MF.ui.toast.show(check.reason, 'warn');
-          return;
-        }
-        MF.ui.router.go('session', { exerciseId: ex.id, weightIndex: weightIndex });
-      });
-      card.appendChild(btn);
-    } else {
-      card.appendChild(el('p.card__desc', {
-        text: 'Wird ab Level ' + ex.unlockLevel + ' freigeschaltet.'
-      }));
-    }
-
-    return card;
-  }
-
-  function sleepPanel() {
+  function footer() {
     var s = state();
     var sets = MF.game.day.setsToday();
     var ratio = s.energy / MF.game.stats.energyMax();
 
-    var panel = el('section.sleep' + (ratio < 0.2 ? '.sleep--urgent' : ''));
-    panel.appendChild(el('div.sleep__info', null, [
-      el('strong', { text: 'Tag ' + s.day + ' beenden' }),
+    var bar = el('div.gymfoot' + (ratio < 0.2 ? '.gymfoot--urgent' : ''));
+    bar.appendChild(el('div.gymfoot__info', null, [
+      el('strong', { text: 'Tag ' + s.day }),
       el('span', {
-        text: sets === 0
-          ? 'Heute noch kein Satz — ohne Reiz kein Wachstum.'
-          : sets + ' Sätze trainiert. Gewachsen wird im Schlaf.'
+        text: sets === 0 ? 'noch kein Satz' : sets + ' Sätze heute'
       })
     ]));
 
-    var btn = el('button.btn.btn--sleep', { type: 'button', text: '🛌 Schlafen' });
+    var btn = el('button.btn.btn--sleep.btn--slim', { type: 'button', text: '🛌 Schlafen' });
     util.onTap(btn, function () {
       MF.core.haptics.buzz('sleep');
-      var report = MF.game.day.sleep();
-      MF.ui.report.show(report);
+      MF.ui.report.show(MF.game.day.sleep());
     });
-    panel.appendChild(btn);
-    return panel;
+    bar.appendChild(btn);
+    return bar;
   }
+
+  /* ---------- Aufbau ------------------------------------------------------ */
 
   function render(container) {
     util.clear(container);
+    var muscle = MF.data.muscles.get(filter);
+    var data = state().muscles[filter];
 
-    /* Blick in die Halle — hier trainieren andere weiter, während du wählst. */
-    var hall = el('div.hall');
-    container.appendChild(hall);
-    MF.ui.scene.mountAmbient(hall);
+    /* Blick in die Halle — nur wenn genug Platz da ist. Auf kurzen Displays
+       hat die Geräteauswahl Vorrang; dann wird auch nichts gezeichnet. */
+    MF.ui.scene.stopAmbient();
+    if (window.innerHeight >= 700) {
+      var hall = el('div.hall');
+      container.appendChild(hall);
+      MF.ui.scene.mountAmbient(hall);
+    }
 
-    container.appendChild(el('div.section-title', { text: 'Intensität' }));
+    container.appendChild(muscleGrid());
+
+    container.appendChild(el('div.exhead', null, [
+      el('span.exhead__title', { text: muscle.name }),
+      el('span.exhead__note', {
+        text: 'Ermüdung ' + Math.round(data.fatigue * 100) + '%'
+      })
+    ]));
+
+    container.appendChild(exerciseList());
     container.appendChild(intensityControl());
-    container.appendChild(el('p.hint', {
-      text: MF.game.training.weightAt(weightIndex).name === 'Brutal'
-        ? 'Maximaler Reiz — der Marker rast und die Zone ist winzig.'
-        : 'Mehr Gewicht bringt mehr Reiz, macht das Timing aber schwerer.'
-    }));
-
-    container.appendChild(el('div.section-title', { text: 'Muskelgruppe' }));
-    container.appendChild(muscleFilter());
-
-    var list = MF.data.exercises.list.filter(function (ex) {
-      return filter === 'alle' || ex.muscle === filter;
-    });
-
-    /* Freigeschaltetes zuerst, danach die Vorschau auf spaeteres. */
-    list.sort(function (a, b) {
-      var ua = MF.game.training.isUnlocked(a) ? 0 : 1;
-      var ub = MF.game.training.isUnlocked(b) ? 0 : 1;
-      if (ua !== ub) return ua - ub;
-      return a.unlockLevel - b.unlockLevel;
-    });
-
-    var grid = el('div.grid');
-    list.forEach(function (ex) { grid.appendChild(exerciseCard(ex)); });
-    container.appendChild(grid);
-
-    container.appendChild(sleepPanel());
+    container.appendChild(footer());
   }
 
   MF.ui.router.register('gym', {
@@ -189,6 +193,6 @@
     leave: function () { MF.ui.scene.stopAmbient(); }
   });
 
-  /* Der Satz-Screen braucht die zuletzt gewaehlte Intensitaet. */
+  /* Der Satz-Screen braucht die zuletzt gewählte Intensität. */
   MF.ui.gym = { weight: function () { return weightIndex; } };
 })(window.MacFit);

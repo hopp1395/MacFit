@@ -115,53 +115,6 @@
   color: #1c0d02;
 }
 
-.chips {
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.chips::-webkit-scrollbar { display: none; }
-
-.chip {
-  flex: 0 0 auto;
-  min-height: 40px;
-  padding: 6px 13px;
-  border-radius: 999px;
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-dim);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-
-.chip.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #1c0d02;
-}
-
-.chip__fatigue {
-  display: block;
-  width: 100%;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, .14);
-  overflow: hidden;
-}
-
-.chip__fatigue i {
-  display: block;
-  height: 100%;
-  background: var(--bad);
-}
-
 /* ---------- Balken -------------------------------------------------------- */
 
 .bar {
@@ -322,17 +275,6 @@
 .tag--good { background: rgba(62, 207, 122, .14); color: var(--good); }
 .tag--bad { background: rgba(255, 84, 112, .14); color: var(--bad); }
 
-.card__fatigue {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.card__fatigue-label {
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
 .card__action { margin-top: 2px; }
 
 .dots {
@@ -349,39 +291,6 @@
 }
 
 .dot.is-on { background: var(--accent); }
-
-/* ---------- Schlafen ------------------------------------------------------ */
-
-.sleep {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: var(--pad);
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, #1c2436, #171d29);
-  border: 1px solid var(--line);
-  margin-top: 4px;
-}
-
-.sleep--urgent {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(255, 122, 41, .25);
-}
-
-.sleep__info {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 12.5px;
-  color: var(--text-dim);
-  min-width: 0;
-}
-
-.sleep__info strong {
-  font-size: 14px;
-  color: var(--text);
-}
 
 /* ---------- Trainingssatz ------------------------------------------------- */
 
@@ -606,11 +515,215 @@
 
 /* Blick in die Halle über der Geräteliste */
 .hall {
+  flex: 0 0 auto;
   border: 2px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   line-height: 0;
   background: var(--bg-card);
+}
+
+/* ---------- Gym: Muskelgruppen als Kacheln -------------------------------- */
+
+.mgrid {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.mtile {
+  position: relative;
+  min-height: 44px;
+  padding: 5px 3px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: background .12s, border-color .12s;
+}
+
+.mtile__name {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.mtile__sub {
+  font-size: 9px;
+  color: var(--text-faint);
+}
+
+.mtile__bar {
+  width: 74%;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .12);
+  overflow: hidden;
+}
+
+.mtile__bar i {
+  display: block;
+  height: 100%;
+  background: var(--bad);
+}
+
+.mtile.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.mtile.is-active .mtile__name { color: #1c0d02; }
+.mtile.is-active .mtile__sub { color: rgba(28, 13, 2, .7); }
+.mtile.is-active .mtile__bar { background: rgba(28, 13, 2, .25); }
+
+/* Die schwächste Partie bekommt einen Punkt — sanfter Hinweis, kein Zwang. */
+.mtile.is-weak::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+/* ---------- Gym: Geräteliste ---------------------------------------------- */
+
+.exhead {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.exhead__title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.exhead__note {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.exlist {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.exrow {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  text-align: left;
+  transition: transform .08s, border-color .12s;
+}
+
+.exrow:active { transform: scale(.99); border-color: var(--accent); }
+
+.exrow__icon {
+  flex: 0 0 auto;
+  font-size: 20px;
+  width: 26px;
+  text-align: center;
+}
+
+.exrow__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.exrow__name {
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exrow__meta {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.exrow__go {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.exrow__lock {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-faint);
+}
+
+.exrow.is-locked { opacity: .45; }
+.exrow.is-blocked { opacity: .6; }
+.exrow.is-blocked .exrow__go { color: var(--text-faint); }
+
+.exrow .dots { flex: 0 0 auto; }
+
+/* ---------- Gym: Fußzeile -------------------------------------------------- */
+
+.segmented--compact { padding: 3px; flex: 0 0 auto; }
+.segmented--compact .segmented__btn { min-height: 34px; font-size: 12.5px; }
+
+.gymfoot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+
+.gymfoot--urgent { border-color: var(--accent); }
+
+.gymfoot__info {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.gymfoot__info strong { font-size: 13px; }
+.gymfoot__info span { font-size: 11px; color: var(--text-faint); }
+
+.btn--slim {
+  width: auto;
+  min-height: 40px;
+  padding: 8px 16px;
+  font-size: 14px;
 }
 
 /* ---------- Ergebnis eines Satzes ---------------------------------------- */

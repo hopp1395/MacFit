@@ -31,6 +31,9 @@
     px.rect(ctx, 0, horizon + 2, w, 2, C.floor);
     px.dither(ctx, 0, horizon + 4, w, h - horizon - 4, C.floor, 3);
 
+    /* Im flachen Band ist für Wandinventar kein Platz. */
+    if (horizon < 50) return;
+
     /* Spiegel */
     var mw = Math.round(w * 0.30);
     px.rect(ctx, 8, horizon - 46, mw, 40, C.ink);
@@ -203,16 +206,18 @@
 
   function mountAmbient(container) {
     stopAmbient();
-    var surface = px.create(container, 320, 104, 'pix--ambient');
+    /* Flaches, breites Band — es soll Atmosphäre liefern, nicht Platz fressen. */
+    var W = 360, H = 62;
+    var surface = px.create(container, W, H, 'pix--ambient');
     var ctx = surface.ctx;
     if (!ctx) return null;
 
-    var horizon = 64;
+    var horizon = 24;
     var extras = pickExtras(null, [
-      { cx: 44, floorY: 98, scale: 0.58, alpha: 1 },
-      { cx: 138, floorY: 92, scale: 0.50, alpha: 0.9 },
-      { cx: 226, floorY: 86, scale: 0.42, alpha: 0.8 },
-      { cx: 296, floorY: 80, scale: 0.36, alpha: 0.7 }
+      { cx: 46, floorY: 60, scale: 0.42, alpha: 1 },
+      { cx: 148, floorY: 57, scale: 0.36, alpha: 0.9 },
+      { cx: 244, floorY: 54, scale: 0.31, alpha: 0.78 },
+      { cx: 322, floorY: 51, scale: 0.26, alpha: 0.65 }
     ]);
 
     var time = 0;
@@ -224,7 +229,7 @@
       if (since < 1 / 15) return;
       since = 0;
       surface.clear();
-      backdrop(ctx, 320, 104, horizon);
+      backdrop(ctx, W, H, horizon);
       drawExtras(ctx, extras, time);
       surface.present();
     });
