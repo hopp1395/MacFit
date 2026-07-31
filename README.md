@@ -49,9 +49,13 @@ Mehr Intensität bringt mehr Reiz, macht das Timing aber härter.
 
 Dazu **Geräusche im Stil von Amiga 500 und C64**: Rechteckwellen statt Sinustönen, harte
 Hüllkurven, Tonhöhen, die in Rastern springen statt zu gleiten, und der ganze Effektweg
-durch ein 4-Bit-Raster. Gewicht auflegen klirrt, eine saubere Wiederholung antwortet mit
-einem SID-Arpeggio nach oben, eine verrissene mit einem Ton, der stufenweise abstürzt.
-Satzende und Levelaufstieg bekommen die Fanfare, die damals hinter jedem Level stand.
+durch ein 4-Bit-Raster.
+
+Der Satz klingt nach Arbeit: Gewicht auflegen klirrt, vor jeder Wiederholung wird tief Luft
+geholt, beim Drücken kommt ein Grunzen. Sauber ist es kurz und fest, unsauber tiefer und
+ohne Druck, verrissen ein Ächzen, das absackt. Die Stimme ist ein Sägezahn durch zwei
+Formantfilter — mehr braucht ein Vokal nicht. Satzende und Levelaufstieg bekommen die
+Fanfare, die damals hinter jedem Level stand, dazu einmal ausatmen.
 
 Dieselben Geräusche liegen auch auf dem Rest: Motor und Reifen im Vorspann, Autotür,
 Schiebetür des Studios, Kasse beim Einkauf im Shop und eine absteigende Tonfolge beim

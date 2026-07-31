@@ -386,49 +386,118 @@
     o.start(at); o.stop(at + dur + 0.02);
   }
 
+  /* Stimme. Mehr als zwei Resonanzen an der richtigen Stelle braucht ein
+     Vokal nicht: ein Saegezahn durch zwei Formantfilter, und aus dem Summen
+     wird ein "uh". path sind Halbtonwerte, die der Ton nacheinander annimmt —
+     erst hoch, dann runter, das ist die Kontur eines Grunzens.
+
+     Auf dem Amiga waere so etwas ein Sample von der Diskette gewesen. Hier ist
+     es gerechnet, bekommt durch das 4-Bit-Raster am Ende aber dieselbe
+     koernige Kante. */
+  function voice(at, path, dur, vol, f1, f2, rasp) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.03);
+    g.gain.setValueAtTime(vol, at + dur * 0.55);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    g.connect(sfxBus);
+
+    var o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    var steps = Math.max(2, Math.round(dur / 0.025));
+    for (var i = 0; i < steps; i++) {
+      var u = (i / (steps - 1)) * (path.length - 1);
+      var lo = Math.floor(u);
+      var hi = Math.min(path.length - 1, lo + 1);
+      var m = path[lo] + (path[hi] - path[lo]) * (u - lo);
+      o.frequency.setValueAtTime(hz(Math.round(m)), at + i * (dur / steps));
+    }
+
+    var fs = [f1, f2];
+    for (var k = 0; k < 2; k++) {
+      var bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = fs[k];
+      bp.Q.value = 4;
+      var fg = ctx.createGain();
+      fg.gain.value = k ? 3.2 : 5;      /* der schmale Filter frisst viel weg */
+      o.connect(bp); bp.connect(fg); fg.connect(g);
+    }
+    o.start(at); o.stop(at + dur + 0.02);
+
+    /* Atem: Luft, die mit durch die Kehle geht. */
+    if (rasp) {
+      var src = ctx.createBufferSource();
+      src.buffer = noise();
+      src.loop = true;
+      var bp2 = ctx.createBiquadFilter();
+      bp2.type = 'bandpass';
+      bp2.frequency.value = 1500;
+      bp2.Q.value = 0.9;
+      var ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.0001, at);
+      ng.gain.exponentialRampToValueAtTime(rasp, at + dur * 0.3);
+      ng.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+      src.connect(bp2); bp2.connect(ng); ng.connect(sfxBus);
+      src.start(at); src.stop(at + dur + 0.02);
+    }
+  }
+
   var SFX = {
-    /* Griff ans Gewicht: Scheibe klirrt, Rahmen wummert. */
+    /* Griff ans Gewicht: Scheibe klirrt, Rahmen wummert, dazu Luft holen. */
     rack: function (at) {
-      clank(at, 2400, 0.07, 0.34);
-      clank(at + 0.05, 1500, 0.12, 0.2);
-      slide(at, 45, 33, 0.14, 0.22, 'triangle');
+      clank(at, 2400, 0.07, 0.6);
+      clank(at + 0.05, 1500, 0.12, 0.36);
+      slide(at, 45, 33, 0.14, 0.4, 'triangle');
+      SFX.breath(at + 0.16);
     },
-    /* Saubere Wiederholung: Akkord nach oben, dazu das Klacken des Gewichts. */
+
+    /* Tief Luft holen. Kommt vor jeder Wiederholung, muss also leise genug
+       sein, dass zehn davon im Satz nicht zum Dauerzischen werden. */
+    breath: function (at) {
+      sweep(at, 420, 1700, 0.34, 3.4, 1.1);
+    },
+
+    /* Saubere Wiederholung: ein kurzes, festes Grunzen aus dem Bauch, dazu
+       das Klacken des Gewichts. Der kleine helle Ton bleibt — im Timing-Spiel
+       muss man hoeren, ob es gesessen hat, und ein Grunzen allein sagt das
+       nicht deutlich genug. */
     perfect: function (at) {
-      clank(at, 2000, 0.05, 0.3);
-      sidArp(at + 0.01, [72, 76, 79, 84], 0.18, 0.2);
-      chip(at + 0.19, hz(84), 0.11, 'square', 0.16);
+      clank(at, 2000, 0.05, 0.26);
+      voice(at + 0.01, [43, 48, 46, 40], 0.28, 0.3, 720, 1150, 0.1);
+      chip(at + 0.03, hz(84), 0.06, 'square', 0.07);
     },
-    /* Unsauber: zwei Stufen, dumpfer, kein Glanz oben drauf. */
+    /* Unsauber: dasselbe Grunzen, tiefer und ohne Druck dahinter. */
     ok: function (at) {
-      clank(at, 1400, 0.05, 0.22);
-      sidArp(at + 0.01, [67, 72], 0.12, 0.17, 0.03);
+      clank(at, 1400, 0.05, 0.2);
+      voice(at + 0.01, [41, 44, 41, 37], 0.26, 0.24, 620, 980, 0.12);
     },
-    /* Verrissen: Tonhoehe faellt in Stufen, dazu ein Scheppern. */
+    /* Verrissen: ein Aechzen, das absackt — Luft raus, Gewicht scheppert. */
     miss: function (at) {
-      slide(at, 62, 38, 0.26, 0.24, 'sawtooth');
+      voice(at, [46, 41, 34], 0.44, 0.26, 480, 1320, 0.2);
       clank(at + 0.02, 700, 0.22, 0.24);
     },
     /* Satz geschafft: die Fanfare, die auf dem C64 hinter jedem Level stand. */
     done: function (at) {
-      sidArp(at, [60, 64, 67], 0.12, 0.2, 0.025);
-      sidArp(at + 0.12, [64, 67, 72], 0.12, 0.2, 0.025);
-      sidArp(at + 0.24, [67, 72, 76], 0.34, 0.22, 0.025);
+      sidArp(at, [60, 64, 67], 0.12, 0.28, 0.025);
+      sidArp(at + 0.12, [64, 67, 72], 0.12, 0.28, 0.025);
+      sidArp(at + 0.24, [67, 72, 76], 0.34, 0.3, 0.025);
       clank(at + 0.24, 3000, 0.1, 0.2);
+      sweep(at + 0.5, 1700, 420, 0.5, 2.0, 1.1);   /* ausatmen, geschafft */
     },
     /* Aufstieg: laenger, eine Stufe hoeher, mit Nachschlag. */
     level: function (at) {
-      sidArp(at, [60, 64, 67, 72], 0.24, 0.2, 0.025);
-      sidArp(at + 0.24, [64, 67, 72, 76], 0.24, 0.2, 0.025);
-      sidArp(at + 0.48, [67, 72, 76, 79], 0.55, 0.24, 0.02);
+      sidArp(at, [60, 64, 67, 72], 0.24, 0.26, 0.025);
+      sidArp(at + 0.24, [64, 67, 72, 76], 0.24, 0.26, 0.025);
+      sidArp(at + 0.48, [67, 72, 76, 79], 0.55, 0.3, 0.02);
       chip(at + 0.48, hz(84), 0.5, 'square', 0.1, 3000);
     },
 
     /* Kasse: zwei Toene hoch, kurz und hell. Der Klang, den damals jedes
        Aufsammeln hatte. */
     coin: function (at) {
-      chip(at, hz(84), 0.05, 'square', 0.15);
-      chip(at + 0.05, hz(91), 0.14, 'square', 0.15);
+      chip(at, hz(84), 0.05, 'square', 0.26);
+      chip(at + 0.05, hz(91), 0.14, 'square', 0.26);
     },
 
     /* Feierabend: drei Toene abwaerts, gedaempft — das Gegenstueck zur
@@ -459,7 +528,7 @@
        Streifen durch, der Ausgang liegt weit unter dem Eingang. Mit kleineren
        Werten bleibt unter der Titelmusik nichts davon uebrig. */
     gymDoor: function (at) {
-      sweep(at, 900, 2600, 0.42, 1.5, 1);
+      sweep(at, 900, 2600, 0.42, 2.2, 1);
     }
   };
 

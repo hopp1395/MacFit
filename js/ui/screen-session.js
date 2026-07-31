@@ -151,6 +151,10 @@
     nodes.ok.style.width = (okWidth * 100).toFixed(2) + '%';
 
     nodes.rep.textContent = 'Rep ' + (run.repIndex + 1) + '/' + run.ex.reps;
+
+    /* Vor jeder Wiederholung Luft holen. Beim ersten Mal steckt das schon im
+       Griff ans Gewicht, sonst atmet er zweimal hintereinander ein. */
+    if (run.repIndex > 0) MF.core.audio.sfx('breath');
   }
 
   function frame(dt) {
