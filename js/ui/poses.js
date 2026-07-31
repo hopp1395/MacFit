@@ -59,21 +59,36 @@
     return out;
   }
 
-  /* Halbe Breiten, aus denselben Formeln wie der Avatar, nur größer gerechnet:
-     die Figur hier ist rund ein Drittel höher. */
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  /* Maße aus denselben Formeln wie der Avatar, nur größer gerechnet: die Figur
+     hier ist rund ein Drittel höher.
+
+     Die Namen sagen jetzt, was gemeint ist. Vorher hieß alles nur "breit", und
+     die Hose rechnete mit halben, der Rumpf mit ganzen Breiten — die Hüfte kam
+     dadurch doppelt so breit heraus wie gewollt.
+       *Span / *Half / *R   halbe Maße ab der Mittelachse
+       *W                   Strichstärken für Gliedmaßen */
   function widths(pose) {
     var m = MF.game.state.get().muscles;
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
     var k = 1.35;
+
+    var waistHalf = (7 + f('bauch') * 2.5) * k * 0.5;
+    var thighW = (7 + f('beine') * 6) * k;
+
     return {
-      shoulder: (9 + f('schultern') * 8) * k,
-      chest: (5 + f('brust') * 5) * k,
-      waist: (7 + f('bauch') * 4) * k,
-      arm: (4 + f('bizeps') * 5) * k * (pose.flex || 1),
-      fore: (3.5 + f('trizeps') * 3) * k,
-      thigh: (7 + f('beine') * 6) * k,
-      calf: (5 + f('waden') * 4) * k,
-      back: (11 + f('ruecken') * 9) * k * (pose.lat || 1),
+      shoulderSpan: (9 + f('schultern') * 8) * k,
+      /* Der Latissimus wächst kräftiger als die Taille — daraus entsteht die
+         V-Form. Beide Werte sind halbe Breiten. */
+      latHalf: (9 + f('ruecken') * 11) * k * 0.5 * (pose.lat || 1),
+      waistHalf: waistHalf,
+      hipHalf: waistHalf + thighW * 0.30,
+      chestR: (5 + f('brust') * 5) * k,
+      armW: (4 + f('bizeps') * 5) * k * (pose.flex || 1),
+      foreW: (3.5 + f('trizeps') * 3) * k,
+      thighW: thighW,
+      calfW: (5 + f('waden') * 4) * k,
       abs: f('bauch')
     };
   }
@@ -87,18 +102,55 @@
       side = i ? 1 : -1;
       out.arms.push({
         side: side,
-        shoulder: [CX + side * w.shoulder, sy],
-        elbow: [CX + side * (w.shoulder + pose.elbow[0]), sy + pose.elbow[1]],
+        shoulder: [CX + side * w.shoulderSpan, sy],
+        elbow: [CX + side * (w.shoulderSpan + pose.elbow[0]), sy + pose.elbow[1]],
         hand: [CX + side * pose.hand[0], sy + pose.hand[1]]
       });
       out.legs.push({
         side: side,
-        hip: [CX + side * w.waist * 0.55, HIP],
+        hip: [CX + side * w.hipHalf, HIP],
         knee: [CX + side * pose.stance * 0.62, KNEE],
         foot: [CX + side * pose.stance, FOOT]
       });
     }
     return out;
+  }
+
+  /* Halbe Rumpfbreite auf Höhe u (0 = Achselhöhe, 1 = Taille).
+
+     Der Latissimus setzt direkt unter der Achsel an, ist dort am breitesten
+     und läuft keilförmig zur Taille aus. Eine gleichmäßig breite Kapsel wie
+     vorher ergibt dagegen eine Tonne mit runden Enden — und die liest sich als
+     zwei Beulen statt als Rücken. */
+  function torsoW(w, u) {
+    if (u < 0.14) return lerp(w.latHalf * 0.86, w.latHalf, u / 0.14);
+    return lerp(w.latHalf, w.waistHalf, (u - 0.14) / 0.86);
+  }
+
+  /* Trapezmuskel: die Schräge vom Hals zur Schulter. Ohne sie hat der Rumpf
+     oben eine waagerechte Kante und sieht aus wie ein Kasten. */
+  function traps(ctx, sy, w, color, extra) {
+    var e = extra || 0;
+    for (var i = 0; i < 2; i++) {
+      var side = i ? 1 : -1;
+      px.capsule(ctx,
+        [CX + side * 3, sy - 9],
+        [CX + side * w.shoulderSpan * 0.88, sy + 1],
+        9 + e, color);
+    }
+  }
+
+  /* Als Stapel waagerechter Kapseln — anders lässt sich mit den vorhandenen
+     Grundformen keine sich verjüngende Fläche zeichnen. */
+  function torso(ctx, sy, w, color, extra) {
+    var y0 = sy - 2, y1 = HIP + 2;
+    var N = 13, h = (y1 - y0) / N, i, u, hw, y;
+    for (i = 0; i < N; i++) {
+      u = i / (N - 1);
+      hw = torsoW(w, u) + (extra || 0);
+      y = y0 + i * h;
+      px.capsule(ctx, [CX - hw, y], [CX + hw, y], h + 1.6 + (extra || 0) * 2, color);
+    }
   }
 
   /* opts: { shorts } */
@@ -118,48 +170,48 @@
 
     /* Flacher Bodenschatten. Eine Scheibe wäre hier eine Kugel und würde bis
        an die Knie reichen — eine liegende Kapsel ist die flache Ellipse. */
-    px.capsule(ctx, [CX - w.thigh * 1.7, FOOT + 3], [CX + w.thigh * 1.7, FOOT + 3],
+    px.capsule(ctx, [CX - w.thighW * 1.7, FOOT + 3], [CX + w.thighW * 1.7, FOOT + 3],
       8, C.wallDark);
 
     /* 1. Kontur — erst alles in Fast-Schwarz, ergibt eine saubere Silhouette. */
     for (i = 0; i < 2; i++) {
       l = j.legs[i];
-      px.capsule(ctx, l.hip, l.knee, w.thigh + 2, C.ink);
-      px.capsule(ctx, l.knee, l.foot, w.calf + 2, C.ink);
-      px.rect(ctx, l.foot[0] - w.calf * 0.9, FOOT - 1, w.calf * 1.8, 6, C.ink);
+      px.capsule(ctx, l.hip, l.knee, w.thighW + 2, C.ink);
+      px.capsule(ctx, l.knee, l.foot, w.calfW + 2, C.ink);
+      px.rect(ctx, l.foot[0] - w.calfW * 0.9, FOOT - 1, w.calfW * 1.8, 6, C.ink);
 
       a = j.arms[i];
-      px.capsule(ctx, a.shoulder, a.elbow, w.arm + 2, C.ink);
-      px.capsule(ctx, a.elbow, a.hand, w.fore + 2, C.ink);
-      px.disc(ctx, a.hand[0], a.hand[1], w.fore * 0.7 + 1.5, C.ink);
-      px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulder * 0.44 + 2, C.ink);
+      px.capsule(ctx, a.shoulder, a.elbow, w.armW + 2, C.ink);
+      px.capsule(ctx, a.elbow, a.hand, w.foreW + 2, C.ink);
+      px.disc(ctx, a.hand[0], a.hand[1], w.foreW * 0.7 + 1.5, C.ink);
+      px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulderSpan * 0.44 + 2, C.ink);
     }
-    px.capsule(ctx, [CX, sy], [CX, HIP - 2], w.back + 2, C.ink);
+    torso(ctx, sy, w, C.ink, 1.4);
+    traps(ctx, sy, w, C.ink, 2);
+    px.capsule(ctx, [CX, HEAD + 6], [CX, sy], 12, C.ink);          /* Hals */
     px.disc(ctx, CX, HEAD, HEAD_R + 1.5, C.ink);
 
     /* 2. Flächen */
     for (i = 0; i < 2; i++) {
       l = j.legs[i];
-      px.capsule(ctx, l.hip, l.knee, w.thigh, skin);
-      px.capsule(ctx, l.knee, l.foot, w.calf, skin);
-      px.rect(ctx, l.foot[0] - w.calf * 0.9, FOOT - 1, w.calf * 1.8, 5, C.shadow);
+      px.capsule(ctx, l.hip, l.knee, w.thighW, skin);
+      px.capsule(ctx, l.knee, l.foot, w.calfW, skin);
+      px.rect(ctx, l.foot[0] - w.calfW * 0.9, FOOT - 1, w.calfW * 1.8, 5, C.shadow);
     }
 
-    px.capsule(ctx, [CX, sy], [CX, HIP - 2], w.back, skin);
-    /* Die Taille schmaler als der Brustkorb — das macht die V-Form. */
-    px.capsule(ctx, [CX, HIP - 22], [CX, HIP - 2], w.waist, skin);
+    /* Hals vor dem Rumpf, sonst steht sein unteres Ende als dunkler Fleck
+       mitten auf der Brust. */
+    px.capsule(ctx, [CX, HEAD + 7], [CX, sy - 2], 9, skinDark);
+    torso(ctx, sy, w, skin);
+    traps(ctx, sy, w, skin);
 
     for (i = 0; i < 2; i++) {
       a = j.arms[i];
-      px.capsule(ctx, a.shoulder, a.elbow, w.arm, skin);
-      px.capsule(ctx, a.elbow, a.hand, w.fore, skin);
-      px.disc(ctx, a.hand[0], a.hand[1], w.fore * 0.7, skin);
-      px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulder * 0.44, skin);
+      px.capsule(ctx, a.shoulder, a.elbow, w.armW, skin);
+      px.capsule(ctx, a.elbow, a.hand, w.foreW, skin);
+      px.disc(ctx, a.hand[0], a.hand[1], w.foreW * 0.7, skin);
+      px.disc(ctx, a.shoulder[0], a.shoulder[1], w.shoulderSpan * 0.44, skin);
     }
-
-    /* Brust */
-    px.disc(ctx, CX - w.chest * 0.9, sy + 15, w.chest, skin);
-    px.disc(ctx, CX + w.chest * 0.9, sy + 15, w.chest, skin);
 
     /* Kopf mit flachem Haarschnitt */
     px.disc(ctx, CX, HEAD, HEAD_R, skin);
@@ -167,46 +219,70 @@
     px.rect(ctx, CX - 5, HEAD, 2, 3, C.ink);
     px.rect(ctx, CX + 3, HEAD, 2, 3, C.ink);
 
-    /* Hose in der gewählten Farbe */
+    /* Hose in der gewählten Farbe. Breite aus der Hüfte, nicht aus der Taille —
+       sie muss die Oberschenkelansätze abdecken. */
     var shorts = o.shorts || C.jeans;
-    px.rect(ctx, CX - w.waist - 2, HIP - 7, (w.waist + 2) * 2, 18, C.ink);
-    px.rect(ctx, CX - w.waist - 1, HIP - 6, (w.waist + 1) * 2, 16, shorts);
+    var sw = w.hipHalf + w.thighW * 0.5;
+    px.rect(ctx, CX - sw - 1, HIP - 7, (sw + 1) * 2, 18, C.ink);
+    px.rect(ctx, CX - sw, HIP - 6, sw * 2, 16, shorts);
     px.rect(ctx, CX - 1.5, HIP - 6, 3, 16, C.ink);
 
     /* 3. Licht und Definition — erst hier wird aus der Silhouette ein Körper. */
     var edge = mix(skin, C.ink, 0.42);
-    px.capsule(ctx, [CX, sy + 6], [CX, HIP - 12], 2.5, edge);        /* Bauchrinne */
-    px.capsule(ctx, [CX - w.chest * 1.7, sy + 20], [CX - w.chest * 0.4, sy + 22], 2, edge);
-    px.capsule(ctx, [CX + w.chest * 0.4, sy + 22], [CX + w.chest * 1.7, sy + 20], 2, edge);
+
+    /* Die Latissimus-Kante: von der Achsel schräg zur Taille. Sie macht den
+       Keil sichtbar, den die Silhouette allein nur andeutet. */
+    for (i = 0; i < 2; i++) {
+      var s2 = i ? 1 : -1;
+      px.capsule(ctx,
+        [CX + s2 * (w.latHalf - 1.5), sy + 4],
+        [CX + s2 * (w.waistHalf - 0.5), HIP - 10],
+        2, edge);
+    }
+
+    /* Brust wird nur über ihre Kanten sichtbar: die Fläche hat denselben
+       Hautton wie der Rumpf. Als Scheibe gezeichnet wären es zwei Bälle. */
+    var deep = mix(skin, C.ink, 0.6);
+    for (i = 0; i < 2; i++) {
+      var s3 = i ? 1 : -1;
+      px.capsule(ctx,
+        [CX + s3 * w.chestR * 0.22, sy + 22],
+        [CX + s3 * w.chestR * 1.45, sy + 19],
+        2.5, deep);                                                  /* Unterkante */
+      px.capsule(ctx,
+        [CX + s3 * w.chestR * 0.55, sy + 9],
+        [CX + s3 * w.chestR * 1.25, sy + 11],
+        w.chestR * 0.55, skinLit);                                   /* Licht oben */
+    }
+    px.capsule(ctx, [CX, sy + 8], [CX, sy + 21], 2, deep);           /* Brustbein */
+    px.capsule(ctx, [CX, sy + 22], [CX, HIP - 12], 2.5, edge);       /* Bauchrinne */
 
     for (i = 0; i < 2; i++) {
       a = j.arms[i];
       /* Bizepsberg auf der Oberseite des Oberarms */
-      px.disc(ctx, (a.shoulder[0] + a.elbow[0]) / 2 - a.side * w.arm * 0.2,
-        (a.shoulder[1] + a.elbow[1]) / 2 - 1, w.arm * 0.46, skinLit);
-      px.disc(ctx, a.shoulder[0] - a.side * 1.5, a.shoulder[1] - 2, w.shoulder * 0.2, skinLit);
+      px.disc(ctx, (a.shoulder[0] + a.elbow[0]) / 2 - a.side * w.armW * 0.2,
+        (a.shoulder[1] + a.elbow[1]) / 2 - 1, w.armW * 0.46, skinLit);
+      px.disc(ctx, a.shoulder[0] - a.side * 1.5, a.shoulder[1] - 2, w.shoulderSpan * 0.2, skinLit);
       l = j.legs[i];
       px.capsule(ctx, [l.hip[0] - l.side * 1, l.hip[1] + 4],
-        [l.knee[0] - l.side * 1, l.knee[1] - 4], w.thigh * 0.28, skinLit);
-      px.capsule(ctx, [l.knee[0], l.knee[1] + 3], [l.foot[0], l.foot[1] - 8], w.calf * 0.3, skinLit);
+        [l.knee[0] - l.side * 1, l.knee[1] - 4], w.thighW * 0.28, skinLit);
+      px.capsule(ctx, [l.knee[0], l.knee[1] + 3], [l.foot[0], l.foot[1] - 8], w.calfW * 0.3, skinLit);
     }
 
-    px.disc(ctx, CX - w.chest * 0.9 - 1, sy + 13, w.chest * 0.4, skinLit);
-    px.disc(ctx, CX + w.chest * 0.9 - 1, sy + 13, w.chest * 0.4, skinLit);
 
     /* Bauchmuskeln zeichnen sich erst ab einer gewissen Größe ab. */
     if (w.abs > 0.26) {
       var rows = w.abs > 0.55 ? 3 : 2;
       for (var r = 0; r < rows; r++) {
-        px.rect(ctx, CX - 7, HIP - 26 + r * 6, 5, 3, edge);
-        px.rect(ctx, CX + 2, HIP - 26 + r * 6, 5, 3, edge);
+        px.rect(ctx, CX - 6, HIP - 24 + r * 6, 4, 2, edge);
+        px.rect(ctx, CX + 2, HIP - 24 + r * 6, 4, 2, edge);
       }
     }
 
     /* Fahler Teint verdient einen Hinweis — die Pose lügt sonst über den
        Zustand, den der Körper-Bildschirm anzeigt. */
     if (health < 45) {
-      px.dither(ctx, CX - w.back, sy, w.back * 2, HIP - sy, C.steel, 4);
+      px.dither(ctx, CX - w.latHalf, sy, w.latHalf * 2, HIP - sy, C.steel, 4);
     }
   }
 
