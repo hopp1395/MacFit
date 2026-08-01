@@ -76,7 +76,10 @@
          geschlossen — das sind die beiden Merkmale, an denen man die Pose
          erkennt. Ohne sie liest sich das Profil als Herumstehen. */
       side: {
-        head: [2, HEAD], shoulder: [-2, SHOULDER], hip: [1, HIP],
+        /* Kopf drei Punkte höher als in den Frontposen: im Profil braucht es
+           einen sichtbaren Hals zwischen Kinn und Rumpfkante — ein zwischen
+           die Schultern gesunkener Kopf liest sich als Buckel. */
+        head: [2, HEAD - 3], shoulder: [-2, SHOULDER], hip: [1, HIP],
         knee: [6, KNEE - 3], foot: [8, FOOT - 5], ball: 1,
         farKnee: [-2, KNEE], farFoot: [-3, FOOT],
         /* Beide Unterarme laufen auf denselben Punkt vor dem Bauch zu — die
@@ -103,7 +106,9 @@
       /* Beide Arme hinter dem Rücken, Hände im Kreuz geschlossen, naher Arm
          fast durchgestreckt — nur so steht der Trizeps im Profil heraus. */
       side: {
-        head: [2, HEAD], shoulder: [-1, SHOULDER], hip: [0, HIP],
+        /* Kopf höher wie bei der seitlichen Brust: sichtbarer Hals statt
+           zwischen die Schultern gesunkenem Kopf. */
+        head: [2, HEAD - 3], shoulder: [-1, SHOULDER], hip: [0, HIP],
         knee: [5, KNEE], foot: [8, FOOT], locked: 1,
         farKnee: [-3, KNEE], farFoot: [-4, FOOT],
         /* Der nahe Arm liegt AM Rücken an, nicht dahinter: nur die
@@ -599,19 +604,24 @@
 
   function profileTorso(ctx, d, backX, color, extra) {
     var y0 = SHOULDER - 3, y1 = HIP + 2;
-    var N = 12, h = (y1 - y0) / N, i, u, depth, e, y, bx;
+    var N = 12, h = (y1 - y0) / N, i, u, depth, e, y, bx, nape, blade;
     for (i = 0; i < N; i++) {
       u = i / (N - 1);
       /* Oben die Brust, darunter die Verjüngung zur Taille. */
       depth = u < 0.3
         ? lerp(d.chest * 0.9, d.chest, u / 0.3)
         : lerp(d.chest, d.waist, (u - 0.3) / 0.7);
-      /* Der Brustkorb steht auch nach hinten etwas über — sonst wirkt die
-         gehobene Brust wie ein angesetzter Buckel. */
-      bx = backX - lerp(1.5, 0, util.clamp(u / 0.45, 0, 1));
+      /* Die Rückenlinie zieht oben zur Halslinie ein und ist erst am
+         Schulterblatt am tiefsten. Vorher stand die OBERSTE Reihe am
+         weitesten hinten — die Silhouette sprang direkt unter dem
+         Haaransatz um mehrere Punkte nach hinten: der Buckel. Die
+         Vorderkante bleibt davon unberührt, die Brust sitzt weiter oben. */
+      nape = u < 0.22 ? lerp(4.5, 0, u / 0.22) : 0;
+      blade = u < 0.3 ? lerp(0, 1.5, u / 0.3) : lerp(1.5, 0, (u - 0.3) / 0.7);
+      bx = backX + nape - blade;
       e = extra || 0;
       y = y0 + i * h;
-      px.capsule(ctx, [bx - e, y], [bx + depth + e, y], h + 1.6 + e * 2, color);
+      px.capsule(ctx, [bx - e, y], [backX + depth + e, y], h + 1.6 + e * 2, color);
     }
   }
 
