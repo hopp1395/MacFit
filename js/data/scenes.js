@@ -286,8 +286,13 @@
       ],
       implement: 'none',
       hold: { hand: [100, 26] },
-      a: { elbow: [104, 44], shoulder: [100, 60], head: [100, 47], hip: [100, 86], knee: [110, 105], foot: [119, 113] },
-      b: { elbow: [90, 35], shoulder: [100, 43], head: [100, 30], hip: [100, 70], knee: [111, 89], foot: [120, 97] }
+      /* Beine im Knie 90 Grad gebeugt, Unterschenkel nach hinten — gestreckt
+         hingen die Fuesse fast am Boden. Das Knie steht bewusst deutlich vor:
+         bei fast senkrechtem Oberschenkel verschwaende der Knick in der
+         Strichstaerke. Der Winkel bleibt ueber die ganze Wiederholung gleich,
+         nur der Koerper hebt sich. */
+      a: { elbow: [104, 44], shoulder: [100, 60], head: [100, 47], hip: [100, 86], knee: [110, 104], foot: [100, 110] },
+      b: { elbow: [90, 35], shoulder: [100, 43], head: [100, 30], hip: [100, 70], knee: [111, 87], foot: [101, 93] }
     },
 
     hangingleg: {
