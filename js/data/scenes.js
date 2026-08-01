@@ -71,6 +71,25 @@
       b: { shoulder: [86, 77], elbow: [100, 76], hand: [88, 67] }
     },
 
+    decline: {
+      name: 'Negativbank', face: 1, supine: true,
+      equip: [
+        /* Die Lehne faellt zum Kopf hin ab, die Beine haken oben ueber der
+           Rolle ein — auf der Negativbank stehen die Fuesse nicht am Boden. */
+        { t: 'line', x1: 58, y1: 100, x2: 142, y2: 72, w: 11, c: '#2f3a4a' },
+        frameLine(70, 102, 66, FLOOR, 5),
+        frameLine(132, 80, 136, FLOOR, 5),
+        { t: 'circle', cx: 144, cy: 74, r: 4.5, c: '#3d4756' },
+        post(44, 48), frameLine(47, 54, 60, 54, 3)
+      ],
+      implement: 'barbell',
+      hold: { hip: [112, 77], knee: [134, 70], foot: [146, 80], head: [72, 86] },
+      /* Ellbogen wie auf den anderen Baenken fusswaerts, mid auf dem Bogen. */
+      a: { shoulder: [86, 84], elbow: [90, 69], hand: [87, 54] },
+      mid: { elbow: [99, 77] },
+      b: { shoulder: [86, 84], elbow: [100, 88], hand: [92, 75] }
+    },
+
     /* ---------- Sitzend, Maschine --------------------------------------- */
     latzug: {
       name: 'Latzug', face: 1,
@@ -335,6 +354,7 @@
     'hammer-curl': 'curl',
     'bankdruecken': 'bench',
     'schraegbank': 'incline',
+    'negativ-schraegbank': 'decline',
     'butterfly-pro': 'butterfly',
     'latzug': 'latzug',
     'rudern-kabel': 'row',

@@ -68,6 +68,10 @@
       unlockLevel: 6, energy: 18, reps: 10, stimulus: 22, speed: 0.78, zone: 0.19,
       desc: 'Bankdrücken für Fortgeschrittene, sagt der Typ an der Station.' },
 
+    { id: 'negativ-schraegbank', name: 'Negativ-Schrägbank', icon: '📉', muscle: 'brust',
+      unlockLevel: 6, energy: 20, reps: 10, stimulus: 24, speed: 0.76, zone: 0.20,
+      desc: 'Kopf nach unten, Hantel zur unteren Brust. Erst einhaken, dann drücken.' },
+
     { id: 'hammer-curl', name: 'Hammer-Curl', icon: '🔨', muscle: 'bizeps',
       unlockLevel: 6, energy: 14, reps: 12, stimulus: 20, speed: 0.80, zone: 0.19,
       desc: 'Brachialis mitnehmen — der Arm wird dicker, nicht nur höher.' },
