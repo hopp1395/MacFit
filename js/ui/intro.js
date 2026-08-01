@@ -668,7 +668,8 @@
     var box = el('div.cine', null, [
       stageEl,
       caption,
-      el('p.cine__skip', { text: 'Tippen zum Überspringen' })
+      el('p.cine__skip', { text: 'Tippen zum Überspringen' }),
+      el('p.cine__version', { text: 'v' + MF.version })
     ]);
     root.appendChild(box);
 

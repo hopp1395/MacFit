@@ -293,6 +293,15 @@ body[data-screen="session"] #hud {
   color: var(--text-faint);
 }
 
+.cine__version {
+  position: absolute;
+  top: calc(var(--safe-top) + 10px);
+  right: 14px;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--text-faint);
+}
+
 /* ---------- Breitere Displays -------------------------------------------- */
 
 @media (min-width: 560px) {
