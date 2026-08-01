@@ -7,7 +7,7 @@ window.MacFit = {
      bei kleinen Aenderungen: nur daran ist auf dem Geraet zu erkennen, ob
      GitHub Pages schon den neuen Stand ausliefert. Die ersten beiden Stellen
      bleiben spuerbaren Aenderungen vorbehalten. */
-  version: '1.1.10',
+  version: '1.1.11',
   core: {},
   data: {},
   game: {},

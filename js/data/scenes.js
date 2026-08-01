@@ -291,10 +291,12 @@
          Standszenen (Oberschenkel ~21, Unterschenkel ~22, Oberarm ~16.5,
          Unterarm ~18): die alte Pose war insgesamt gestaucht, oben schrumpfte
          der Arm zusaetzlich. Der Ellbogen laeuft ueber mid, weil die Hand an
-         der Stange fest ist und er sonst die Bahn schneidet. */
+         der Stange fest ist und er sonst die Bahn schneidet — und er beugt
+         nach VORN vor den Koerper: nach hinten hinter den Kopf kann die
+         Schulter nicht. */
       a: { elbow: [104, 44], shoulder: [100, 60], head: [100, 47], hip: [100, 86], knee: [106, 106], foot: [85, 112] },
-      mid: { elbow: [88, 40] },
-      b: { elbow: [85, 36], shoulder: [100, 43], head: [100, 30], hip: [100, 70], knee: [107, 89], foot: [86, 97] }
+      mid: { elbow: [112, 40] },
+      b: { elbow: [115, 36], shoulder: [100, 43], head: [100, 30], hip: [100, 70], knee: [107, 89], foot: [86, 97] }
     },
 
     hangingleg: {
