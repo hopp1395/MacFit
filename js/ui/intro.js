@@ -183,30 +183,35 @@
 
     /* Heckflügel: zwei Streben auf dem Heckdeckel, darüber ein angestelltes
        Blatt. Das Blatt endet auf Dachhöhe — steht es höher, liest es sich als
-       Dachträger statt als Flügel. Die Anstellung nach vorn oben macht den
-       Unterschied zwischen Spoilerkante und Flügel. */
+       Dachträger statt als Flügel. Die HINTERkante (links, weg von der
+       Schnauze) steht oben, wie am echten Flügel — andersherum sähe er
+       verkehrt montiert aus. */
     for (i = 0; i < 2; i++) {
       var sx = cx - (i ? 38 : 54);
       px.rect(ctx, sx - 1, gy - 42, 6, 13, C.ink);
       px.rect(ctx, sx, gy - 41, 4, 12, C.steelDark);
     }
-    px.capsule(ctx, [cx - 62, gy - 40], [cx - 30, gy - 44], 8, C.ink);
-    px.capsule(ctx, [cx - 62, gy - 40], [cx - 30, gy - 44], 5, C.shirt);
-    px.capsule(ctx, [cx - 61, gy - 41.5], [cx - 31, gy - 45.5], 1.5, C.shirtLit);
+    px.capsule(ctx, [cx - 62, gy - 44], [cx - 30, gy - 40], 8, C.ink);
+    px.capsule(ctx, [cx - 62, gy - 44], [cx - 30, gy - 40], 5, C.shirt);
+    px.capsule(ctx, [cx - 61, gy - 45.5], [cx - 31, gy - 41.5], 1.5, C.shirtLit);
 
     if (doorOpen <= 0.01) {
       px.line(ctx, cx - 10, gy - 30, cx - 10, gy - 10, 1, C.ink);   /* Türfuge */
       return;
     }
 
-    /* Offene Tür: dunkler Einstieg plus ein Blatt, das zum Betrachter
-       aufschwingt — nach unten-links, das liest sich im Seitenriss richtig. */
+    /* Offene Tür: dunkler Einstieg plus eine Scherentür, die um ein Scharnier
+       an der Vorderkante nach OBEN schwenkt — wie am Supersportler. Ein
+       normales Blatt schwenkte zum Betrachter und wäre im Seitenriss bis zur
+       Unkenntlichkeit verkürzt; nach unten geklappt las es sich, als fiele
+       die Tür ab. */
     px.rect(ctx, cx - 28, gy - 28, 34, 18, C.ink);
-    var hinge = [cx + 6, gy - 27];
-    var tip = [cx + 6 - 22 * doorOpen, gy - 23 + 14 * doorOpen];
-    px.capsule(ctx, hinge, tip, 19, C.ink);
-    px.capsule(ctx, hinge, tip, 16, C.shirt);
-    px.capsule(ctx, hinge, tip, 3.5, C.shirtLit);
+    var hinge = [cx + 2, gy - 19];
+    var ang = doorOpen * 1.25;                 /* zu bis ~72 Grad offen */
+    var tip = [hinge[0] - 26 * Math.cos(ang), hinge[1] - 26 * Math.sin(ang)];
+    px.capsule(ctx, hinge, tip, 9, C.ink);
+    px.capsule(ctx, hinge, tip, 7, C.shirt);
+    px.capsule(ctx, hinge, tip, 2, C.shirtLit);
   }
 
   /* ---------- Figur in Rückansicht ----------------------------------------- */
