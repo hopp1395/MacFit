@@ -65,11 +65,11 @@ untere Bildschirmhälfte.
 Die Zone schrumpft mit jeder Wiederholung im Satz und wird enger, je müder die Partie ist.
 Mehr Intensität bringt mehr Reiz, macht das Timing aber härter.
 
-Dazu **Geräusche im Stil von Amiga 500 und C64**: Rechteckwellen statt Sinustönen, harte
-Hüllkurven, Tonhöhen, die in Rastern springen statt zu gleiten, und der ganze Effektweg
-durch ein 4-Bit-Raster. Gewicht auflegen klirrt, eine saubere Wiederholung antwortet mit
-einem SID-Arpeggio nach oben, eine verrissene mit einem Ton, der stufenweise abstürzt.
-Satzende und Levelaufstieg bekommen die Fanfare, die damals hinter jedem Level stand.
+Dazu **dezente Rückmeldetöne** im Stil heutiger Apps: weiche Sinus- und Dreiecksklänge,
+die sich einblenden statt hart einzusetzen, und Tonhöhen, die stufenlos gleiten. Gewicht
+auflegen gibt einen dumpfen Aufschlag, eine saubere Wiederholung antwortet mit zwei
+Tönen aufwärts, eine verrissene mit einem Ton, der absackt. Satzende und Levelaufstieg
+bekommen eine kleine aufsteigende Tonfolge.
 
 Dieselben Geräusche liegen auch auf dem Rest: Motor und Reifen im Vorspann, Autotür,
 Schiebetür des Studios, Kasse beim Einkauf im Shop und eine absteigende Tonfolge beim

@@ -237,92 +237,97 @@
 
   /* ---------- Trainingsgeraeusche ------------------------------------------ */
 
-  /* Vorbild sind Amiga 500 und C64: Rechteck- und Saegezahnwellen statt
-     Sinustoenen, harte Kanten statt weicher Huellkurven, Tonhoehen, die in
-     Stufen springen. Der ganze Bus laeuft am Ende durch ein grobes Raster —
-     das ist der Beigeschmack der alten 8-Bit-Wandler und macht mehr vom
-     Charakter aus als die Wellenform selbst. */
+  /* Leitbild sind die Rueckmeldetoene heutiger Apps: Sinus und Dreieck statt
+     Rechteck und Saegezahn, jede Stimme blendet in ein paar Millisekunden ein
+     statt hart einzusetzen, Tonhoehen gleiten stufenlos statt in Rastern zu
+     springen. Die Geraeusche sollen bestaetigen, nicht auffallen — die Pegel
+     liegen bei etwa der Haelfte der frueheren Chip-Fassung, und deren
+     4-Bit-Verzerrer ueber dem ganzen Bus ist ersatzlos gestrichen. */
 
-  var CRUNCH = 15;        /* Stufen pro Halbwelle, also gut 4 Bit */
-
-  function crusher() {
-    var n = 1024;
-    var curve = new Float32Array(n);
-    for (var i = 0; i < n; i++) {
-      var x = (i / (n - 1)) * 2 - 1;
-      curve[i] = Math.round(x * CRUNCH) / CRUNCH;
-    }
-    var ws = ctx.createWaveShaper();
-    ws.curve = curve;
-    return ws;
-  }
-
-  /* Ein Ton mit der Kante eines Chip-Bausteins: sofort da, kein Einblenden,
-     am Ende ein kurzer Abfall statt eines Ausklangs. */
-  function chip(at, freq, dur, type, vol, cut) {
+  /* Ein weicher Einzelton, der Grundbaustein: Sinus oder Dreieck, auf Wunsch
+     mit stufenlos gleitender Tonhoehe (bendTo) und Tiefpass (cut). */
+  function tone(at, freq, dur, vol, opts) {
+    var o = opts || {};
     var g = ctx.createGain();
-    g.gain.setValueAtTime(vol, at);
-    g.gain.setValueAtTime(vol, at + dur * 0.75);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
-
+    gainTo(g, at, vol, o.attack || 0.008, dur * 0.25, dur * 0.75);
     var tail = g;
-    if (cut) {
+    if (o.cut) {
       var lp = ctx.createBiquadFilter();
       lp.type = 'lowpass';
-      lp.frequency.value = cut;
+      lp.frequency.value = o.cut;
       lp.connect(g);
       tail = lp;
     }
     g.connect(sfxBus);
 
-    var o = ctx.createOscillator();
-    o.type = type || 'square';
-    o.frequency.setValueAtTime(freq, at);
-    o.connect(tail);
-    o.start(at); o.stop(at + dur + 0.02);
-    return o;
+    var osc = ctx.createOscillator();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(freq, at);
+    if (o.bendTo) osc.frequency.exponentialRampToValueAtTime(o.bendTo, at + dur);
+    osc.connect(tail);
+    osc.start(at); osc.stop(at + dur + 0.05);
   }
 
-  /* Der Arpeggio-Trick des C64: ein einziger Oszillator springt im Rhythmus
-     der Bildwiederholung durch die Toene eines Akkords. Klingt nach Akkord,
-     kostet aber nur eine Stimme — und genau danach klingt es auch. */
-  function sidArp(at, midis, dur, vol, rate) {
-    var frame = rate || 0.02;               /* 1/50 s, wie beim Original */
+  /* Der Bestaetigungston: Sinus mit leiser Oktave darueber, kurzer Anschlag,
+     Ausklang wie eine angeschlagene Saite — dieselbe Machart wie das Klavier
+     der Titelmusik, nur kuerzer und auf dem Effektbus. */
+  function pluck(at, midi, vol, dur) {
+    var d = dur || 0.3;
     var g = ctx.createGain();
-    g.gain.setValueAtTime(vol, at);
-    g.gain.setValueAtTime(vol, at + dur * 0.8);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + d);
     g.connect(sfxBus);
 
     var o = ctx.createOscillator();
-    o.type = 'square';
-    var steps = Math.max(1, Math.floor(dur / frame));
-    for (var i = 0; i < steps; i++) {
-      o.frequency.setValueAtTime(hz(midis[i % midis.length]), at + i * frame);
-    }
+    o.type = 'sine';
+    o.frequency.value = hz(midi);
     o.connect(g);
-    o.start(at); o.stop(at + dur + 0.02);
+    o.start(at); o.stop(at + d + 0.02);
+
+    var top = ctx.createOscillator();
+    var tg = ctx.createGain();
+    top.type = 'sine';
+    top.frequency.value = hz(midi + 12);
+    tg.gain.value = 0.25;
+    top.connect(tg); tg.connect(g);
+    top.start(at); top.stop(at + d + 0.02);
   }
 
-  /* Eisen: kurzer Rauschstoss durch ein schmales Band. Das ist die
-     Amiga-Seite — dort kam so etwas als kurzes Sample von der Diskette. */
-  function clank(at, freq, dur, vol) {
+  /* Aufschlag: ein tiefer Sinus sackt stufenlos ab, dazu ein Hauch tiefpass-
+     gefiltertes Rauschen. Ersetzt Klirren und Scheppern — Eisen auf einer
+     Gummimatte statt Blech auf Beton. */
+  function thud(at, vol, fromHz, toHz) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.22);
+    g.connect(sfxBus);
+
+    var o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(fromHz || 120, at);
+    o.frequency.exponentialRampToValueAtTime(toHz || 50, at + 0.12);
+    o.connect(g);
+    o.start(at); o.stop(at + 0.26);
+
     var src = ctx.createBufferSource();
     src.buffer = noise();
-    var bp = ctx.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.frequency.value = freq;
-    bp.Q.value = 3;
-    var g = ctx.createGain();
-    g.gain.setValueAtTime(vol, at);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
-    src.connect(bp); bp.connect(g); g.connect(sfxBus);
-    src.start(at); src.stop(at + dur + 0.02);
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 900;
+    var ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.0001, at);
+    ng.gain.exponentialRampToValueAtTime(vol * 0.5, at + 0.006);
+    ng.gain.exponentialRampToValueAtTime(0.0001, at + 0.1);
+    src.connect(lp); lp.connect(ng); ng.connect(sfxBus);
+    src.start(at); src.stop(at + 0.12);
   }
 
-  /* Rauschen durch ein wanderndes Band: Reifen, Schiebetuer, Zischen.
-     Die Rauschtabelle ist nur eine halbe Sekunde lang, deshalb in Schleife. */
-  function sweep(at, fromHz, toHz, dur, vol, q) {
+  /* Luft: Rauschen durch ein breites, wanderndes Band, weich ein- und
+     ausgeblendet. Die Rauschtabelle ist nur eine halbe Sekunde lang, deshalb
+     in Schleife. Ersetzt das Zischen mit hoher Bandschaerfe. */
+  function air(at, fromHz, toHz, dur, vol) {
     var src = ctx.createBufferSource();
     src.buffer = noise();
     src.loop = true;
@@ -330,136 +335,103 @@
     bp.type = 'bandpass';
     bp.frequency.setValueAtTime(fromHz, at);
     bp.frequency.exponentialRampToValueAtTime(Math.max(60, toHz), at + dur);
-    bp.Q.value = q || 2;
+    bp.Q.value = 1;
     var g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(vol, at + dur * 0.2);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    gainTo(g, at, vol, dur * 0.3, dur * 0.2, dur * 0.5);
     src.connect(bp); bp.connect(g); g.connect(sfxBus);
     src.start(at); src.stop(at + dur + 0.02);
   }
 
-  /* Motor: zwei Stimmen eine Oktave auseinander, Tonhoehe in Rastern. Der
-     Tiefpass nimmt die Schaerfe raus — ein nackter Saegezahn saegt zu sehr. */
+  /* Motor: Dreieck und Sinus eine Oktave auseinander, die Tonhoehe gleitet
+     stufenlos, ein tiefer Tiefpass macht ein Brummen daraus. */
   function engine(at, fromMidi, toMidi, dur, vol) {
     var lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 1100;
+    lp.frequency.value = 500;
     var g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(vol, at + dur * 0.3);
-    g.gain.setValueAtTime(vol, at + dur * 0.72);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    gainTo(g, at, vol, dur * 0.3, dur * 0.42, dur * 0.28);
     lp.connect(g); g.connect(sfxBus);
 
-    var types = ['sawtooth', 'square'];
-    var steps = Math.max(2, Math.round(dur / 0.03));
+    var types = ['triangle', 'sine'];
     for (var v = 0; v < 2; v++) {
       var o = ctx.createOscillator();
       o.type = types[v];
-      for (var i = 0; i < steps; i++) {
-        var m = fromMidi + (toMidi - fromMidi) * (i / (steps - 1)) - v * 12;
-        o.frequency.setValueAtTime(hz(Math.round(m)), at + i * (dur / steps));
-      }
+      o.frequency.setValueAtTime(hz(fromMidi - v * 12), at);
+      o.frequency.exponentialRampToValueAtTime(hz(toMidi - v * 12), at + dur);
       o.connect(lp);
       o.start(at); o.stop(at + dur + 0.02);
     }
   }
 
-  /* Tonhoehe, die in Stufen faellt oder steigt — das Rutschen einer Sirene
-     gab es auf dem SID nicht, dort wurde in Rastern gerechnet. */
-  function slide(at, fromMidi, toMidi, dur, vol, type) {
-    var g = ctx.createGain();
-    g.gain.setValueAtTime(vol, at);
-    g.gain.setValueAtTime(vol, at + dur * 0.7);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
-    g.connect(sfxBus);
-
-    var o = ctx.createOscillator();
-    o.type = type || 'square';
-    var steps = Math.max(2, Math.round(dur / 0.02));
-    for (var i = 0; i < steps; i++) {
-      var m = fromMidi + (toMidi - fromMidi) * (i / (steps - 1));
-      o.frequency.setValueAtTime(hz(Math.round(m)), at + i * (dur / steps));
-    }
-    o.connect(g);
-    o.start(at); o.stop(at + dur + 0.02);
-  }
-
   var SFX = {
-    /* Griff ans Gewicht: Scheibe klirrt, Rahmen wummert. */
+    /* Griff ans Gewicht: weicher Aufschlag, dazu ein leiser heller Tick. */
     rack: function (at) {
-      clank(at, 2400, 0.07, 0.34);
-      clank(at + 0.05, 1500, 0.12, 0.2);
-      slide(at, 45, 33, 0.14, 0.22, 'triangle');
+      thud(at, 0.32);
+      tone(at + 0.02, 1900, 0.06, 0.05, { attack: 0.005 });
     },
-    /* Saubere Wiederholung: Akkord nach oben, dazu das Klacken des Gewichts. */
+    /* Saubere Wiederholung: zwei weiche Toene aufwaerts. */
     perfect: function (at) {
-      clank(at, 2000, 0.05, 0.3);
-      sidArp(at + 0.01, [72, 76, 79, 84], 0.18, 0.2);
-      chip(at + 0.19, hz(84), 0.11, 'square', 0.16);
+      pluck(at, 79, 0.18, 0.16);
+      pluck(at + 0.08, 84, 0.2, 0.3);
     },
-    /* Unsauber: zwei Stufen, dumpfer, kein Glanz oben drauf. */
+    /* Unsauber: ein einzelner, dunklerer Ton ohne Glanz. */
     ok: function (at) {
-      clank(at, 1400, 0.05, 0.22);
-      sidArp(at + 0.01, [67, 72], 0.12, 0.17, 0.03);
+      tone(at, hz(72), 0.2, 0.16, { type: 'triangle', cut: 1400, attack: 0.006 });
     },
-    /* Verrissen: Tonhoehe faellt in Stufen, dazu ein Scheppern. */
+    /* Verrissen: ein Ton sackt weich ab, darunter ein gedaempfter Aufschlag —
+       erkennbar daneben, ohne wehzutun. */
     miss: function (at) {
-      slide(at, 62, 38, 0.26, 0.24, 'sawtooth');
-      clank(at + 0.02, 700, 0.22, 0.24);
+      tone(at, hz(64), 0.3, 0.14, { bendTo: hz(50), attack: 0.006 });
+      thud(at + 0.05, 0.2, 90, 45);
     },
-    /* Satz geschafft: die Fanfare, die auf dem C64 hinter jedem Level stand. */
+    /* Satz geschafft: drei ueberlappende Toene aufwaerts, dezent. */
     done: function (at) {
-      sidArp(at, [60, 64, 67], 0.12, 0.2, 0.025);
-      sidArp(at + 0.12, [64, 67, 72], 0.12, 0.2, 0.025);
-      sidArp(at + 0.24, [67, 72, 76], 0.34, 0.22, 0.025);
-      clank(at + 0.24, 3000, 0.1, 0.2);
+      pluck(at, 72, 0.15, 0.3);
+      pluck(at + 0.09, 76, 0.15, 0.3);
+      pluck(at + 0.18, 79, 0.17, 0.45);
     },
-    /* Aufstieg: laenger, eine Stufe hoeher, mit Nachschlag. */
+    /* Aufstieg: vier Toene aufwaerts und ein langer, hoher Schimmer. */
     level: function (at) {
-      sidArp(at, [60, 64, 67, 72], 0.24, 0.2, 0.025);
-      sidArp(at + 0.24, [64, 67, 72, 76], 0.24, 0.2, 0.025);
-      sidArp(at + 0.48, [67, 72, 76, 79], 0.55, 0.24, 0.02);
-      chip(at + 0.48, hz(84), 0.5, 'square', 0.1, 3000);
+      pluck(at, 72, 0.18, 0.3);
+      pluck(at + 0.11, 76, 0.18, 0.3);
+      pluck(at + 0.22, 79, 0.18, 0.3);
+      pluck(at + 0.33, 84, 0.2, 0.5);
+      tone(at + 0.33, hz(91), 0.9, 0.05, { attack: 0.05 });
     },
 
-    /* Kasse: zwei Toene hoch, kurz und hell. Der Klang, den damals jedes
-       Aufsammeln hatte. */
+    /* Kasse: zwei kurze weiche Ticks aufwaerts. */
     coin: function (at) {
-      chip(at, hz(84), 0.05, 'square', 0.15);
-      chip(at + 0.05, hz(91), 0.14, 'square', 0.15);
+      pluck(at, 84, 0.13, 0.09);
+      pluck(at + 0.06, 91, 0.15, 0.22);
     },
 
-    /* Feierabend: drei Toene abwaerts, gedaempft — das Gegenstueck zur
-       Fanfare. */
+    /* Feierabend: dieselben drei Toene abwaerts wie immer, nur mit langem
+       Ausklang statt hartem Ende. */
     sleep: function (at) {
-      chip(at, hz(69), 0.15, 'triangle', 0.2, 1200);
-      chip(at + 0.15, hz(65), 0.15, 'triangle', 0.2, 1200);
-      chip(at + 0.30, hz(60), 0.42, 'triangle', 0.2, 1200);
+      pluck(at, 69, 0.16, 0.35);
+      pluck(at + 0.18, 65, 0.16, 0.35);
+      pluck(at + 0.36, 60, 0.16, 0.7);
     },
 
     /* Vorspann: Wagen kommt an und bremst. */
     drive: function (at) {
-      engine(at, 45, 33, 1.15, 0.15);
-      sweep(at + 0.8, 2600, 900, 0.36, 0.1, 4);      /* Reifen */
+      engine(at, 45, 33, 1.15, 0.22);
+      air(at + 0.8, 1800, 700, 0.36, 0.16);      /* Reifen */
     },
     /* Vorspann: Wagen faehrt weg. */
     driveOff: function (at) {
-      engine(at, 31, 47, 1.05, 0.15);
+      engine(at, 31, 47, 1.05, 0.22);
     },
-    /* Autotuer: Blech und ein tiefes Zufallen. Lauter als die Geraeusche im
-       Training — hier laeuft die Titelmusik darunter und schluckt sonst alles. */
+    /* Autotuer: dumpfes Zufallen. Lauter als die Geraeusche im Training —
+       hier laeuft die Titelmusik darunter und schluckt sonst alles. */
     carDoor: function (at) {
-      clank(at, 900, 0.09, 0.45);
-      slide(at, 40, 30, 0.1, 0.32, 'triangle');
+      thud(at, 0.5, 140, 55);
     },
-    /* Schiebetuer des Studios: Zischen nach oben. Der Wert sieht zu hoch aus,
-       ist er aber nicht: ein Bandpass laesst vom Rauschen nur einen schmalen
-       Streifen durch, der Ausgang liegt weit unter dem Eingang. Mit kleineren
-       Werten bleibt unter der Titelmusik nichts davon uebrig. */
+    /* Schiebetuer des Studios: Luft nach oben. Der Wert sieht hoch aus, ist
+       er aber nicht: der Bandpass laesst vom Rauschen nur einen Streifen
+       durch, der Ausgang liegt weit unter dem Eingang. */
     gymDoor: function (at) {
-      sweep(at, 900, 2600, 0.42, 1.5, 1);
+      air(at, 700, 2200, 0.45, 0.5);
     }
   };
 
@@ -501,16 +473,10 @@
     master.connect(out);
 
     /* Eigener Weg fuer die Geraeusche, damit sie nicht mit der Musik
-       weggeblendet werden — und mit dem Raster am Ende. */
+       weggeblendet werden. */
     sfxBus = ctx.createGain();
-    sfxBus.gain.value = 0.55;
-    if (ctx.createWaveShaper && typeof Float32Array !== 'undefined') {
-      var ws = crusher();
-      sfxBus.connect(ws);
-      ws.connect(out);
-    } else {
-      sfxBus.connect(out);
-    }
+    sfxBus.gain.value = 0.3;
+    sfxBus.connect(out);
     return true;
   }
 
