@@ -634,6 +634,18 @@
     var fHip = [hip[0] + FAR, hip[1]];
     var fShoulder = [shoulder[0] + FAR, shoulder[1]];
 
+    if (pose.triceps) {
+      /* Der Arm haengt an der Rueckenlinie, nicht an festen Punkten. Mit
+         festen Versaetzen stimmte die Pose nur fuer den breiten Koerper: bei
+         der untrainierten Figur liegt die Rueckenlinie vier Punkte weiter
+         vorn, und Arm samt Faust stak wieder als dunkler Schlauch hinter der
+         Silhouette. Nur die Hoehen kommen aus der Posenbeschreibung. */
+      elbow = [backX + w.armW * 0.2, s.elbow[1]];
+      hand = [backX + w.armW * 0.05, s.hand[1]];
+      fElbow = [backX + d.waist * 0.5, s.farElbow[1]];
+      fHand = [backX + w.armW * 0.4, s.farHand[1]];
+    }
+
     /* Fuß im Profil als Raster, Zehen nach vorn. Steht das Bein auf dem
        Ballen, reicht nur der Vorderfuß auf den Boden. */
     function shoe(p, ball, ramp) {
@@ -666,9 +678,13 @@
     limb(fElbow, fHand, w.foreW * 0.9, col.skinDark);
     px.disc(ctx, fHand[0], fHand[1], w.foreW * 0.66, col.skinDark);
 
-    /* Hals und Rumpf */
-    px.capsule(ctx, [head[0] - 1, HEAD + 5], [shoulder[0] + 2, shoulder[1]], 11, C.ink);
-    px.capsule(ctx, [head[0] - 1, HEAD + 6], [shoulder[0] + 2, shoulder[1] - 2], 8, col.skinDark);
+    /* Hals und Rumpf. Die Halsbreite folgt der Schulter — mit festen 11
+       Punkten war der Ink-Hals bei der untrainierten Figur breiter als ihre
+       ganze Schulter und verschmolz mit Arm und Kontur zu einem Klotz. */
+    px.capsule(ctx, [head[0] - 1, HEAD + 5], [shoulder[0] + 2, shoulder[1]],
+      w.shoulderSpan * 0.82, C.ink);
+    px.capsule(ctx, [head[0] - 1, HEAD + 6], [shoulder[0] + 2, shoulder[1] - 2],
+      w.shoulderSpan * 0.6, col.skinDark);
     profileTorso(ctx, d, backX, C.ink, 1.4);
     profileTorso(ctx, d, backX, col.skin);
 
@@ -692,13 +708,20 @@
     /* Der Deltamuskel ist im Profil fast so tief wie der Brustkorb — mit einer
        kleinen Kugel wirkt die Schulter abfallend statt geladen. */
     if (pose.triceps) {
-      /* Der Arm liegt hier IN der Silhouette auf dem Rumpf. Trennung deshalb
-         über dunkle Haut statt über die Ink-Kontur: ein voll umrandeter Arm
-         mitten auf dem Rücken las sich als umgeschnallter Rucksack. */
+      /* Der Arm liegt auf dem Rumpf, seine Hinterkante ist aber Silhouette.
+         Deshalb dreigeteilt: dunkle Haut als Trennung zum Rumpf (innen), Ink
+         nur entlang der Aussenkante, dann die Hautflaeche — sie deckt die
+         innere Haelfte der Ink-Linie wieder zu. Eine volle Umrandung mitten
+         auf dem Ruecken las sich als Rucksack, die dunkle Wulst ohne
+         Aussenkontur vor der dunklen Wand als Schlauch. */
       px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55 + 1.5, col.skinDark);
       px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.52, col.skin);
       px.capsule(ctx, shoulder, elbow, w.armW + 2.5, col.skinDark);
       px.capsule(ctx, elbow, hand, w.foreW + 2.5, col.skinDark);
+      px.capsule(ctx, [shoulder[0] - w.shoulderSpan * 0.45, shoulder[1] - 2],
+        [elbow[0] - w.armW * 0.5, elbow[1]], 2.5, C.ink);
+      px.capsule(ctx, [elbow[0] - w.armW * 0.5, elbow[1]],
+        [hand[0] - w.foreW * 0.5, hand[1]], 2.5, C.ink);
       px.capsule(ctx, shoulder, elbow, w.armW, col.skin);
       px.capsule(ctx, elbow, hand, w.foreW, col.skin);
     } else {
