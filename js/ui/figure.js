@@ -146,12 +146,17 @@
     px.capsule(ctx, f.hip, between(f.hip, f.knee, 0.48), th.thigh * 1.1, shorts);
     px.capsule(ctx, f.foot, toe, footW, shoe);
 
-    /* Kopf: Gesicht, flacher Haarschnitt, ein Auge in Blickrichtung. */
+    /* Kopf: Gesicht, Haar, ein Auge in Blickrichtung. Die Haarkappe endet am
+       oberen Drittel — vorher reichte sie bis zur Kopfmitte und sass wie ein
+       Helm. Der Hinterkopf bekommt einen eigenen Fleck entgegen der
+       Blickrichtung, sonst wirkt das Profil vorn und hinten gleich. */
+    var hair = opts.hair || C.shadow;
     px.disc(ctx, f.head[0], f.head[1], hr, skin);
     px.capsule(ctx,
-      [f.head[0] - hr * 0.55, f.head[1] - hr * 0.42],
-      [f.head[0] + hr * 0.55, f.head[1] - hr * 0.42],
-      hr * 0.95, opts.hair || C.shadow);
+      [f.head[0] - hr * 0.45, f.head[1] - hr * 0.75],
+      [f.head[0] + hr * 0.45, f.head[1] - hr * 0.75],
+      hr * 0.45, hair);
+    px.disc(ctx, f.head[0] - face * hr * 0.5, f.head[1] - hr * 0.3, hr * 0.4, hair);
     px.rect(ctx, f.head[0] + face * 2 - 0.5, f.head[1] + 0.5, 1.5, 2, C.ink);
 
     /* 3. Schatten auf der lichtabgewandten Seite, dann Licht. Zwei Stufen der

@@ -27,23 +27,25 @@
     return { w: rows[0].length, h: rows.length, key: KEY, rows: rows };
   }
 
-  /* Von vorn: flacher Haarschnitt, Brauen, Augen, Nasenrücken, Kinnschatten. */
+  /* Von vorn. Der Haaransatz liegt bei gut einem Viertel der Kopfhöhe und die
+     Augen auf der Hälfte — vorher sass das Haar bis 37 % herunter und ohne
+     Ohren wie ein Helm. Seitlich je ein Streifen Ohr auf Augenhöhe. */
   var HEAD_FRONT = sprite([
     '......KKKKKKK......',
-    '....KKKKKKKKKKK....',
-    '...KKKKKKKKKKKKK...',
+    '....KKHHKKKKKKK....',
+    '...KKHHKKKKKKKKK...',
     '..KKKKKKKKKKKKKKK..',
     '.KKKKKKKKKKKKKKKKK.',
-    '.KKKKKKKKKKKKKKKKK.',
-    'KKKKKKKKKKKKKKKKKKK',
-    'KKKeddddddddddddeKK',
-    'KKcbbbdddddddbbbcKK',
-    'KcddkkddeeeddkkddcK',
-    'KcddccddeeeddccddcK',
+    '.KKedddddddddddeKK.',
+    'KcdddddddddddddddcK',
     'KcdddddddedddddddcK',
-    'KcddddddcbcddddddcK',
-    '.cddddddcccddddddc.',
+    'dcdbbbbdddddbbbbdcd',
+    'ccddkkddeeeddkkddcc',
+    'bcddccddeeeddccddcb',
+    'cdddddddcbcdddddddc',
+    'cdddddddddddddddddc',
     '.cddddddbbbddddddc.',
+    '.cdddddddedddddddc.',
     '..cdddddddddddddc..',
     '...cbdddddddddbc...',
     '....cbbdddddbbc....',
@@ -75,21 +77,22 @@
   ]);
 
   /* Im Profil, Blick nach rechts: Haar über Hinterkopf und Scheitel, vorn
-     Stirn, Auge, Nasenrücken und Kinn. */
+     Stirn ab gut einem Viertel der Höhe, Auge, Nase mit Lichtkante, Kinn —
+     und in der Mitte ein Ohr, das vorher schlicht fehlte. */
   var HEAD_SIDE = sprite([
     '......KKKKKKK......',
-    '....KKKKKKKKKKK....',
-    '...KKKKKKKKKKKKK...',
+    '....KKHHKKKKKKK....',
+    '...KKHHKKKKKKKKK...',
     '..KKKKKKKKKKKKKKK..',
-    '.KKKKKKKKKKKKKKKKK.',
-    '.KKKKKKKKKKKKKKKKK.',
-    'KKKKKKKKKKKKKKKKKKK',
-    'KKKKKKKKKKKKKddddKK',
-    'KKKKKKKKKKKddddddKK',
-    'KKKKKKKKKKdddddddeK',
-    'KKKKKKKKKddkkddddde',
-    'KKKKKKKKKdddddddddf',
-    'KKKKKKKKcdddddddddd',
+    '.KKKKKKKKKKKKKdddd.',
+    '.KKKKKKKKKKKKdddde.',
+    'KKKKKKKKKKKKdddddde',
+    'KKKKKKKKKKKddddddde',
+    'KKKKKKKKKKdddbbddde',
+    'KKKKKKKKKcbcdkkddde',
+    'KKKKKKKKKcbcddddddf',
+    'KKKKKKKKKcbdddddddc',
+    'KKKKKKKKcddddddbbdd',
     '.KKKKKKcdddddddddd.',
     '.KKKKKcddddddbbddd.',
     '..KKKcddddddddddc..',
@@ -103,17 +106,17 @@
      19er Raster säße dort wie ein Helm. */
   var HEAD_SMALL = sprite([
     '....KKKKKKK....',
-    '...KKKKKKKKK...',
-    '..KKKKKKKKKKK..',
+    '...KKHHKKKKK...',
+    '..KKHHKKKKKKK..',
     '.KKKKKKKKKKKKK.',
-    '.KKKKHKKKKKKKK.',
-    'KKKKKKKKKKKKKKK',
-    'KKdddddddddddKK',
-    'KcdkkdddddkkdcK',
-    'KcddddddeddddcK',
-    'KcdddddcbcdddcK',
+    '.KKedddddddeKK.',
+    'KcdddddddddddcK',
+    'dcdbbdddddbbdcd',
+    'ccdkkdddddkkdcc',
+    'bcddddeeeddddcb',
+    'cddddddcbcddddc',
     '.cddddbbbddddc.',
-    '.cdddddddddddc.',
+    '.cdddddedddddc.',
     '..cbdddddddbc..',
     '...cbbdddbbc...',
     '....cbbbbbc....'

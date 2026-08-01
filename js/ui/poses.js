@@ -479,6 +479,15 @@
   function frontDetail(ctx, sy, w, j, col) {
     var i, s;
 
+    /* Schlüsselbeine: von der Drosselgrube leicht ansteigend zu den
+       Schultern. Die Linie trennt Hals und Brustplatte — ohne sie hängt die
+       Brust konturlos unter dem Kopf. */
+    for (i = 0; i < 2; i++) {
+      s = i ? 1 : -1;
+      px.capsule(ctx, [CX + s * 2.5, sy + 5],
+        [CX + s * w.shoulderSpan * 0.82, sy + 2], 1.5, col.soft);
+    }
+
     /* Die Latissimus-Kante: von der Achsel schräg zur Taille. Sie macht den
        Keil sichtbar, den die Silhouette allein nur andeutet. */
     for (i = 0; i < 2; i++) {
@@ -514,6 +523,13 @@
         px.rect(ctx, CX - 6, HIP - 22 + r * 6, 4, 2, col.edge);
         px.rect(ctx, CX + 2, HIP - 22 + r * 6, 4, 2, col.edge);
       }
+    }
+
+    /* Kniescheibe: ein kleiner dunkler Punkt. Ohne ihn ist das Bein von der
+       Hüfte bis zum Schuh eine ununterbrochene Röhre. */
+    for (i = 0; i < 2; i++) {
+      var l = j.legs[i];
+      px.disc(ctx, l.knee[0], l.knee[1] + 1, 2, col.soft);
     }
   }
 

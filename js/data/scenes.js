@@ -155,7 +155,11 @@
       b: { knee: [102, 74], foot: [118, 84] }
     },
 
-    /* ---------- Stehend -------------------------------------------------- */
+    /* ---------- Stehend ---------------------------------------------------
+       Aufrecht stehende Figuren folgen denselben anatomischen Bruchteilen wie
+       das Posenbild: Schulter 44, Hüfte 70, Knie 92 bei Kopfoberkante 27 und
+       Boden 118. Vorher lagen Schulter und Hüfte drei Punkte tiefer — zu
+       langer Hals, zu kurze Beine. */
     squat: {
       name: 'Kniebeuge', face: -1,
       equip: [post(52, 44), post(148, 44), frameLine(55, 50, 151, 50, 3)],
@@ -178,27 +182,27 @@
       name: 'Overhead-Press', face: 1,
       equip: [],
       implement: 'barbell',
-      hold: { hip: [100, 73], knee: [100, 95], foot: [100, FLOOR] },
-      a: { shoulder: [100, 47], head: [98, 34], elbow: [104, 35], hand: [101, 19] },
-      b: { shoulder: [100, 48], head: [99, 35], elbow: [111, 55], hand: [100, 42] }
+      hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR] },
+      a: { shoulder: [100, 44], head: [98, 34], elbow: [104, 32], hand: [101, 16] },
+      b: { shoulder: [100, 45], head: [99, 35], elbow: [111, 52], hand: [100, 39] }
     },
 
     curl: {
       name: 'Curl', face: -1,
       equip: [],
       implement: 'dumbbell',
-      hold: { hip: [100, 73], knee: [100, 95], foot: [100, FLOOR], shoulder: [98, 47], head: [97, 34] },
-      a: { elbow: [97, 66], hand: [99, 84] },
-      b: { elbow: [96, 65], hand: [85, 55] }
+      hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [98, 44], head: [97, 34] },
+      a: { elbow: [97, 63], hand: [99, 81] },
+      b: { elbow: [96, 62], hand: [85, 52] }
     },
 
     lateral: {
       name: 'Seitheben', face: -1,
       equip: [],
       implement: 'dumbbell',
-      hold: { hip: [100, 73], knee: [100, 95], foot: [100, FLOOR], shoulder: [100, 47], head: [99, 34] },
-      a: { elbow: [90, 60], hand: [82, 72] },
-      b: { elbow: [84, 47], hand: [66, 44] }
+      hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [100, 44], head: [99, 34] },
+      a: { elbow: [90, 57], hand: [82, 69] },
+      b: { elbow: [84, 44], hand: [66, 41] }
     },
 
     tricep: {
@@ -209,9 +213,9 @@
       ],
       cable: [155, 30],
       implement: 'handle',
-      hold: { hip: [96, 73], knee: [96, 95], foot: [96, FLOOR], shoulder: [98, 47], head: [96, 34] },
-      a: { elbow: [110, 58], hand: [117, 75] },
-      b: { elbow: [109, 56], hand: [113, 49] }
+      hold: { hip: [96, 70], knee: [96, 92], foot: [96, FLOOR], shoulder: [98, 44], head: [96, 34] },
+      a: { elbow: [110, 55], hand: [117, 72] },
+      b: { elbow: [109, 53], hand: [113, 46] }
     },
 
     calf: {
@@ -282,18 +286,18 @@
       name: 'Herumstehen', face: -1,
       equip: [],
       implement: 'none',
-      hold: { hip: [100, 73], knee: [100, 95], foot: [100, FLOOR], head: [99, 34] },
-      a: { shoulder: [100, 47], elbow: [94, 62], hand: [92, 76] },
-      b: { shoulder: [101, 48], elbow: [95, 63], hand: [95, 74] }
+      hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], head: [99, 34] },
+      a: { shoulder: [100, 44], elbow: [94, 59], hand: [92, 73] },
+      b: { shoulder: [101, 45], elbow: [95, 60], hand: [95, 71] }
     },
 
     phone: {
       name: 'Am Handy', face: -1,
       equip: [],
       implement: 'none',
-      hold: { hip: [100, 73], knee: [100, 95], foot: [100, FLOOR], shoulder: [100, 47] },
-      a: { head: [97, 35], elbow: [93, 60], hand: [90, 50] },
-      b: { head: [96, 36], elbow: [93, 61], hand: [91, 52] }
+      hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [100, 44] },
+      a: { head: [97, 35], elbow: [93, 57], hand: [90, 47] },
+      b: { head: [96, 36], elbow: [93, 58], hand: [91, 49] }
     },
 
     treadmill: {
@@ -343,13 +347,17 @@
 
   /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt). */
   function poseAt(scene, t) {
+    /* Geglättet statt linear: an den Umkehrpunkten verweilt die Bewegung
+       kurz — so sieht eine kontrollierte Wiederholung aus. Linear schrubbte
+       die Figur wie ein Scheibenwischer zwischen den Endlagen. */
+    var e = t * t * (3 - 2 * t);
     var out = {};
     for (var i = 0; i < JOINTS.length; i++) {
       var j = JOINTS[i];
       var a = scene.a[j] || (scene.hold && scene.hold[j]);
       var b = scene.b[j] || (scene.hold && scene.hold[j]) || a;
       if (!a) { out[j] = [100, 80]; continue; }
-      out[j] = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      out[j] = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e];
     }
     return out;
   }
