@@ -32,7 +32,7 @@
 
     /* ---------- Liegend ------------------------------------------------- */
     bench: {
-      name: 'Flachbank', face: 1,
+      name: 'Flachbank', face: 1, supine: true,
       equip: [
         pad(52, 84, 96, 9),
         frameLine(66, 93, 63, FLOOR, 5),
@@ -52,11 +52,14 @@
     },
 
     incline: {
-      name: 'Schrägbank', face: 1,
+      name: 'Schrägbank', face: 1, supine: true,
       equip: [
-        { t: 'line', x1: 58, y1: 104, x2: 142, y2: 74, w: 11, c: '#2f3a4a' },
-        frameLine(70, 100, 66, FLOOR, 5),
-        frameLine(132, 82, 136, FLOOR, 5),
+        /* Die Lehne steigt zum KOPF hin (links) — die Figur liegt mit
+           erhoehtem Oberkoerper darauf. Vorher stieg das Polster fusswaerts,
+           genau spiegelverkehrt zur Figur. */
+        { t: 'line', x1: 58, y1: 74, x2: 142, y2: 104, w: 11, c: '#2f3a4a' },
+        frameLine(70, 80, 66, FLOOR, 5),
+        frameLine(132, 102, 136, FLOOR, 5),
         post(44, 40), frameLine(47, 46, 60, 46, 3)
       ],
       implement: 'barbell',
