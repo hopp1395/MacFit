@@ -152,12 +152,31 @@
        Blickrichtung, sonst wirkt das Profil vorn und hinten gleich. */
     var hair = opts.hair || C.shadow;
     px.disc(ctx, f.head[0], f.head[1], hr, skin);
-    px.capsule(ctx,
-      [f.head[0] - hr * 0.45, f.head[1] - hr * 0.75],
-      [f.head[0] + hr * 0.45, f.head[1] - hr * 0.75],
-      hr * 0.45, hair);
-    px.disc(ctx, f.head[0] - face * hr * 0.5, f.head[1] - hr * 0.3, hr * 0.4, hair);
-    px.rect(ctx, f.head[0] + face * 2 - 0.5, f.head[1] + 0.5, 1.5, 2, C.ink);
+    if (opts.supine) {
+      /* Rueckenlage (Bank): Der Scheitel zeigt vom Rumpf weg die Lehne
+         entlang, der Blick senkrecht dazu nach oben. Die Achsen kommen aus
+         der Pose selbst — so stimmt der Kopf auf Flach- UND Schraegbank,
+         ohne dass die Szene einen Winkel mitliefern muss. */
+      var ux = f.head[0] - f.shoulder[0], uy = f.head[1] - f.shoulder[1];
+      var un = Math.sqrt(ux * ux + uy * uy) || 1;
+      ux /= un; uy /= un;
+      var fx = -uy, fy = ux;              /* Blick: 90 Grad vom Scheitel */
+      px.capsule(ctx,
+        [f.head[0] + (ux * 0.75 - fx * 0.45) * hr, f.head[1] + (uy * 0.75 - fy * 0.45) * hr],
+        [f.head[0] + (ux * 0.75 + fx * 0.45) * hr, f.head[1] + (uy * 0.75 + fy * 0.45) * hr],
+        hr * 0.45, hair);
+      px.disc(ctx, f.head[0] + (ux * 0.3 - fx * 0.5) * hr,
+                   f.head[1] + (uy * 0.3 - fy * 0.5) * hr, hr * 0.4, hair);
+      px.rect(ctx, f.head[0] + fx * 2 - ux * 1.5 - 1,
+                   f.head[1] + fy * 2 - uy * 1.5 - 0.75, 2, 1.5, C.ink);
+    } else {
+      px.capsule(ctx,
+        [f.head[0] - hr * 0.45, f.head[1] - hr * 0.75],
+        [f.head[0] + hr * 0.45, f.head[1] - hr * 0.75],
+        hr * 0.45, hair);
+      px.disc(ctx, f.head[0] - face * hr * 0.5, f.head[1] - hr * 0.3, hr * 0.4, hair);
+      px.rect(ctx, f.head[0] + face * 2 - 0.5, f.head[1] + 0.5, 1.5, 2, C.ink);
+    }
 
     /* 3. Schatten auf der lichtabgewandten Seite, dann Licht. Zwei Stufen der
        Rampe auseinander — mit den früheren drei Hauttönen ging nur eines. */

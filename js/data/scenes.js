@@ -3,6 +3,10 @@
      equip / front  Gerät hinter bzw. vor der Figur
      a / b          Keyframes (a = Streckung, b = tiefster Punkt); dazwischen
                     wird interpoliert, gesteuert vom Marker der Trainingsleiste
+     mid            optional, je Gelenk: Stuetzpunkt auf halber Strecke. Noetig,
+                    wenn ein Gelenk weit um sein Nachbargelenk schwenkt — die
+                    gerade Sehne schnitte den Bogen, und der Knochen schrumpfte
+                    sichtbar mitten in der Bewegung
      hold           Gelenke, die sich nicht bewegen (aus a übernommen)
      implement      barbell | dumbbell | handle | roller | sled | none
      cable          Seilzug von diesem Punkt zur Hand
@@ -28,7 +32,7 @@
 
     /* ---------- Liegend ------------------------------------------------- */
     bench: {
-      name: 'Flachbank', face: 1,
+      name: 'Flachbank', face: 1, supine: true,
       equip: [
         pad(52, 84, 96, 9),
         frameLine(66, 93, 63, FLOOR, 5),
@@ -38,22 +42,52 @@
       ],
       implement: 'barbell',
       hold: { hip: [112, 79], knee: [136, 85], foot: [143, FLOOR], head: [70, 77] },
-      a: { shoulder: [84, 79], elbow: [80, 65], hand: [85, 51] },
-      b: { shoulder: [84, 79], elbow: [66, 74], hand: [86, 71] }
+      /* Der Ellbogen sinkt FUSSwaerts neben den Rumpf auf Bankhoehe — kopfwaerts
+         saehe er ueber das Gesicht ueberstreckt aus. mid haelt ihn dabei auf dem
+         Kreisbogen um die Schulter, sonst schrumpft der Oberarm mitten in der
+         Wiederholung (Sehne statt Bogen). */
+      a: { shoulder: [84, 79], elbow: [88, 65], hand: [85, 51] },
+      mid: { elbow: [97, 72] },
+      b: { shoulder: [84, 79], elbow: [98, 84], hand: [90, 71] }
     },
 
     incline: {
-      name: 'Schrägbank', face: 1,
+      name: 'Schrägbank', face: 1, supine: true,
       equip: [
-        { t: 'line', x1: 58, y1: 104, x2: 142, y2: 74, w: 11, c: '#2f3a4a' },
-        frameLine(70, 100, 66, FLOOR, 5),
-        frameLine(132, 82, 136, FLOOR, 5),
+        /* Die Lehne steigt zum KOPF hin (links) — die Figur liegt mit
+           erhoehtem Oberkoerper darauf. Vorher stieg das Polster fusswaerts,
+           genau spiegelverkehrt zur Figur. */
+        { t: 'line', x1: 58, y1: 74, x2: 142, y2: 104, w: 11, c: '#2f3a4a' },
+        frameLine(70, 80, 66, FLOOR, 5),
+        frameLine(132, 102, 136, FLOOR, 5),
         post(44, 40), frameLine(47, 46, 60, 46, 3)
       ],
       implement: 'barbell',
       hold: { hip: [112, 88], knee: [134, 94], foot: [141, FLOOR], head: [72, 70] },
-      a: { shoulder: [86, 77], elbow: [82, 62], hand: [88, 47] },
-      b: { shoulder: [86, 77], elbow: [70, 71], hand: [88, 67] }
+      /* Wie bei der Flachbank: Ellbogen fusswaerts nach unten, mid auf dem
+         Kreisbogen. */
+      a: { shoulder: [86, 77], elbow: [90, 62], hand: [88, 47] },
+      mid: { elbow: [97, 67] },
+      b: { shoulder: [86, 77], elbow: [100, 76], hand: [88, 67] }
+    },
+
+    decline: {
+      name: 'Negativbank', face: 1, supine: true,
+      equip: [
+        /* Die Lehne faellt zum Kopf hin ab, die Beine haken oben ueber der
+           Rolle ein — auf der Negativbank stehen die Fuesse nicht am Boden. */
+        { t: 'line', x1: 58, y1: 100, x2: 142, y2: 72, w: 11, c: '#2f3a4a' },
+        frameLine(70, 102, 66, FLOOR, 5),
+        frameLine(132, 80, 136, FLOOR, 5),
+        { t: 'circle', cx: 144, cy: 74, r: 4.5, c: '#3d4756' },
+        post(44, 48), frameLine(47, 54, 60, 54, 3)
+      ],
+      implement: 'barbell',
+      hold: { hip: [112, 77], knee: [134, 70], foot: [146, 80], head: [72, 86] },
+      /* Ellbogen wie auf den anderen Baenken fusswaerts, mid auf dem Bogen. */
+      a: { shoulder: [86, 84], elbow: [90, 69], hand: [87, 54] },
+      mid: { elbow: [99, 77] },
+      b: { shoulder: [86, 84], elbow: [100, 88], hand: [92, 75] }
     },
 
     /* ---------- Sitzend, Maschine --------------------------------------- */
@@ -320,6 +354,7 @@
     'hammer-curl': 'curl',
     'bankdruecken': 'bench',
     'schraegbank': 'incline',
+    'negativ-schraegbank': 'decline',
     'butterfly-pro': 'butterfly',
     'latzug': 'latzug',
     'rudern-kabel': 'row',
@@ -357,7 +392,17 @@
       var a = scene.a[j] || (scene.hold && scene.hold[j]);
       var b = scene.b[j] || (scene.hold && scene.hold[j]) || a;
       if (!a) { out[j] = [100, 80]; continue; }
-      out[j] = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e];
+      /* Mit Stuetzpunkt laeuft das Gelenk ueber zwei Geradenstuecke — genug
+         Bogen, damit der Knochen seine Laenge behaelt. */
+      var m = scene.mid && scene.mid[j];
+      if (m) {
+        var p = e < 0.5 ? a : m;
+        var q = e < 0.5 ? m : b;
+        var u = e < 0.5 ? e * 2 : (e - 0.5) * 2;
+        out[j] = [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+      } else {
+        out[j] = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e];
+      }
     }
     return out;
   }

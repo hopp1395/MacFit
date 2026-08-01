@@ -101,7 +101,7 @@
       px.capsule(ctx, scene.cable, pose.hand, 1.5, C.steelLit);
     }
 
-    var look = { face: scene.face === undefined ? 1 : scene.face };
+    var look = { face: scene.face === undefined ? 1 : scene.face, supine: !!scene.supine };
     if (opts.colors) {
       for (var key in opts.colors) {
         if (Object.prototype.hasOwnProperty.call(opts.colors, key)) look[key] = opts.colors[key];
