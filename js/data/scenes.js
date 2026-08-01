@@ -3,6 +3,10 @@
      equip / front  Gerät hinter bzw. vor der Figur
      a / b          Keyframes (a = Streckung, b = tiefster Punkt); dazwischen
                     wird interpoliert, gesteuert vom Marker der Trainingsleiste
+     mid            optional, je Gelenk: Stuetzpunkt auf halber Strecke. Noetig,
+                    wenn ein Gelenk weit um sein Nachbargelenk schwenkt — die
+                    gerade Sehne schnitte den Bogen, und der Knochen schrumpfte
+                    sichtbar mitten in der Bewegung
      hold           Gelenke, die sich nicht bewegen (aus a übernommen)
      implement      barbell | dumbbell | handle | roller | sled | none
      cable          Seilzug von diesem Punkt zur Hand
@@ -38,8 +42,13 @@
       ],
       implement: 'barbell',
       hold: { hip: [112, 79], knee: [136, 85], foot: [143, FLOOR], head: [70, 77] },
-      a: { shoulder: [84, 79], elbow: [80, 65], hand: [85, 51] },
-      b: { shoulder: [84, 79], elbow: [66, 74], hand: [86, 71] }
+      /* Der Ellbogen sinkt FUSSwaerts neben den Rumpf auf Bankhoehe — kopfwaerts
+         saehe er ueber das Gesicht ueberstreckt aus. mid haelt ihn dabei auf dem
+         Kreisbogen um die Schulter, sonst schrumpft der Oberarm mitten in der
+         Wiederholung (Sehne statt Bogen). */
+      a: { shoulder: [84, 79], elbow: [88, 65], hand: [85, 51] },
+      mid: { elbow: [97, 72] },
+      b: { shoulder: [84, 79], elbow: [98, 84], hand: [90, 71] }
     },
 
     incline: {
@@ -52,8 +61,11 @@
       ],
       implement: 'barbell',
       hold: { hip: [112, 88], knee: [134, 94], foot: [141, FLOOR], head: [72, 70] },
-      a: { shoulder: [86, 77], elbow: [82, 62], hand: [88, 47] },
-      b: { shoulder: [86, 77], elbow: [70, 71], hand: [88, 67] }
+      /* Wie bei der Flachbank: Ellbogen fusswaerts nach unten, mid auf dem
+         Kreisbogen. */
+      a: { shoulder: [86, 77], elbow: [90, 62], hand: [88, 47] },
+      mid: { elbow: [97, 67] },
+      b: { shoulder: [86, 77], elbow: [100, 76], hand: [88, 67] }
     },
 
     /* ---------- Sitzend, Maschine --------------------------------------- */
@@ -357,7 +369,17 @@
       var a = scene.a[j] || (scene.hold && scene.hold[j]);
       var b = scene.b[j] || (scene.hold && scene.hold[j]) || a;
       if (!a) { out[j] = [100, 80]; continue; }
-      out[j] = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e];
+      /* Mit Stuetzpunkt laeuft das Gelenk ueber zwei Geradenstuecke — genug
+         Bogen, damit der Knochen seine Laenge behaelt. */
+      var m = scene.mid && scene.mid[j];
+      if (m) {
+        var p = e < 0.5 ? a : m;
+        var q = e < 0.5 ? m : b;
+        var u = e < 0.5 ? e * 2 : (e - 0.5) * 2;
+        out[j] = [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+      } else {
+        out[j] = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e];
+      }
     }
     return out;
   }
