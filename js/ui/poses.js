@@ -106,10 +106,14 @@
         head: [2, HEAD], shoulder: [-1, SHOULDER], hip: [0, HIP],
         knee: [5, KNEE], foot: [8, FOOT], locked: 1,
         farKnee: [-3, KNEE], farFoot: [-4, FOOT],
-        /* Hände im Kreuz geschlossen, naher Arm fast durchgestreckt und nach
-           hinten gedrückt — nur so steht der Trizeps als Kante heraus. */
-        elbow: [-13, SHOULDER + 22], hand: [-15, SHOULDER + 40],
-        farElbow: [-4, SHOULDER + 22], farHand: [-8, SHOULDER + 40]
+        /* Der nahe Arm liegt AM Rücken an, nicht dahinter: nur die
+           Trizepskante steht ein paar Punkte über die Rückenlinie hinaus.
+           Weiter nach hinten versetzt hing die ganze Armmasse frei hinter der
+           Silhouette und las sich als Rucksack. Der ferne Arm verschwindet
+           fast ganz hinter dem Rumpf — in echt verdeckt ihn der Körper; nur
+           die Hand lugt an der Griffstelle im Kreuz hervor. */
+        elbow: [-8, SHOULDER + 22], hand: [-9, SHOULDER + 38],
+        farElbow: [3, SHOULDER + 20], farHand: [-1, SHOULDER + 38]
       },
       flex: 1.08, triceps: 1
     },
@@ -687,10 +691,22 @@
 
     /* Der Deltamuskel ist im Profil fast so tief wie der Brustkorb — mit einer
        kleinen Kugel wirkt die Schulter abfallend statt geladen. */
-    px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55 + 2, C.ink);
-    px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55, col.skin);
-    limb(shoulder, elbow, w.armW, col.skin);
-    limb(elbow, hand, w.foreW, col.skin);
+    if (pose.triceps) {
+      /* Der Arm liegt hier IN der Silhouette auf dem Rumpf. Trennung deshalb
+         über dunkle Haut statt über die Ink-Kontur: ein voll umrandeter Arm
+         mitten auf dem Rücken las sich als umgeschnallter Rucksack. */
+      px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55 + 1.5, col.skinDark);
+      px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.52, col.skin);
+      px.capsule(ctx, shoulder, elbow, w.armW + 2.5, col.skinDark);
+      px.capsule(ctx, elbow, hand, w.foreW + 2.5, col.skinDark);
+      px.capsule(ctx, shoulder, elbow, w.armW, col.skin);
+      px.capsule(ctx, elbow, hand, w.foreW, col.skin);
+    } else {
+      px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55 + 2, C.ink);
+      px.disc(ctx, shoulder[0], shoulder[1], w.shoulderSpan * 0.55, col.skin);
+      limb(shoulder, elbow, w.armW, col.skin);
+      limb(elbow, hand, w.foreW, col.skin);
+    }
     /* Beide Hände treffen sich an einem Punkt — geschlossen, nicht zwei Fäuste
        nebeneinander. Deshalb nur eine gemeinsame Faust. */
     px.stamp(ctx, SP.fist, hand[0] - 4, hand[1] - 4, col.ramp);
