@@ -3,8 +3,11 @@
    sich an dieses Objekt, damit das Spiel ohne ES-Module ueber file:// laeuft. */
 window.MacFit = {
   /* Von Hand gepflegt — es gibt keinen Build-Schritt, der sie setzen koennte.
-     Sichtbar im Vorspann; bei spuerbaren Aenderungen hochzaehlen. */
-  version: '1.1',
+     Sichtbar im Vorspann. Die dritte Stelle wird VOR JEDEM Push erhoeht, auch
+     bei kleinen Aenderungen: nur daran ist auf dem Geraet zu erkennen, ob
+     GitHub Pages schon den neuen Stand ausliefert. Die ersten beiden Stellen
+     bleiben spuerbaren Aenderungen vorbehalten. */
+  version: '1.1.1',
   core: {},
   data: {},
   game: {},
