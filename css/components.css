@@ -1369,9 +1369,12 @@
   line-height: 0;
 }
 
+/* Die Breite setzt share.js in CSS-Punkten, damit ein Kartenpunkt genau
+   ganzzahlig viele Bildschirmpunkte belegt. Hier deshalb keine feste Obergrenze
+   mehr — die frühere max-width von 260px hätte die Angabe wieder gestaucht. */
 .share__card {
   width: 100%;
-  max-width: 260px;
+  max-width: 100%;
   height: auto;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);

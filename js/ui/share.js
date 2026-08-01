@@ -100,6 +100,59 @@
     return canvas;
   }
 
+  /* ---------- Vorschau in ganzen Bildschirmpunkten -------------------------- */
+
+  /* Die Karte ist 360 Punkte breit und wurde per CSS auf 260 gestaucht. Das
+     sind 1,444 CSS-Punkte je Kartenpunkt, und weil image-rendering: pixelated
+     nicht mittelt, sondern den naechsten Nachbarn nimmt, faellt dabei rund
+     jede vierte Spalte ersatzlos weg — feine Linien wie Schluesselbein,
+     Bauchkerben oder die Augen verschwinden stellenweise ganz.
+
+     Deshalb wird die Vorschau auf den groessten ganzzahligen Faktor gebracht,
+     der noch in die verfuegbare Breite passt. Gerechnet wird in echten
+     Bildschirmpunkten, nicht in CSS-Punkten: erst dort entscheidet sich, ob
+     ein Bildpunkt sauber aufgeht. Das exportierte Bild bleibt unberuehrt bei
+     360 x 532 — es wird nur angezeigt, nicht neu berechnet. */
+  function availableWidth(node) {
+    var w = node && node.clientWidth;
+    if (w > 0) return w;
+    /* Vor dem Einhaengen laesst sich nichts messen — dann aus dem Fenster
+       rechnen: Overlay-Rand 16, Modal-Rand 18, Modal hoechstens 440 breit. */
+    var inner = window.innerWidth || 390;
+    return Math.max(180, Math.min(440, inner - 32) - 36);
+  }
+
+  function previewOf(card, availCss) {
+    var dpr = window.devicePixelRatio || 1;
+    var factor = Math.floor((availCss * dpr) / CARD_W);
+    if (!(factor >= 1)) factor = 1;
+
+    var out, ctx;
+    try {
+      out = document.createElement('canvas');
+      out.width = CARD_W * factor;
+      out.height = CARD_H * factor;
+      ctx = out.getContext('2d');
+    } catch (err) {
+      return card;
+    }
+    if (!ctx || !ctx.drawImage) return card;
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    try {
+      ctx.drawImage(card, 0, 0, out.width, out.height);
+    } catch (err) {
+      return card;
+    }
+    /* Breite fest in CSS-Punkten setzen, damit ein Kartenpunkt genau factor
+       Bildschirmpunkte belegt. Die Angabe schlaegt die Stilvorlage. */
+    out.style.width = (CARD_W * factor / dpr) + 'px';
+    out.style.height = 'auto';
+    return out;
+  }
+
   function label(ctx, str, x, y, font, color, align) {
     ctx.fillStyle = color;
     ctx.font = font;
@@ -289,8 +342,11 @@
       card = buildCard(chosen);
       util.clear(stage);
       if (card) {
-        card.className = 'share__card';
-        stage.appendChild(card);
+        /* card bleibt die 360er Fassung — sie wird geteilt und gespeichert.
+           Angezeigt wird eine ganzzahlig vergroesserte Kopie davon. */
+        var view = previewOf(card, availableWidth(stage));
+        view.className = 'share__card';
+        stage.appendChild(view);
       } else {
         stage.appendChild(el('p.share__note', {
           text: 'Dieser Browser kann kein Bild erzeugen — Teilen geht als Text.'
@@ -364,6 +420,10 @@
         { label: 'Abbrechen', tone: 'ghost' }
       ]
     });
+
+    /* Noch einmal, jetzt mit echter Breite: vor modal.open haengt die Bühne
+       nicht im Dokument und laesst sich nicht messen. */
+    drawCard();
   }
 
   MF.ui.share = {
