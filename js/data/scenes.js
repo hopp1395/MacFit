@@ -296,9 +296,13 @@
         frameLine(118, 36, 142, 36, 4)
       ],
       implement: 'none',
-      hold: { foot: [104, 106], elbow: [116, 52], hand: [126, 44] },
-      a: { hip: [102, 64], knee: [102, 87], shoulder: [102, 38], head: [101, 25] },
-      b: { hip: [102, 71], knee: [102, 92], shoulder: [102, 45], head: [101, 32] }
+      /* Beim Heben steigt der KNOECHEL mit (Fersenhub), das Bein bleibt
+         starr — mit festem Fusspunkt stauchte sich der Unterschenkel von
+         19 auf 14. Der Ellbogen ist je Endlage als Kreisschnitt gerechnet,
+         weil die Hand am Rahmen fest ist. */
+      hold: { hand: [126, 44] },
+      a: { hip: [102, 64], knee: [102, 85], foot: [104, 99], shoulder: [102, 38], head: [101, 25], elbow: [113, 45] },
+      b: { hip: [102, 71], knee: [102, 92], foot: [104, 106], shoulder: [102, 45], head: [101, 32], elbow: [114, 49] }
     },
 
     donkeycalf: {
@@ -308,9 +312,11 @@
         pad(52, 74, 26, 7)
       ],
       implement: 'none',
-      hold: { foot: [110, 106], hand: [66, 72], elbow: [74, 74] },
-      a: { hip: [112, 68], knee: [110, 88], shoulder: [82, 66], head: [69, 63] },
-      b: { hip: [112, 74], knee: [110, 93], shoulder: [82, 72], head: [69, 69] }
+      /* Wie beim Wadenheben: Knoechel steigt mit, Ellbogen je Endlage als
+         Kreisschnitt (Hand liegt fest auf dem Polster). */
+      hold: { hand: [66, 72] },
+      a: { hip: [112, 68], knee: [110, 87], foot: [110, 100], shoulder: [82, 66], head: [69, 63], elbow: [75, 72] },
+      b: { hip: [112, 74], knee: [110, 93], foot: [110, 106], shoulder: [82, 72], head: [69, 69], elbow: [74, 76] }
     },
 
     /* ---------- Hängend --------------------------------------------------- */
