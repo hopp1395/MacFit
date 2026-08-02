@@ -96,6 +96,24 @@
 
     var pose = SC.poseAt(scene, t);
 
+    /* Anstrengungszittern nahe der schweren Endlage: ein halber Pixel,
+       deterministisch aus der Zeit (kein Zufall — Aufzeichnungen bleiben
+       reproduzierbar), mit t*t auf die Endlage b gewichtet. Ist die Hand
+       am Gerät fest (Stange, Holm), zittert stattdessen der Körper. */
+    if (opts.time) {
+      var tr = Math.sin(opts.time * 42) * 0.55 * t * t;
+      if (tr) {
+        if (scene.hold && scene.hold.hand) {
+          pose.shoulder = [pose.shoulder[0] + tr, pose.shoulder[1]];
+          pose.head = [pose.head[0] + tr, pose.head[1]];
+          pose.hip = [pose.hip[0] + tr * 0.6, pose.hip[1]];
+        } else {
+          pose.hand = [pose.hand[0] + tr, pose.hand[1] + tr * 0.6];
+          pose.elbow = [pose.elbow[0] + tr * 0.7, pose.elbow[1]];
+        }
+      }
+    }
+
     if (scene.cable) {
       px.capsule(ctx, scene.cable, pose.hand, 3, C.ink);
       px.capsule(ctx, scene.cable, pose.hand, 1.5, C.steelLit);
@@ -152,6 +170,7 @@
   function drawExtras(ctx, extras, time) {
     for (var i = 0; i < extras.length; i++) {
       var e = extras[i];
+      e.time = time;
       drawScene(ctx, e.scene, (Math.sin(time * e.speed * 2 + e.phase) + 1) / 2, e);
     }
   }
@@ -179,7 +198,7 @@
       backdrop(ctx, 220, 128, horizon);
       drawExtras(ctx, extras, time);
       drawScene(ctx, scene, phase, {
-        cx: 110, floorY: 122, scale: 0.94,
+        cx: 110, floorY: 122, scale: 0.94, time: time,
         colors: MF.data.outfits.look(MF.game.state.get().player.outfit)
       });
       surface.present();
