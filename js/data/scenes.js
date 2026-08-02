@@ -232,12 +232,12 @@
       implement: 'dumbbell',
       hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [98, 44], head: [97, 34] },
       /* Strenger Curl: der Ellbogen bleibt am Rumpf stehen, nur der
-         Unterarm schwenkt — Oberarm 16 und Unterarm 14 wie in den
-         Standszenen. Die Hand laeuft als orbit exakt auf dem Kreisbogen
-         um den Ellbogen; ein mid-Stuetzpunkt liess die Laenge in den
-         Viertelphasen noch sichtbar atmen. */
-      a: { elbow: [98, 60], hand: [99, 74] },
-      b: { elbow: [98, 60], hand: [88, 50] },
+         Unterarm schwenkt. Oberarm 16, Unterarm 17 — die 14 aus der
+         idle-Szene wirkte hier gestaucht, weil die Hantelscheibe die Hand
+         verdeckt und der Unterarm das Zentrum der Uebung ist. Die Hand
+         laeuft als orbit exakt auf dem Kreisbogen um den Ellbogen. */
+      a: { elbow: [98, 60], hand: [99, 77] },
+      b: { elbow: [98, 60], hand: [86, 48] },
       orbit: { hand: 'elbow' }
     },
 
