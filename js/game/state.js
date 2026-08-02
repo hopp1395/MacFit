@@ -45,7 +45,10 @@
          ohne diesen Block laufen dadurch einmalig durch die Anlage.
          photo ist ein verkleinertes JPEG als data-URL oder leer. */
       player: { name: '', outfit: 'blau', photo: '', number: '', since: 1, created: false },
-      settings: { haptics: true, music: true, sound: true, muscle: 'brust', weight: 1 },
+      /* autoResume: nach der Nacht ohne Tippen weiterspielen (Wahl am
+         Schlaf-Countdown, bleibt über Sitzungen erhalten). */
+      settings: { haptics: true, music: true, sound: true, muscle: 'brust', weight: 1,
+                  autoResume: false },
       seenIntro: false,
       lastReport: null
     };

@@ -9,7 +9,7 @@
 
   /* So lange dauert eine Nacht, bevor es weitergeht. Über setSleepSeconds()
      veränderbar — das braucht der Test, der nicht wirklich warten will. */
-  var sleepSeconds = 60;
+  var sleepSeconds = 30;
 
   function deltaText(v, digits) {
     var d = util.round(v, digits === undefined ? 1 : digits);
@@ -109,6 +109,16 @@
         tone: 'primary',
         delaySeconds: sleepSeconds,
         waitText: '🛌 Du schläfst',
+        /* Während des Wartens anwählbar; die Wahl liegt im Spielstand und
+           gilt ab dann für jede Nacht, bis sie wieder abgewählt wird. */
+        auto: {
+          label: 'Automatisch weiter trainieren',
+          on: !!MF.game.state.get().settings.autoResume,
+          onToggle: function (on) {
+            MF.game.state.get().settings.autoResume = on;
+            MF.game.state.saveNow();
+          }
+        },
         /* Der neue Tag beginnt wie der erste: Anfahrt ans Studio. */
         onTap: function () { MF.ui.intro.play(); }
       }]
