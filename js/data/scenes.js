@@ -262,9 +262,15 @@
       ],
       cable: [155, 30],
       implement: 'handle',
-      hold: { hip: [96, 70], knee: [96, 92], foot: [96, FLOOR], shoulder: [98, 44], head: [96, 34] },
-      a: { elbow: [110, 55], hand: [117, 72] },
-      b: { elbow: [109, 53], hand: [113, 46] }
+      /* Oberkoerper nach vorn gebeugt (Huefte 96, Schulter 104), Knie leicht
+         weich — kerzengerade sah der Druecker unnatuerlich aus. Der Ellbogen
+         steht fest am Koerper unter der Schulter, nur der Unterarm schwenkt
+         als orbit zwischen Zug oben und Streckung unten. */
+      hold: { hip: [96, 70], knee: [98, 92], foot: [96, FLOOR],
+              shoulder: [104, 46], head: [107, 35], elbow: [106, 61] },
+      a: { hand: [111, 77] },
+      b: { hand: [117, 48] },
+      orbit: { hand: 'elbow' }
     },
 
     calf: {
@@ -335,8 +341,15 @@
       ],
       implement: 'none',
       hold: { hand: [100, 56] },
-      a: { shoulder: [96, 42], head: [94, 30], elbow: [101, 50], hip: [98, 70], knee: [107, 90], foot: [98, 104] },
-      b: { shoulder: [96, 56], head: [94, 44], elbow: [111, 61], hip: [98, 84], knee: [107, 103], foot: [98, 116] }
+      /* Die Ellbogen beugen nach HINTEN, nicht nach vorn — vorn kann die
+         Schulter beim Dip nicht. Knochenlaengen wie ueberall (Oberarm ~15,
+         Unterarm ~15); die alte Pose hatte 9er-Oberarme. Der Ellbogen
+         laeuft ueber mid (Kreisschnitt bei halber Hoehe), weil die Hand am
+         Holm fest ist. Unten faellt die Schulter bis auf Holmhoehe, der
+         Rumpf lehnt leicht nach vorn. */
+      a: { shoulder: [99, 27], head: [97, 15], elbow: [101, 41], hip: [98, 55], knee: [107, 75], foot: [98, 89] },
+      mid: { elbow: [87, 48] },
+      b: { shoulder: [100, 54], head: [96, 42], elbow: [85, 58], hip: [96, 82], knee: [106, 101], foot: [97, 115] }
     },
 
     /* ---------- Nur für den Hintergrund ---------------------------------- */
