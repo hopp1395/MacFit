@@ -328,8 +328,15 @@
       ],
       implement: 'none',
       hold: { hand: [100, 24], elbow: [102, 40], shoulder: [100, 54], head: [100, 41] },
+      /* Kniebeugen-Variante: der Oberschenkel schwenkt bis ueber die
+         Waagerechte, der Unterschenkel bleibt haengen — das Bein beugt
+         sich beim Anheben im Knie. Beide Beinknochen als orbit (Knie um
+         die Huefte, Fuss ums Knie), dadurch konstante Laengen: vorher
+         wuchs der Unterschenkel von 15 auf 19 und beide kollabierten auf
+         der geraden Zwischenbahn. */
       a: { hip: [100, 82], knee: [102, 101], foot: [102, 116] },
-      b: { hip: [100, 80], knee: [117, 73], foot: [133, 63] }
+      b: { hip: [100, 80], knee: [117, 72], foot: [122, 86] },
+      orbit: { knee: 'hip', foot: 'knee' }
     },
 
     dips: {
