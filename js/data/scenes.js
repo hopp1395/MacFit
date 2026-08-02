@@ -177,8 +177,9 @@
       implement: 'roller',
       hold: { hip: [96, 89], shoulder: [84, 68], head: [79, 56], elbow: [90, 79], hand: [100, 91], knee: [118, 90] },
       /* Unterschenkel als orbit ums feste Knie — vorher war er gestreckt 30
-         und gebeugt 23 lang. */
-      a: { foot: [141, 86] },
+         und gebeugt 23 lang. Die Streckung endet knapp UNTER der
+         Waagerechten: darueber laese sich das Knie ueberdehnt. */
+      a: { foot: [141, 91] },
       b: { foot: [123, 113] },
       orbit: { foot: 'knee' }
     },
@@ -218,8 +219,8 @@
          Tiefe: Fuss und Knochenlaengen stehen fest, sonst schrumpfte der
          Oberschenkel unterwegs um ein Fuenftel. */
       a: { hip: [100, 71], knee: [100, 95], shoulder: [100, 45], head: [98, 32], elbow: [90, 54], hand: [95, 43] },
-      mid: { knee: [91, 97] },
-      b: { hip: [115, 88], knee: [93, 97], shoulder: [106, 64], head: [102, 52], elbow: [96, 73], hand: [101, 62] }
+      mid: { knee: [90, 98] },
+      b: { hip: [111, 89], knee: [90, 98], shoulder: [102, 65], head: [98, 53], elbow: [92, 74], hand: [97, 63] }
     },
 
     deadlift: {
