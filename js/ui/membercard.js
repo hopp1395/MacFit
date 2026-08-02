@@ -104,8 +104,12 @@
     info.appendChild(el('div.mcard__row', null, [
       el('span', { text: 'Nummer' }), el('strong', { text: number(p) })
     ]));
+    /* Dauer statt Beitrittstag: "Tag 1" stand da fuer immer, weil jeder an
+       Tag 1 beitritt — gemeint ist, wie lange man schon dabei ist. */
+    var days = Math.max(1, MF.game.state.get().day - (p.since || 1) + 1);
     info.appendChild(el('div.mcard__row', null, [
-      el('span', { text: 'Mitglied seit' }), el('strong', { text: 'Tag ' + (p.since || 1) })
+      el('span', { text: 'Mitglied seit' }),
+      el('strong', { text: days === 1 ? '1 Tag' : days + ' Tagen' })
     ]));
 
     card.appendChild(el('div.mcard__body', null, [photo, info]));
