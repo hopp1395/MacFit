@@ -134,12 +134,26 @@
        nur 15 x 15 statt 19 x 19. */
     px.stamp(ctx, MF.ui.sprites.headSmall, CX - 7, 5, r);
 
-    /* Shorts in der gewählten Farbe */
+    /* Shorts in der gewählten Farbe: Bund über der Hüfte plus zwei
+       Hosenbeine, die den Oberschenkel wirklich umschließen. Der flache
+       Kasten von vorher war schmaler als die Schenkelwölbung — die Beine
+       quollen seitlich heraus und verschmolzen darunter zu einem Block. */
     var outfit = MF.data.outfits.get(s.player ? s.player.outfit : 'blau');
-    var sw = hipX + thighW * 0.5;
-    px.rect(ctx, CX - sw - 1, hipY - 4, (sw + 1) * 2, 13, C.ink);
-    px.rect(ctx, CX - sw, hipY - 3, sw * 2, 11, outfit.shirt);
-    px.rect(ctx, CX - 1, hipY - 3, 2, 11, C.ink);
+    var bw = Math.max(backW * 0.5, hipX + thighW * 0.5) + 1;
+    function shortLeg(side, color, e) {
+      px.capsule(ctx, [CX + side * hipX, hipY + 3],
+        [CX + side * (hipX + 1), hipY + 10], thighW + (e || 0), color);
+    }
+    shortLeg(-1, C.ink, 2);
+    shortLeg(1, C.ink, 2);
+    px.rect(ctx, CX - bw - 1, hipY - 4, (bw + 1) * 2, 6, C.ink);
+    shortLeg(-1, outfit.shirt, 0);
+    shortLeg(1, outfit.shirt, 0);
+    px.rect(ctx, CX - bw, hipY - 3, bw * 2, 4, outfit.shirt);
+    /* Mittelnaht, darunter die Trennlinie der Schenkel — ohne sie liest
+       sich der Bereich zwischen den Hosenbeinen als ein Block. */
+    px.rect(ctx, CX - 1, hipY - 3, 2, 16, C.ink);
+    px.capsule(ctx, [CX, hipY + 13], [CX, hipY + 19], 1.5, C.ink);
 
     /* --- Licht und Definition ------------------------------------------- */
     px.capsule(ctx, [CX - 3, shoulderY + 3], [CX - 3, hipY - 12], backW * 0.22, skinLit);
