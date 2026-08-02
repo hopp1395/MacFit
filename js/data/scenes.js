@@ -226,8 +226,14 @@
       equip: [],
       implement: 'dumbbell',
       hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [98, 44], head: [97, 34] },
-      a: { elbow: [97, 63], hand: [99, 81] },
-      b: { elbow: [96, 62], hand: [85, 52] }
+      /* Strenger Curl: der Ellbogen bleibt am Rumpf stehen, nur der
+         Unterarm schwenkt — Oberarm 16 und Unterarm 14 wie in den
+         Standszenen (vorher 19 und schwankend 18 bis 15). mid haelt die
+         Hand auf dem Kreisbogen um den Ellbogen, sonst schrumpft der
+         Unterarm auf der geraden Bahn auf ein Drittel. */
+      a: { elbow: [98, 60], hand: [99, 74] },
+      mid: { hand: [85, 66] },
+      b: { elbow: [98, 60], hand: [88, 50] }
     },
 
     lateral: {
