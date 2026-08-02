@@ -1208,6 +1208,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Der Anwahl-Knopf unterm Balken: aktiv leuchtet er in der Akzentfarbe,
+   damit klar ist, dass es nach der Nacht von selbst weitergeht. */
+.modal__auto {
+  margin-top: 3px;
+  font-size: 13.5px;
+  padding: 9px 12px;
+}
+
+.modal__auto.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .bar--wait { height: 8px; }
 
 .bar--wait .bar__fill {
