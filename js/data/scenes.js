@@ -235,8 +235,12 @@
       equip: [],
       implement: 'dumbbell',
       hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [100, 44], head: [99, 34] },
+      /* Oberarm 16, Unterarm 14 in beiden Endlagen — oben war der Unterarm
+         auf 18 gewachsen. mid haelt Ellbogen und Hand auf dem Kreisbogen um
+         die Schulter, sonst schrumpft der Arm mitten im Heben. */
       a: { elbow: [90, 57], hand: [82, 69] },
-      b: { elbow: [84, 44], hand: [66, 41] }
+      mid: { elbow: [85, 51], hand: [72, 57] },
+      b: { elbow: [84, 44], hand: [70, 42] }
     },
 
     tricep: {
