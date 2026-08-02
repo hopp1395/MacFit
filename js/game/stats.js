@@ -32,12 +32,18 @@
     return util.clamp(100 - cv * 145, 0, 100);
   }
 
-  /* Schwaechste Partie — fuer Hinweise in der UI. */
+  /* Schwaechste Partie — fuer Hinweise in der UI. Gemessen wird der Aufbau
+     seit Start RELATIV zum Wachstumsfaktor der Partie: Waden legen mit
+     growth 0.70 konstruktionsbedingt nur halb so schnell zu wie der Rest
+     und standen nach roher Groesse fast immer als Nachholbedarf da, selbst
+     wenn sie fleissig trainiert wurden. Der Hinweis soll Vernachlaessigung
+     zeigen, nicht Genetik — die Balance selbst bleibt unveraendert. */
   function weakestMuscle() {
     var worst = null;
     MF.data.muscles.list.forEach(function (m) {
       var s = state().muscles[m.id].size;
-      if (!worst || s < worst.size) worst = { id: m.id, name: m.name, size: s };
+      var rel = (s - 8) / m.growth;
+      if (!worst || rel < worst.rel) worst = { id: m.id, name: m.name, size: s, rel: rel };
     });
     return worst;
   }
