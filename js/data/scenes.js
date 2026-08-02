@@ -296,12 +296,12 @@
         frameLine(118, 36, 142, 36, 4)
       ],
       implement: 'none',
-      /* Beim Heben steigt der KNOECHEL mit (Fersenhub), das Bein bleibt
-         starr — mit festem Fusspunkt stauchte sich der Unterschenkel von
-         19 auf 14. Der Ellbogen ist je Endlage als Kreisschnitt gerechnet,
-         weil die Hand am Rahmen fest ist. */
-      hold: { hand: [126, 44] },
-      a: { hip: [102, 64], knee: [102, 85], foot: [104, 99], shoulder: [102, 38], head: [101, 25], elbow: [113, 45] },
+      /* Die Zehen (toe) stehen fest auf dem Block, der Knoechel kippt beim
+         Heben um sie nach oben-vorn — der Fuss dreht sichtbar in den
+         Zehenstand, statt dass der ganze Koerper schwebt. Bein bleibt
+         starr, Ellbogen je Endlage als Kreisschnitt (Hand am Rahmen). */
+      hold: { hand: [126, 44], toe: [110, 107] },
+      a: { hip: [104, 68], knee: [104, 89], foot: [106, 103], shoulder: [104, 42], head: [103, 29], elbow: [114, 50] },
       b: { hip: [102, 71], knee: [102, 92], foot: [104, 106], shoulder: [102, 45], head: [101, 32], elbow: [114, 49] }
     },
 
@@ -312,11 +312,12 @@
         pad(52, 74, 26, 7)
       ],
       implement: 'none',
-      /* Wie beim Wadenheben: Knoechel steigt mit, Ellbogen je Endlage als
-         Kreisschnitt (Hand liegt fest auf dem Polster). */
-      hold: { hand: [66, 72] },
-      a: { hip: [112, 68], knee: [110, 87], foot: [110, 100], shoulder: [82, 66], head: [69, 63], elbow: [75, 72] },
-      b: { hip: [112, 74], knee: [110, 93], foot: [110, 106], shoulder: [82, 72], head: [69, 69], elbow: [74, 76] }
+      /* Wie beim Wadenheben: Zehen fest, Knoechel kippt um sie nach
+         oben-vorn (Blick nach links). Hand und Ellbogen liegen fest auf
+         dem Polster. */
+      hold: { hand: [66, 72], elbow: [74, 76], toe: [104, 107] },
+      a: { hip: [110, 71], knee: [108, 90], foot: [108, 103], shoulder: [80, 69], head: [67, 66] },
+      b: { hip: [112, 74], knee: [110, 93], foot: [110, 106], shoulder: [82, 72], head: [69, 69] }
     },
 
     /* ---------- Hängend --------------------------------------------------- */
@@ -443,7 +444,10 @@
   /* Wer im Hintergrund trainiert. */
   var AMBIENT = ['curl', 'treadmill', 'phone', 'latzug', 'bench', 'idle', 'squat', 'lateral'];
 
-  var JOINTS = ['head', 'shoulder', 'elbow', 'hand', 'hip', 'knee', 'foot'];
+  /* toe ist optional: nur Szenen, in denen der Fuss um die Zehen kippt
+     (Wadenheben), definieren es — fehlt es, zeichnet figure.js den Fuss
+     starr in Blickrichtung. */
+  var JOINTS = ['head', 'shoulder', 'elbow', 'hand', 'hip', 'knee', 'foot', 'toe'];
 
   /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt). */
   function poseAt(scene, t) {
@@ -456,7 +460,10 @@
       var j = JOINTS[i];
       var a = scene.a[j] || (scene.hold && scene.hold[j]);
       var b = scene.b[j] || (scene.hold && scene.hold[j]) || a;
-      if (!a) { out[j] = [100, 80]; continue; }
+      if (!a) {
+        if (j !== 'toe') out[j] = [100, 80];
+        continue;
+      }
       /* Drehgelenk: nicht die Lage interpolieren, sondern Winkel und Radius
          um das Elterngelenk — der Knochen ist damit in JEDER Zwischenphase
          exakt gleich lang. Setzt voraus, dass das Elterngelenk in JOINTS

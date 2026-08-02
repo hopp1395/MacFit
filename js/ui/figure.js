@@ -114,8 +114,12 @@
     var L = limbs(f, th);
     var o = farSide(f);
     var hr = th.head;
-    var toe = [f.foot[0] + face * 5.5, f.foot[1] + 1.5];
-    var farToe = [o.foot[0] + face * 5.5 - 4, o.foot[1] + 1.5];
+    /* Liefert die Pose eine eigene Zehenposition (f.toe), kippt der Fuss um
+       sie — so hebt sich beim Wadenheben die Ferse, waehrend die Zehen am
+       Boden bleiben. Ohne toe zeigt der Fuss starr in Blickrichtung. */
+    var toe = f.toe || [f.foot[0] + face * 5.5, f.foot[1] + 1.5];
+    var farToe = f.toe ? [f.toe[0] - 4, f.toe[1]]
+                       : [o.foot[0] + face * 5.5 - 4, o.foot[1] + 1.5];
     var footW = th.calf * 0.8;
 
     /* 1. Kontur: erst hinten, dann vorne — ergibt eine saubere Silhouette. */
