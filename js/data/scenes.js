@@ -176,8 +176,11 @@
       ],
       implement: 'roller',
       hold: { hip: [96, 89], shoulder: [84, 68], head: [79, 56], elbow: [90, 79], hand: [100, 91], knee: [118, 90] },
-      a: { foot: [148, 86] },
-      b: { foot: [123, 113] }
+      /* Unterschenkel als orbit ums feste Knie — vorher war er gestreckt 30
+         und gebeugt 23 lang. */
+      a: { foot: [141, 86] },
+      b: { foot: [123, 113] },
+      orbit: { foot: 'knee' }
     },
 
     legpress: {
@@ -190,8 +193,13 @@
       ],
       implement: 'sled',
       hold: { head: [46, 70], shoulder: [60, 82], hip: [88, 99], elbow: [68, 94], hand: [80, 104] },
-      a: { knee: [124, 84], foot: [152, 62] },
-      b: { knee: [102, 74], foot: [118, 84] }
+      /* Fuss faehrt auf der Schiene, Kniepositionen sind als Kreisschnitt
+         gerechnet (Oberschenkel 22, Unterschenkel 26) — vorher schwankten
+         die Knochen zwischen 39/36 und 29/19. Knie als orbit um die
+         Huefte. */
+      a: { knee: [104, 84], foot: [130, 80] },
+      b: { knee: [94, 78], foot: [117, 90] },
+      orbit: { knee: 'hip' }
     },
 
     /* ---------- Stehend ---------------------------------------------------
@@ -204,8 +212,14 @@
       equip: [post(52, 44), post(148, 44), frameLine(55, 50, 151, 50, 3)],
       implement: 'barbell',
       hold: { foot: [100, FLOOR] },
+      /* Huefte nach HINTEN, Knie nach VORN ueber die Zehen (Blick nach
+         links) — vorher war es genau umgekehrt und das Bein knickte wie
+         ein Vogelbein. Der mid-Stuetzpunkt ist der Kreisschnitt bei halber
+         Tiefe: Fuss und Knochenlaengen stehen fest, sonst schrumpfte der
+         Oberschenkel unterwegs um ein Fuenftel. */
       a: { hip: [100, 71], knee: [100, 95], shoulder: [100, 45], head: [98, 32], elbow: [90, 54], hand: [95, 43] },
-      b: { hip: [91, 91], knee: [111, 98], shoulder: [94, 65], head: [91, 52], elbow: [84, 74], hand: [89, 63] }
+      mid: { knee: [91, 97] },
+      b: { hip: [115, 88], knee: [93, 97], shoulder: [106, 64], head: [102, 52], elbow: [96, 73], hand: [101, 62] }
     },
 
     deadlift: {
