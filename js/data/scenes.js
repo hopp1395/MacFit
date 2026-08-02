@@ -451,13 +451,15 @@
 
   /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt). */
   function poseAt(scene, t) {
-    /* Zeitgefühl statt Metronom. Smootherstep (erste UND zweite Ableitung
-       an den Enden null) lässt die Bewegung an beiden Umkehrpunkten spürbar
-       verharren; der Exponent davor verschiebt das Verweilen zur schweren
-       Endlage b — unten zäh, oben knackiger Lockout. Das Marker-Timing des
-       Spiels bleibt unberührt, geformt wird nur die Pose. */
+    /* Zeitgefühl statt Metronom. Smootherstep ZWEIFACH hintereinander:
+       an beiden Umkehrpunkten steht die Bewegung je rund ein Fünftel der
+       Zeit fast still, dazwischen zieht sie entschlossen durch — einfach
+       angewendet wirkte die Ausführung noch zu linear. Der Exponent davor
+       verschiebt das Verweilen zur schweren Endlage b. Das Marker-Timing
+       des Spiels bleibt unberührt, geformt wird nur die Pose. */
     var u = Math.pow(t, 0.85);
-    var e = u * u * u * (u * (u * 6 - 15) + 10);
+    var s = u * u * u * (u * (u * 6 - 15) + 10);
+    var e = s * s * s * (s * (s * 6 - 15) + 10);
     var out = {};
     for (var i = 0; i < JOINTS.length; i++) {
       var j = JOINTS[i];
