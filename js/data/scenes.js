@@ -451,10 +451,13 @@
 
   /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt). */
   function poseAt(scene, t) {
-    /* Geglättet statt linear: an den Umkehrpunkten verweilt die Bewegung
-       kurz — so sieht eine kontrollierte Wiederholung aus. Linear schrubbte
-       die Figur wie ein Scheibenwischer zwischen den Endlagen. */
-    var e = t * t * (3 - 2 * t);
+    /* Zeitgefühl statt Metronom. Smootherstep (erste UND zweite Ableitung
+       an den Enden null) lässt die Bewegung an beiden Umkehrpunkten spürbar
+       verharren; der Exponent davor verschiebt das Verweilen zur schweren
+       Endlage b — unten zäh, oben knackiger Lockout. Das Marker-Timing des
+       Spiels bleibt unberührt, geformt wird nur die Pose. */
+    var u = Math.pow(t, 0.85);
+    var e = u * u * u * (u * (u * 6 - 15) + 10);
     var out = {};
     for (var i = 0; i < JOINTS.length; i++) {
       var j = JOINTS[i];
