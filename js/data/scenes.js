@@ -7,6 +7,11 @@
                     wenn ein Gelenk weit um sein Nachbargelenk schwenkt — die
                     gerade Sehne schnitte den Bogen, und der Knochen schrumpfte
                     sichtbar mitten in der Bewegung
+     orbit          optional, { kind: elternGelenk }: das Gelenk laeuft auf dem
+                    Kreisbogen um sein Elterngelenk (Winkel und Radius werden
+                    interpoliert, nicht die Lage). Exakt konstante Knochenlaenge
+                    in jeder Zwischenphase — fuer grosse Schwenks die bessere
+                    Wahl als mid, das nur die halbe Sehne durch zwei ersetzt
      hold           Gelenke, die sich nicht bewegen (aus a übernommen)
      implement      barbell | dumbbell | handle | roller | sled | none
      cable          Seilzug von diesem Punkt zur Hand
@@ -226,8 +231,14 @@
       equip: [],
       implement: 'dumbbell',
       hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [98, 44], head: [97, 34] },
-      a: { elbow: [97, 63], hand: [99, 81] },
-      b: { elbow: [96, 62], hand: [85, 52] }
+      /* Strenger Curl: der Ellbogen bleibt am Rumpf stehen, nur der
+         Unterarm schwenkt. Oberarm 16, Unterarm 17 — die 14 aus der
+         idle-Szene wirkte hier gestaucht, weil die Hantelscheibe die Hand
+         verdeckt und der Unterarm das Zentrum der Uebung ist. Die Hand
+         laeuft als orbit exakt auf dem Kreisbogen um den Ellbogen. */
+      a: { elbow: [98, 60], hand: [99, 77] },
+      b: { elbow: [98, 60], hand: [86, 48] },
+      orbit: { hand: 'elbow' }
     },
 
     lateral: {
@@ -405,6 +416,28 @@
       var a = scene.a[j] || (scene.hold && scene.hold[j]);
       var b = scene.b[j] || (scene.hold && scene.hold[j]) || a;
       if (!a) { out[j] = [100, 80]; continue; }
+      /* Drehgelenk: nicht die Lage interpolieren, sondern Winkel und Radius
+         um das Elterngelenk — der Knochen ist damit in JEDER Zwischenphase
+         exakt gleich lang. Setzt voraus, dass das Elterngelenk in JOINTS
+         vor dem Kind steht, damit out[parent] schon berechnet ist. */
+      var parent = scene.orbit && scene.orbit[j];
+      if (parent && out[parent]) {
+        var pa = scene.a[parent] || (scene.hold && scene.hold[parent]);
+        var pb = scene.b[parent] || (scene.hold && scene.hold[parent]) || pa;
+        var ax = a[0] - pa[0], ay = a[1] - pa[1];
+        var bx = b[0] - pb[0], by = b[1] - pb[1];
+        var ra = Math.sqrt(ax * ax + ay * ay);
+        var rb = Math.sqrt(bx * bx + by * by);
+        var wa = Math.atan2(ay, ax);
+        var dw = Math.atan2(by, bx) - wa;
+        if (dw > Math.PI) dw -= 2 * Math.PI;      /* kuerzester Drehsinn */
+        if (dw < -Math.PI) dw += 2 * Math.PI;
+        var w = wa + dw * e;
+        var r = ra + (rb - ra) * e;
+        out[j] = [out[parent][0] + Math.cos(w) * r,
+                  out[parent][1] + Math.sin(w) * r];
+        continue;
+      }
       /* Mit Stuetzpunkt laeuft das Gelenk ueber zwei Geradenstuecke — genug
          Bogen, damit der Knochen seine Laenge behaelt. */
       var m = scene.mid && scene.mid[j];
