@@ -328,8 +328,13 @@
       ],
       implement: 'none',
       hold: { hand: [100, 24], elbow: [102, 40], shoulder: [100, 54], head: [100, 41] },
+      /* Beide Beinknochen als orbit: Knie kreist um die Huefte, Fuss ums
+         Knie — vorher wuchs der Unterschenkel beim Anheben von 15 auf 19
+         und beide kollabierten auf der geraden Zwischenbahn. Endlagen auf
+         gleiche Laengen gebracht (Oberschenkel 19, Unterschenkel 15). */
       a: { hip: [100, 82], knee: [102, 101], foot: [102, 116] },
-      b: { hip: [100, 80], knee: [117, 73], foot: [133, 63] }
+      b: { hip: [100, 80], knee: [118, 74], foot: [132.4, 69.7] },
+      orbit: { knee: 'hip', foot: 'knee' }
     },
 
     dips: {
