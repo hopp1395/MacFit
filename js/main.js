@@ -3,9 +3,154 @@
 (function (MF) {
   'use strict';
 
+  /* Ohne Konto laeuft nichts mehr: erst die Anmeldung (Gate), dann die
+     Entscheidung, welcher Spielstand zaehlt (Cloud oder Geraet), dann der
+     bisherige Start. */
   function boot() {
-    var loaded = MF.core.storage.load();
-    var s = loaded ? MF.game.state.hydrate(loaded) : MF.game.state.createNewState();
+    var cloud = MF.core.cloud;
+
+    /* Der Link aus der Passwort-Mail meldet sich frueh im Start — der
+       Listener muss deshalb vor init() stehen, nicht erst in wireEvents(). */
+    MF.core.events.on('cloud:recovery', function () {
+      MF.ui.login.showNewPassword();
+    });
+
+    cloud.init();
+
+    if (!cloud.isSupported()) {
+      MF.ui.login.showBlocked(MF.cloudConfig && MF.cloudConfig.url
+        ? 'Dieser Browser ist zu alt für MacFit Online. Bitte nutze einen aktuellen Browser.'
+        : 'MacFit Online ist noch nicht eingerichtet — es fehlen die Zugangsdaten.');
+      return;
+    }
+
+    cloud.getSession(function (session) {
+      if (session) { chooseSave(); return; }
+      MF.ui.login.show({ onDone: chooseSave });
+    });
+  }
+
+  /* Angemeldet — jetzt den Stand bestimmen. Die Cloud fuehrt; der lokale
+     Speicher ist nur der Puffer dieses Geraets. */
+  function chooseSave() {
+    var cloud = MF.core.cloud;
+
+    cloud.loadSave(function (err, row) {
+      var local = MF.core.storage.load();
+
+      if (err) {
+        /* Cloud gerade nicht erreichbar. Gehoert der lokale Stand zu diesem
+           Konto, geht es damit weiter — der Marker schiebt spaeter nach.
+           Sonst hilft nur neu laden: ein fremder Stand darf das Konto nicht
+           ueberschreiben. */
+        var m = cloud.marker();
+        var u = cloud.user();
+        if (local && m && u && m.user === u.id) {
+          startGame(MF.game.state.hydrate(local));
+          MF.ui.toast.show('Keine Verbindung — dein Stand wird später synchronisiert.', 'warn');
+          return;
+        }
+        MF.ui.login.showBlocked('Keine Verbindung zum Server. Prüfe dein Internet und lade die Seite neu.');
+        return;
+      }
+
+      var uid = cloud.user() ? cloud.user().id : '';
+      var verdict = cloud.decideBoot(row, local, cloud.marker(), uid);
+
+      if (verdict === 'fresh') { startGame(MF.game.state.createNewState()); return; }
+      if (verdict === 'cloud') {
+        cloud.markSynced(row.updatedAt);
+        startGame(MF.game.state.hydrate(row.data));
+        return;
+      }
+      if (verdict === 'local') {
+        /* Der letzte Upload hat gefehlt (z. B. beim Schliessen) — nachschieben. */
+        startGame(MF.game.state.hydrate(local));
+        cloud.pushNow();
+        return;
+      }
+      if (verdict === 'adopt') { askAdoption(local); return; }
+      askWhich(row, local);
+    });
+  }
+
+  /* Neues Konto, aber auf dem Geraet liegt schon ein Stand aus der Zeit vor
+     MacFit Online: einmalig anbieten, ihn zu uebernehmen. */
+  function askAdoption(local) {
+    var name = (local.player && local.player.name) || 'ein Spieler';
+    var day = local.day || 1;
+
+    MF.ui.modal.open({
+      title: 'Spielstand gefunden',
+      subtitle: 'Auf diesem Gerät trainiert bereits ' + name + ' (Tag ' + day + ').',
+      body: MF.core.util.el('p', {
+        text: 'Soll dieser Stand in dein Konto übernommen werden? Er wandert dann '
+            + 'in die Cloud und steht auf allen Geräten bereit.'
+      }),
+      dismissible: false,
+      actions: [
+        {
+          label: 'Übernehmen', tone: 'primary',
+          onTap: function () {
+            startGame(MF.game.state.hydrate(local));
+            MF.core.cloud.pushNow();
+          }
+        },
+        {
+          label: 'Neu anfangen', tone: 'ghost',
+          onTap: function () {
+            MF.ui.modal.open({
+              title: 'Wirklich neu anfangen?',
+              subtitle: 'Der Stand von ' + name + ' auf diesem Gerät wird dabei überschrieben.',
+              dismissible: false,
+              actions: [
+                { label: 'Zurück', tone: 'ghost', onTap: function () { askAdoption(local); } },
+                { label: 'Neu anfangen', tone: 'danger', onTap: function () {
+                    startGame(MF.game.state.createNewState());
+                  } }
+              ]
+            });
+          }
+        }
+      ]
+    });
+  }
+
+  /* Cloud und Geraet sind auseinandergelaufen (zwei Geraete, beide mit
+     eigenen Aenderungen) — das entscheidet der Spieler, nicht der Code. */
+  function askWhich(row, local) {
+    var cloudDay = (row.data && row.data.day) || 1;
+    var localDay = local.day || 1;
+
+    MF.ui.modal.open({
+      title: 'Welcher Stand zählt?',
+      subtitle: 'Cloud und dieses Gerät sind unterschiedlich weit.',
+      body: MF.core.util.el('p', {
+        text: 'Cloud: Tag ' + cloudDay + ' — dieses Gerät: Tag ' + localDay + '. '
+            + 'Der jeweils andere Stand wird überschrieben.'
+      }),
+      dismissible: false,
+      actions: [
+        {
+          label: 'Cloud (Tag ' + cloudDay + ')', tone: 'primary',
+          onTap: function () {
+            MF.core.cloud.markSynced(row.updatedAt);
+            startGame(MF.game.state.hydrate(row.data));
+          }
+        },
+        {
+          label: 'Dieses Gerät (Tag ' + localDay + ')', tone: 'ghost',
+          onTap: function () {
+            startGame(MF.game.state.hydrate(local));
+            MF.core.cloud.pushNow();
+          }
+        }
+      ]
+    });
+  }
+
+  /* Der bisherige Start — laeuft, sobald feststeht, welcher Stand gilt. */
+  function startGame(s) {
     MF.game.state.set(s);
 
     /* Level immer aus den XP ableiten — falls sich Schwellen geaendert haben. */
@@ -26,6 +171,10 @@
     MF.game.state.startAutosave(15);
 
     document.body.classList.add('is-ready');
+
+    /* Den gewaehlten Stand sofort in den lokalen Puffer schreiben — ein
+       Cloud-Stand waere sonst bis zum ersten Speicherpunkt nur im Speicher. */
+    MF.game.state.saveNow();
 
     /* Vorspann zuerst — Dialoge kämen sonst hinter dem Film zu liegen und
        wären beim Wegtippen schon quittiert. */
@@ -64,7 +213,8 @@
         body: MF.core.util.el('p', {
           text: 'Das passiert im privaten Modus oder wenn Website-Daten blockiert sind. '
               + 'Du kannst normal spielen, aber beim Schließen des Tabs ist alles weg. '
-              + 'In einem normalen Fenster wird automatisch gespeichert.'
+              + 'Auch die Anmeldung wird nicht gemerkt — beim nächsten Start heißt es '
+              + 'neu einloggen. In einem normalen Fenster passiert beides automatisch.'
         }),
         actions: [{ label: 'Verstanden', tone: 'primary' }]
       });
@@ -95,10 +245,41 @@
       MF.ui.hud.render();
     });
 
-    /* Beim Verlassen der Seite auf jeden Fall sichern. */
-    window.addEventListener('pagehide', function () { MF.game.state.saveNow(); });
+    /* Cloud-Stoerungen nur dezent melden — das Spiel laeuft lokal weiter,
+       und der Nachschub probiert es von selbst wieder. */
+    var lastCloudWarn = 0;
+    on('cloud:error', function () {
+      var t = +new Date();
+      if (t - lastCloudWarn < 60000) return;
+      lastCloudWarn = t;
+      MF.ui.toast.show('Cloud gerade nicht erreichbar — es wird lokal weitergespielt.', 'warn');
+    });
+
+    /* Sitzung weg (abgelaufen oder auf anderem Weg beendet): das Spiel bleibt
+       stehen, wo es ist, nur die Anmeldung wird als Schicht darueber geholt. */
+    on('cloud:signedout', function () {
+      MF.ui.toast.show('Du wurdest abgemeldet.', 'warn');
+      MF.ui.login.show({
+        overlay: true,
+        onDone: function () {
+          MF.ui.toast.show('Wieder angemeldet.', 'good');
+          MF.core.cloud.pushNow();
+        }
+      });
+    });
+
+    /* Beim Verlassen der Seite auf jeden Fall sichern — lokal und, so weit
+       der Browser den Request noch rauslaesst, auch in die Cloud. Geht der
+       Upload verloren, holt ihn der Marker beim naechsten Start nach. */
+    window.addEventListener('pagehide', function () {
+      MF.game.state.saveNow();
+      MF.core.cloud.pushNow();
+    });
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden') MF.game.state.saveNow();
+      if (document.visibilityState === 'hidden') {
+        MF.game.state.saveNow();
+        MF.core.cloud.pushNow();
+      }
     });
   }
 
