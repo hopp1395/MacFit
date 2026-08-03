@@ -53,6 +53,88 @@
     return host;
   }
 
+  /* Automatisch angelegte Konten (Migration): direkt unter der Karte steht,
+     wie der Zugang lautet, und E-Mail plus eigenes Passwort lassen sich
+     nachtragen. Das ersetzt den frueheren Datei-Export: mit vollstaendigem
+     Konto trainiert man auf jedem weiteren Geraet ohne Einschraenkungen
+     weiter, der Stand kommt automatisch mit. Verschwindet, sobald eine
+     echte Adresse am Konto haengt. */
+  function accountHintPanel() {
+    var cloud = MF.core.cloud;
+    var cs = cloud.status();
+    if (!cs.signedIn || !cloud.isMemberEmail(cs.email)) return null;
+
+    var p = state().player;
+    var box = el('section.savebox');
+
+    box.appendChild(el('div.savebox__head', null, [
+      el('span.savebox__dot.is-warn'),
+      el('strong', { text: '✉️ Konto vervollständigen' })
+    ]));
+    box.appendChild(el('span.savebox__text', {
+      text: 'Dein Konto wurde automatisch aus der Mitgliedskarte angelegt — '
+          + 'Benutzername: ' + cloud.memberUsername(p.name, p.number)
+          + ', Passwort: deine Mitgliedsnummer. Trag E-Mail und eigenes Passwort '
+          + 'nach: danach meldest du dich damit auf jedem weiteren Gerät an und '
+          + 'trainierst ohne Einschränkungen weiter — dein Stand kommt '
+          + 'automatisch mit.'
+    }));
+
+    var mailInput = el('input.field', {
+      type: 'email',
+      placeholder: 'deine@mail.de',
+      autocomplete: 'email',
+      autocapitalize: 'off',
+      spellcheck: 'false'
+    });
+    box.appendChild(mailInput);
+
+    var pwInput = el('input.field', {
+      type: 'password',
+      placeholder: 'Neues Passwort (mind. 6 Zeichen, freiwillig)',
+      autocomplete: 'new-password'
+    });
+    box.appendChild(pwInput);
+
+    var btn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'E-Mail übernehmen' });
+    util.onTap(btn, function () {
+      var mail = String(mailInput.value || '').replace(/\s+/g, '');
+      var pw = String(pwInput.value || '');
+      if (mail.indexOf('@') < 1 || cloud.isMemberEmail(mail)) {
+        MF.ui.toast.show('Bitte trag eine echte E-Mail-Adresse ein.', 'warn');
+        return;
+      }
+      if (pw && pw.length < 6) {
+        MF.ui.toast.show('Das Passwort braucht mindestens 6 Zeichen.', 'warn');
+        return;
+      }
+      btn.disabled = true;
+      cloud.updateEmail(mail, function (err) {
+        if (err) {
+          btn.disabled = false;
+          MF.ui.toast.show('Das hat nicht geklappt: ' + err, 'bad');
+          return;
+        }
+        function finished() {
+          btn.disabled = false;
+          MF.ui.toast.show('Bestätigungs-Mail ist unterwegs — nach dem Klick darin gilt die neue Adresse.', 'good');
+        }
+        if (!pw) { finished(); return; }
+        cloud.updatePassword(pw, function (err2) {
+          if (err2) {
+            btn.disabled = false;
+            MF.ui.toast.show('E-Mail übernommen, aber das Passwort nicht: ' + err2, 'warn');
+            return;
+          }
+          finished();
+        });
+      });
+    });
+    box.appendChild(btn);
+
+    return box;
+  }
+
   /* Erfolge teilen. Sitzt direkt unter der Karte — geteilt wird die Identität
      samt Werten, nicht irgendeine Zahl aus der Tiefe des Bildschirms. */
   function sharePanel() {
@@ -286,6 +368,8 @@
       text: (cs.signedIn ? 'Angemeldet als ' + cs.email + '.' : 'Nicht angemeldet.')
           + (cs.secondsAgo === null ? '' : ' Zuletzt synchronisiert vor ' + cs.secondsAgo + ' s.')
           + (cs.error ? ' Verbindung gestört: ' + cs.error : '')
+          + ' Dein Spielstand wandert automatisch mit: einfach auf jedem weiteren '
+          + 'Gerät anmelden und ohne Einschränkungen weitertrainieren.'
     }));
 
     var row = el('div.savebox__row');
@@ -341,47 +425,6 @@
       });
     });
     row.appendChild(outBtn);
-
-    box.appendChild(row);
-    return box;
-  }
-
-  /* Profil mitnehmen. Der Spielstand haengt sonst an genau diesem Browser auf
-     genau diesem Geraet — ein Handywechsel oder ein geleerter Speicher kostet
-     alles. */
-  function transferBox() {
-    var box = el('div.savebox');
-    box.appendChild(el('div.savebox__head', null, [
-      el('strong', { text: '💾 Profil sichern und übertragen' })
-    ]));
-    box.appendChild(el('span.savebox__text', {
-      text: 'Zusätzlich zur Cloud — als Datei für den Notfall. Legt eine Datei mit '
-          + 'allem an: Fortschritt, Geld, Kuren, Statistik und Mitgliedskarte samt Foto.'
-    }));
-
-    var row = el('div.savebox__row');
-
-    var saveBtn = el('button.btn.btn--ghost', { type: 'button', text: '⬇ Datei speichern' });
-    util.onTap(saveBtn, function () {
-      var res = MF.ui.transfer.exportProfile(false);
-      MF.ui.toast.show(
-        res === 'error' ? 'Die Datei ließ sich nicht anlegen.' : 'Profil gespeichert: ' + MF.ui.transfer.filename(),
-        res === 'error' ? 'bad' : 'good'
-      );
-    });
-    row.appendChild(saveBtn);
-
-    /* Am Handy landet ein Download irgendwo im Dateisystem — das Teilen-Blatt
-       ist dort der brauchbarere Weg. */
-    if (MF.ui.transfer.canSendFile()) {
-      var sendBtn = el('button.btn.btn--ghost', { type: 'button', text: '📤 Profil senden' });
-      util.onTap(sendBtn, function () { MF.ui.transfer.exportProfile(true); });
-      row.appendChild(sendBtn);
-    }
-
-    row.appendChild(MF.ui.transfer.pickButton('transfer-file', '📥 Profil laden', function () {
-      MF.ui.router.refresh('stats');
-    }));
 
     box.appendChild(row);
     return box;
@@ -459,7 +502,6 @@
     }
     panel.appendChild(saveBox);
     panel.appendChild(accountBox());
-    panel.appendChild(transferBox());
 
     /* Spieler zurücksetzen: löscht den Stand und führt direkt in die Anlage —
        sonst stünde man ohne Namen im Spiel. */
@@ -500,6 +542,8 @@
   function render(container) {
     util.clear(container);
     container.appendChild(cardPanel());
+    var hint = accountHintPanel();
+    if (hint) container.appendChild(hint);
     container.appendChild(sharePanel());
     container.appendChild(avatarPanel());
     container.appendChild(fitnessPanel());

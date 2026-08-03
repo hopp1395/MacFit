@@ -111,27 +111,15 @@
       })
     ]);
 
-    /* Wer schon woanders trainiert hat, soll hier nicht bei Tag 1 anfangen
-       muessen. Der Knopf steht bewusst im Dialog und nicht in den Aktionen:
-       ein Dateifeld braucht ein echtes <label>, ein nachgebauter Klick auf ein
-       verstecktes Feld geht am Handy oft ins Leere. */
+    /* Wer schon woanders trainiert, holt seinen Stand ueber das Konto —
+       einfach abbrechen geht hier nicht (die Anlage ist Pflicht), aber der
+       Hinweis erspart einen doppelten Spieler. */
     if (!retrofit) {
-      body.appendChild(el('div.create__sep', { text: 'oder' }));
-      body.appendChild(el('div.create__import', null, [
-        MF.ui.transfer.pickButton('create-import', '📥 Vorhandenes Profil laden', function () {
-          if (close) close();
-          /* Steckt in der Datei ein Stand ohne Karte, muss sie nachgetragen
-             werden — dann geht es hier gleich weiter. */
-          if (needed()) { show(done); return; }
-          MF.ui.hud.render();
-          MF.ui.router.refresh();
-          done(MF.game.state.get().player);
-        }),
-        el('p.create__note', {
-          text: 'Du hast dein Profil auf einem anderen Gerät gesichert? '
-              + 'Lade die Datei, dann geht es dort weiter, wo du aufgehört hast.'
-        })
-      ]));
+      body.appendChild(el('p.create__note', {
+        text: 'Du trainierst schon auf einem anderen Gerät? Dann melde dich dort '
+            + 'unter „Körper“ mit E-Mail und Passwort an — hier reicht danach die '
+            + 'Anmeldung mit demselben Konto, dein Stand kommt automatisch mit.'
+      }));
     }
 
     if (retrofit) {

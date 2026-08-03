@@ -1801,3 +1801,7 @@
   background: var(--bg-card);
   border-left: 3px solid var(--good);
 }
+
+/* Konto-vervollstaendigen-Hinweis unter der Mitgliedskarte. */
+.savebox__dot.is-warn { background: var(--warn); }
+.savebox .field { margin-top: 3px; }
