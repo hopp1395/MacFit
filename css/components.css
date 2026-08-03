@@ -1702,3 +1702,91 @@
   border-top: 1px solid var(--line);
   padding-top: 10px;
 }
+
+/* ---------- Anmelde-Gate (MacFit Online) ---------------------------------- */
+
+/* Unter Toasts (60) und Dialogen (80): Meldungen und Rueckfragen muessen
+   auch ueber dem Gate noch zu sehen sein. */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 18px calc(20px + var(--safe-bottom));
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+/* Re-Login mitten im Spiel: das Spielfeld bleibt schemenhaft sichtbar. */
+.gate--overlay { background: rgba(14, 17, 22, .93); }
+
+.gate__box {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gate__logo {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.gate__title { font-size: 19px; font-weight: 800; }
+
+.gate__sub {
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+.gate__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gate__error {
+  display: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--bad);
+  line-height: 1.4;
+}
+
+.gate__error.is-on { display: block; }
+
+.gate__links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.gate__link {
+  background: none;
+  border: none;
+  padding: 7px 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--info);
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.gate__note {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
