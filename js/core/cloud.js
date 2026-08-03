@@ -176,7 +176,19 @@
     client.auth.getSession().then(function (res) {
       var sess = (res && res.data) ? res.data.session : null;
       authUser = (sess && sess.user) ? { id: sess.user.id, email: sess.user.email } : null;
-      done(sess);
+      if (!sess) { done(null); return; }
+      /* Die gespeicherte Sitzung kann eine veraltete Adresse tragen — etwa
+         direkt nach einem bestaetigten E-Mail-Wechsel, bis das Token
+         turnusmaessig erneuert wird. Der Server kennt die aktuelle; ohne
+         den Abgleich bliebe der Vervollstaendigen-Hinweis faelschlich
+         stehen. Scheitert die Abfrage, bleibt es bei der Sitzung. */
+      client.auth.getUser().then(function (r2) {
+        var u = (r2 && r2.data) ? r2.data.user : null;
+        if (u) authUser = { id: u.id, email: u.email };
+        done(sess);
+      })['catch'](function () {
+        done(sess);
+      });
     })['catch'](function () {
       done(null);
     });
