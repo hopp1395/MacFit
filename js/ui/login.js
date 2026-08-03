@@ -50,6 +50,20 @@
     var mode = opts.mode || 'login';
     var busy = false;
 
+    /* Migration fuer Bestandsspieler: liegt auf dem Geraet ein Stand aus der
+       Zeit vor MacFit Online, muss das Gate zwei Dinge leisten — beruhigen
+       (der Fortschritt ist nicht weg) und in die richtige Ansicht fuehren.
+       Ohne Sync-Marker gab es hier noch nie ein Konto, also ist Registrieren
+       der Normalfall, nicht Anmelden. */
+    var keep = null;
+    if (!opts.overlay && mode !== 'newpass') {
+      var localSave = MF.core.storage.load();
+      if (localSave && localSave.player && localSave.player.created) {
+        keep = { name: localSave.player.name || 'ein Spieler', day: localSave.day || 1 };
+        if (!opts.mode && !MF.core.cloud.marker()) mode = 'register';
+      }
+    }
+
     function render() {
       util.clear(r);
 
@@ -151,6 +165,14 @@
         el('div.gate__logo', { text: 'MacFit' }),
         el('h2.gate__title', { text: TITLES[mode] }),
         el('p.gate__sub', { text: SUBS[mode] }),
+        (keep && (mode === 'login' || mode === 'register'))
+          ? el('p.gate__keep', {
+              text: 'Auf diesem Gerät trainiert ' + keep.name + ' (Tag ' + keep.day + '). '
+                  + 'Der Fortschritt bleibt erhalten — nach '
+                  + (mode === 'register' ? 'dem Anlegen des Kontos' : 'der Anmeldung')
+                  + ' bieten wir die Übernahme an.'
+            })
+          : null,
         form,
         links
       ]);

@@ -52,6 +52,9 @@
   function markDirty() {
     var m = readMarker() || {};
     m.dirty = true;
+    /* Der Stand gehoert zum angemeldeten Konto — ohne den Stempel saehe
+       decideBoot offline erspielten Fortschritt spaeter als fremd an. */
+    if (authUser && !m.user) m.user = authUser.id;
     writeMarker(m);
   }
 
@@ -75,8 +78,12 @@
     if (!row && !local) return 'fresh';
     if (!row) return 'adopt';
     if (!local) return 'cloud';
-    /* Lokaler Stand von einem anderen (oder gar keinem) Konto: Cloud zaehlt. */
-    if (!marker || marker.user !== uid) return 'cloud';
+    /* Ohne Marker stammt der lokale Stand aus der Zeit vor MacFit Online —
+       etwa das Zweitgeraet eines Bestandsspielers. Er koennte weiter sein
+       als die Cloud; das entscheidet der Spieler, nicht der Code. */
+    if (!marker) return 'ask';
+    /* Lokaler Rest eines anderen Kontos: zaehlt hier nicht. */
+    if (marker.user !== uid) return 'cloud';
     var unchanged = String(row.updatedAt) === String(marker.syncedAt);
     if (unchanged) return marker.dirty ? 'local' : 'cloud';
     return marker.dirty ? 'ask' : 'cloud';

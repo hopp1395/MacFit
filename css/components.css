@@ -1790,3 +1790,14 @@
   border-top: 1px solid var(--line);
   padding-top: 10px;
 }
+
+/* Beruhigung fuer Bestandsspieler: der lokale Stand ist nicht weg. */
+.gate__keep {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.45;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border-left: 3px solid var(--good);
+}
