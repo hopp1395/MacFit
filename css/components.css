@@ -1805,3 +1805,13 @@
 /* Konto-vervollstaendigen-Hinweis unter der Mitgliedskarte. */
 .savebox__dot.is-warn { background: var(--warn); }
 .savebox .field { margin-top: 3px; }
+
+/* Versionsnummer im Gate — wie im Vorspann, nur eben schon vor dem Login. */
+.gate__version {
+  margin-top: -8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  text-align: center;
+}

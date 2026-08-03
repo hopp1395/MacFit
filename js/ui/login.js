@@ -171,6 +171,10 @@
 
       var box = el('div.gate__box', null, [
         el('div.gate__logo', { text: 'MacFit' }),
+        /* Wie im Vorspann: nur an der Nummer ist auf dem Geraet zu erkennen,
+           ob GitHub Pages schon den neuen Stand ausliefert — und das Gate
+           kommt VOR dem Vorspann. */
+        el('div.gate__version', { text: 'v' + MF.version }),
         el('h2.gate__title', { text: TITLES[mode] }),
         el('p.gate__sub', { text: SUBS[mode] }),
         (keep && (mode === 'login' || mode === 'register'))
@@ -219,6 +223,7 @@
     r.appendChild(el('div.gate', null, [
       el('div.gate__box', null, [
         el('div.gate__logo', { text: 'MacFit' }),
+        el('div.gate__version', { text: 'v' + MF.version }),
         el('h2.gate__title', { text: 'Da klemmt was' }),
         el('p.gate__sub', { text: text }),
         reload
