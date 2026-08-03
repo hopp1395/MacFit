@@ -26,7 +26,48 @@
 
     cloud.getSession(function (session) {
       if (session) { chooseSave(); return; }
-      MF.ui.login.show({ onDone: chooseSave });
+      autoMigrate(function (ok) {
+        if (ok) { chooseSave(); return; }
+        MF.ui.login.show({ onDone: chooseSave });
+      });
+    });
+  }
+
+  /* Nach automatischer Kontoanlage wird der Alt-Stand ohne Rueckfrage
+     uebernommen — es ist das frische Konto genau dieses Spielers. */
+  var autoAdopt = false;
+
+  /* Migration fuer Bestandsspieler: wer schon eine Mitgliedskarte hat,
+     bekommt sein Konto automatisch — Benutzername aus Name und Kartennummer,
+     Passwort die Kartennummer. Die E-Mail wird spaeter unter der Karte im
+     Koerper-Menue nachgetragen. done(true) = angemeldet.
+
+     Nur solange dieses Geraet noch nie mit einem Konto abgeglichen war
+     (kein Marker): danach gehoert der Login dem Spieler — sonst wuerde nach
+     einem Konto mit nachgetragener E-Mail hier ein zweites Konto entstehen. */
+  function autoMigrate(done) {
+    var cloud = MF.core.cloud;
+    var local = MF.core.storage.load();
+
+    if (!local || !local.player || !local.player.created
+        || !local.player.number || cloud.marker()) {
+      done(false);
+      return;
+    }
+
+    var email = cloud.memberEmail(local.player.name, local.player.number);
+    var pw = String(local.player.number);
+
+    /* Erst anmelden (das Konto kann von einem frueheren Besuch stammen),
+       sonst anlegen. Scheitert beides, bleibt das normale Gate. */
+    cloud.signIn(email, pw, function (err) {
+      if (!err) { done(true); return; }
+      cloud.signUp(email, pw, function (err2) {
+        if (err2) { done(false); return; }
+        autoAdopt = true;
+        MF.ui.toast.show('Dein Konto wurde automatisch aus der Mitgliedskarte angelegt.', 'good');
+        done(true);
+      });
     });
   }
 
@@ -69,7 +110,15 @@
         cloud.pushNow();
         return;
       }
-      if (verdict === 'adopt') { askAdoption(local); return; }
+      if (verdict === 'adopt') {
+        if (autoAdopt) {
+          startGame(MF.game.state.hydrate(local));
+          MF.core.cloud.pushNow();
+          return;
+        }
+        askAdoption(local);
+        return;
+      }
       askWhich(row, local);
     });
   }
@@ -316,7 +365,9 @@
       MF.ui.router.refresh();
       return res;
     },
-    state: function () { return MF.game.state.get(); }
+    state: function () { return MF.game.state.get(); },
+    /* Startet den kompletten Boot erneut — fuer Tests und die Konsole. */
+    reboot: boot
   };
 
   if (document.readyState === 'loading') {

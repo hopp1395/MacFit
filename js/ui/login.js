@@ -72,7 +72,9 @@
       if (mode !== 'newpass') {
         email = el('input.field', {
           type: 'email',
-          placeholder: 'E-Mail',
+          /* Automatisch angelegte Konten melden sich mit dem Benutzernamen
+             von der Karte an — der ist keine vollstaendige Adresse. */
+          placeholder: mode === 'login' ? 'E-Mail oder Benutzername' : 'E-Mail',
           autocomplete: 'email',
           autocapitalize: 'off',
           spellcheck: 'false'
@@ -100,6 +102,10 @@
         if (busy) return;
         var mail = email ? String(email.value || '').replace(/\s+/g, '') : '';
         var pass = pw ? String(pw.value || '') : '';
+        /* Benutzername ohne @ (automatisch angelegtes Konto) ergaenzen —
+           aber nur beim Anmelden; ein Tippfehler beim Registrieren soll
+           kein .example-Konto anlegen. */
+        if (mode === 'login' && mail) mail = MF.core.cloud.expandLogin(mail);
         if (email && !mail) { fail('Bitte trag deine E-Mail ein.'); return; }
         if (pw && !pass) { fail('Bitte trag dein Passwort ein.'); return; }
         if (pw && mode !== 'login' && pass.length < 6) {
@@ -135,7 +141,9 @@
         else cloud.updatePassword(pass, after);
       }
 
-      var form = el('form.gate__form');
+      /* novalidate: die Pruefung macht go() — der Browser wuerde sonst einen
+         Benutzernamen ohne @ im E-Mail-Feld stumm blockieren. */
+      var form = el('form.gate__form', { novalidate: true });
       if (email) form.appendChild(email);
       if (pw) form.appendChild(pw);
       form.appendChild(error);

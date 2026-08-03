@@ -89,6 +89,38 @@
     return marker.dirty ? 'ask' : 'cloud';
   }
 
+  /* --- Automatisch angelegte Konten (Migration) -----------------------------
+     Bestandsspieler mit Mitgliedskarte bekommen ihr Konto ohne Formular:
+     Benutzername aus Mitgliedsname und Kartennummer, Passwort die Nummer.
+     Dahinter steht eine .example-Domain — die ist reserviert und kann nie
+     echte Post empfangen. Solange das Konto so eine Adresse traegt, gilt es
+     als unvollstaendig und die Karte wirbt fuer den E-Mail-Nachtrag. */
+
+  var MEMBER_DOMAIN = '@macfit.example';
+
+  function memberUsername(name, number) {
+    var s = String(name || 'mitglied');
+    s = s.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue')
+         .replace(/Ä/g, 'ae').replace(/Ö/g, 'oe').replace(/Ü/g, 'ue')
+         .replace(/ß/g, 'ss');
+    s = s.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'mitglied';
+    return s + '-' + String(number);
+  }
+
+  function memberEmail(name, number) {
+    return memberUsername(name, number) + MEMBER_DOMAIN;
+  }
+
+  function isMemberEmail(email) {
+    return String(email || '').indexOf(MEMBER_DOMAIN) >= 0;
+  }
+
+  /* Ein Benutzername ohne @ wird zur vollen Adresse ergaenzt — so reicht am
+     Gate das, was auf der Karte bzw. im Hinweis steht. */
+  function expandLogin(mail) {
+    return mail.indexOf('@') < 0 ? mail + MEMBER_DOMAIN : mail;
+  }
+
   /* --- Fehlertexte ---------------------------------------------------------- */
 
   function mapError(err) {
@@ -203,6 +235,17 @@
     })['catch'](function (err) { done(mapError(err)); });
   }
 
+  /* E-Mail nachtragen (Konto vervollstaendigen). Supabase schickt an die
+     neue Adresse eine Bestaetigungs-Mail; erst der Klick darin macht sie
+     zum Login. Voraussetzung im Dashboard: "Secure email change" AUS, sonst
+     muesste auch die alte .example-Adresse bestaetigen — und die kann nie
+     Post empfangen. */
+  function updateEmail(email, done) {
+    client.auth.updateUser({ email: email }).then(function (res) {
+      done(res.error ? mapError(res.error) : null);
+    })['catch'](function (err) { done(mapError(err)); });
+  }
+
   /* --- Spielstand ------------------------------------------------------------ */
 
   /* done(fehlertext, row) — row = { data, updatedAt } oder null, wenn das
@@ -292,6 +335,11 @@
     signOut: signOut,
     sendReset: sendReset,
     updatePassword: updatePassword,
+    updateEmail: updateEmail,
+    memberUsername: memberUsername,
+    memberEmail: memberEmail,
+    isMemberEmail: isMemberEmail,
+    expandLogin: expandLogin,
     loadSave: loadSave,
     pushNow: pushNow,
     marker: readMarker,
