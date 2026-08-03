@@ -270,6 +270,82 @@
     ]);
   }
 
+  /* Konto und Cloud-Stand. Der eigentliche Abgleich laeuft von selbst nach
+     jedem Speicherpunkt — hier stehen Status und die drei Handgriffe, die
+     man ab und zu braucht. */
+  function accountBox() {
+    var cs = MF.core.cloud.status();
+    var box = el('div.savebox' + (cs.error ? '.savebox--bad' : ''));
+
+    box.appendChild(el('div.savebox__head', null, [
+      el('span.savebox__dot' + (cs.error ? '.is-bad' : '.is-ok')),
+      el('strong', { text: '☁️ Konto' })
+    ]));
+
+    box.appendChild(el('span.savebox__text', {
+      text: (cs.signedIn ? 'Angemeldet als ' + cs.email + '.' : 'Nicht angemeldet.')
+          + (cs.secondsAgo === null ? '' : ' Zuletzt synchronisiert vor ' + cs.secondsAgo + ' s.')
+          + (cs.error ? ' Verbindung gestört: ' + cs.error : '')
+    }));
+
+    var row = el('div.savebox__row');
+
+    var syncBtn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Jetzt synchronisieren' });
+    util.onTap(syncBtn, function () {
+      MF.game.state.saveNow();
+      MF.core.cloud.pushNow(function (err) {
+        MF.ui.toast.show(
+          err ? 'Synchronisieren fehlgeschlagen: ' + err : 'Spielstand liegt in der Cloud.',
+          err ? 'bad' : 'good'
+        );
+        MF.ui.router.refresh('stats');
+      });
+    });
+    row.appendChild(syncBtn);
+
+    var pwBtn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Passwort ändern' });
+    util.onTap(pwBtn, function () {
+      MF.core.cloud.sendReset(cs.email, function (err) {
+        MF.ui.toast.show(
+          err ? 'Das hat nicht geklappt: ' + err : 'E-Mail zum Passwort-Ändern ist unterwegs.',
+          err ? 'bad' : 'good'
+        );
+      });
+    });
+    row.appendChild(pwBtn);
+
+    var outBtn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Abmelden' });
+    util.onTap(outBtn, function () {
+      MF.ui.modal.confirm({
+        title: 'Abmelden?',
+        text: 'Der Spielstand bleibt in der Cloud erhalten und wird von diesem Gerät '
+            + 'entfernt. Beim nächsten Anmelden geht es genau hier weiter.',
+        confirmLabel: 'Abmelden',
+        onConfirm: function () {
+          MF.game.state.saveNow();
+          /* Erst sicher in die Cloud, dann raus — sonst waere der letzte
+             Fortschritt nur auf diesem Geraet und gleich darauf geloescht. */
+          MF.core.cloud.pushNow(function (err) {
+            if (err) {
+              MF.ui.toast.show('Nicht abgemeldet: der Stand ließ sich nicht in die Cloud '
+                + 'schreiben (' + err + ').', 'bad');
+              return;
+            }
+            MF.core.cloud.signOut(function () {
+              MF.core.storage.reset();
+              MF.core.cloud.clearMarker();
+              window.location.reload();
+            });
+          });
+        }
+      });
+    });
+    row.appendChild(outBtn);
+
+    box.appendChild(row);
+    return box;
+  }
+
   /* Profil mitnehmen. Der Spielstand haengt sonst an genau diesem Browser auf
      genau diesem Geraet — ein Handywechsel oder ein geleerter Speicher kostet
      alles. */
@@ -279,9 +355,8 @@
       el('strong', { text: '💾 Profil sichern und übertragen' })
     ]));
     box.appendChild(el('span.savebox__text', {
-      text: 'Legt eine Datei mit allem an: Fortschritt, Geld, Kuren, Statistik und '
-          + 'Mitgliedskarte samt Foto. Damit spielst du auf einem anderen Gerät weiter '
-          + 'oder holst dich nach einem geleerten Browserspeicher zurück.'
+      text: 'Zusätzlich zur Cloud — als Datei für den Notfall. Legt eine Datei mit '
+          + 'allem an: Fortschritt, Geld, Kuren, Statistik und Mitgliedskarte samt Foto.'
     }));
 
     var row = el('div.savebox__row');
@@ -383,6 +458,7 @@
       saveBox.appendChild(saveBtn);
     }
     panel.appendChild(saveBox);
+    panel.appendChild(accountBox());
     panel.appendChild(transferBox());
 
     /* Spieler zurücksetzen: löscht den Stand und führt direkt in die Anlage —
@@ -391,13 +467,17 @@
     util.onTap(resetBtn, function () {
       MF.ui.modal.confirm({
         title: 'Spieler löschen?',
-        text: 'Name, Tag, Level, Masse und Geld sind danach weg. Danach legst du einen '
-            + 'neuen Spieler an. Das lässt sich nicht rückgängig machen.',
+        text: 'Name, Tag, Level, Masse und Geld sind danach weg — auch in der Cloud. '
+            + 'Danach legst du einen neuen Spieler an. Das lässt sich nicht '
+            + 'rückgängig machen.',
         confirmLabel: 'Löschen',
         onConfirm: function () {
           MF.core.storage.reset();
           MF.game.state.set(MF.game.state.createNewState());
           MF.game.state.saveNow();
+          /* Sofort auch die Cloud-Zeile ersetzen — sonst wuerde der naechste
+             Start den alten Stand wiederbeleben. */
+          MF.core.cloud.pushNow();
           MF.ui.hud.render();
           MF.ui.router.go('gym');
           MF.ui.create.show(function (player) {
