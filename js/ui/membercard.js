@@ -111,6 +111,14 @@
       el('span', { text: 'Mitglied seit' }),
       el('strong', { text: days === 1 ? '1 Tag' : days + ' Tagen' })
     ]));
+    /* Die Konto-Adresse gehoert mit auf den Ausweis — bei automatisch
+       angelegten Konten steht hier die .example-Adresse, bis unter der
+       Karte eine echte nachgetragen wird. */
+    var mail = MF.core.cloud.status().email;
+    info.appendChild(el('div.mcard__row', null, [
+      el('span', { text: 'E-Mail' }),
+      el('strong.mcard__mail', { text: mail || '—' })
+    ]));
 
     card.appendChild(el('div.mcard__body', null, [photo, info]));
     container.appendChild(card);

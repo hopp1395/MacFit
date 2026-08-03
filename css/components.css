@@ -1815,3 +1815,10 @@
   color: var(--text-faint);
   text-align: center;
 }
+
+/* E-Mail auf der Mitgliedskarte: Adressen sind lang — kleiner und umbruchfest. */
+.mcard__mail {
+  font-size: 9.5px;
+  word-break: break-all;
+  text-align: right;
+}
