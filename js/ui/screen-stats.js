@@ -53,6 +53,88 @@
     return host;
   }
 
+  /* Automatisch angelegte Konten (Migration): direkt unter der Karte steht,
+     wie der Zugang lautet, und E-Mail plus eigenes Passwort lassen sich
+     nachtragen. Das ersetzt den frueheren Datei-Export: mit vollstaendigem
+     Konto trainiert man auf jedem weiteren Geraet ohne Einschraenkungen
+     weiter, der Stand kommt automatisch mit. Verschwindet, sobald eine
+     echte Adresse am Konto haengt. */
+  function accountHintPanel() {
+    var cloud = MF.core.cloud;
+    var cs = cloud.status();
+    if (!cs.signedIn || !cloud.isMemberEmail(cs.email)) return null;
+
+    var p = state().player;
+    var box = el('section.savebox');
+
+    box.appendChild(el('div.savebox__head', null, [
+      el('span.savebox__dot.is-warn'),
+      el('strong', { text: '✉️ Konto vervollständigen' })
+    ]));
+    box.appendChild(el('span.savebox__text', {
+      text: 'Dein Konto wurde automatisch aus der Mitgliedskarte angelegt — '
+          + 'Benutzername: ' + cloud.memberUsername(p.name, p.number)
+          + ', Passwort: deine Mitgliedsnummer. Trag E-Mail und eigenes Passwort '
+          + 'nach: danach meldest du dich damit auf jedem weiteren Gerät an und '
+          + 'trainierst ohne Einschränkungen weiter — dein Stand kommt '
+          + 'automatisch mit.'
+    }));
+
+    var mailInput = el('input.field', {
+      type: 'email',
+      placeholder: 'deine@mail.de',
+      autocomplete: 'email',
+      autocapitalize: 'off',
+      spellcheck: 'false'
+    });
+    box.appendChild(mailInput);
+
+    var pwInput = el('input.field', {
+      type: 'password',
+      placeholder: 'Neues Passwort (mind. 6 Zeichen, freiwillig)',
+      autocomplete: 'new-password'
+    });
+    box.appendChild(pwInput);
+
+    var btn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'E-Mail übernehmen' });
+    util.onTap(btn, function () {
+      var mail = String(mailInput.value || '').replace(/\s+/g, '');
+      var pw = String(pwInput.value || '');
+      if (mail.indexOf('@') < 1 || cloud.isMemberEmail(mail)) {
+        MF.ui.toast.show('Bitte trag eine echte E-Mail-Adresse ein.', 'warn');
+        return;
+      }
+      if (pw && pw.length < 6) {
+        MF.ui.toast.show('Das Passwort braucht mindestens 6 Zeichen.', 'warn');
+        return;
+      }
+      btn.disabled = true;
+      cloud.updateEmail(mail, function (err) {
+        if (err) {
+          btn.disabled = false;
+          MF.ui.toast.show('Das hat nicht geklappt: ' + err, 'bad');
+          return;
+        }
+        function finished() {
+          btn.disabled = false;
+          MF.ui.toast.show('Bestätigungs-Mail ist unterwegs — nach dem Klick darin gilt die neue Adresse.', 'good');
+        }
+        if (!pw) { finished(); return; }
+        cloud.updatePassword(pw, function (err2) {
+          if (err2) {
+            btn.disabled = false;
+            MF.ui.toast.show('E-Mail übernommen, aber das Passwort nicht: ' + err2, 'warn');
+            return;
+          }
+          finished();
+        });
+      });
+    });
+    box.appendChild(btn);
+
+    return box;
+  }
+
   /* Erfolge teilen. Sitzt direkt unter der Karte — geteilt wird die Identität
      samt Werten, nicht irgendeine Zahl aus der Tiefe des Bildschirms. */
   function sharePanel() {
@@ -270,43 +352,79 @@
     ]);
   }
 
-  /* Profil mitnehmen. Der Spielstand haengt sonst an genau diesem Browser auf
-     genau diesem Geraet — ein Handywechsel oder ein geleerter Speicher kostet
-     alles. */
-  function transferBox() {
-    var box = el('div.savebox');
+  /* Konto und Cloud-Stand. Der eigentliche Abgleich laeuft von selbst nach
+     jedem Speicherpunkt — hier stehen Status und die drei Handgriffe, die
+     man ab und zu braucht. */
+  function accountBox() {
+    var cs = MF.core.cloud.status();
+    var box = el('div.savebox' + (cs.error ? '.savebox--bad' : ''));
+
     box.appendChild(el('div.savebox__head', null, [
-      el('strong', { text: '💾 Profil sichern und übertragen' })
+      el('span.savebox__dot' + (cs.error ? '.is-bad' : '.is-ok')),
+      el('strong', { text: '☁️ Konto' })
     ]));
+
     box.appendChild(el('span.savebox__text', {
-      text: 'Legt eine Datei mit allem an: Fortschritt, Geld, Kuren, Statistik und '
-          + 'Mitgliedskarte samt Foto. Damit spielst du auf einem anderen Gerät weiter '
-          + 'oder holst dich nach einem geleerten Browserspeicher zurück.'
+      text: (cs.signedIn ? 'Angemeldet als ' + cs.email + '.' : 'Nicht angemeldet.')
+          + (cs.secondsAgo === null ? '' : ' Zuletzt synchronisiert vor ' + cs.secondsAgo + ' s.')
+          + (cs.error ? ' Verbindung gestört: ' + cs.error : '')
+          + ' Dein Spielstand wandert automatisch mit: einfach auf jedem weiteren '
+          + 'Gerät anmelden und ohne Einschränkungen weitertrainieren.'
     }));
 
     var row = el('div.savebox__row');
 
-    var saveBtn = el('button.btn.btn--ghost', { type: 'button', text: '⬇ Datei speichern' });
-    util.onTap(saveBtn, function () {
-      var res = MF.ui.transfer.exportProfile(false);
-      MF.ui.toast.show(
-        res === 'error' ? 'Die Datei ließ sich nicht anlegen.' : 'Profil gespeichert: ' + MF.ui.transfer.filename(),
-        res === 'error' ? 'bad' : 'good'
-      );
+    var syncBtn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Jetzt synchronisieren' });
+    util.onTap(syncBtn, function () {
+      MF.game.state.saveNow();
+      MF.core.cloud.pushNow(function (err) {
+        MF.ui.toast.show(
+          err ? 'Synchronisieren fehlgeschlagen: ' + err : 'Spielstand liegt in der Cloud.',
+          err ? 'bad' : 'good'
+        );
+        MF.ui.router.refresh('stats');
+      });
     });
-    row.appendChild(saveBtn);
+    row.appendChild(syncBtn);
 
-    /* Am Handy landet ein Download irgendwo im Dateisystem — das Teilen-Blatt
-       ist dort der brauchbarere Weg. */
-    if (MF.ui.transfer.canSendFile()) {
-      var sendBtn = el('button.btn.btn--ghost', { type: 'button', text: '📤 Profil senden' });
-      util.onTap(sendBtn, function () { MF.ui.transfer.exportProfile(true); });
-      row.appendChild(sendBtn);
-    }
+    var pwBtn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Passwort ändern' });
+    util.onTap(pwBtn, function () {
+      MF.core.cloud.sendReset(cs.email, function (err) {
+        MF.ui.toast.show(
+          err ? 'Das hat nicht geklappt: ' + err : 'E-Mail zum Passwort-Ändern ist unterwegs.',
+          err ? 'bad' : 'good'
+        );
+      });
+    });
+    row.appendChild(pwBtn);
 
-    row.appendChild(MF.ui.transfer.pickButton('transfer-file', '📥 Profil laden', function () {
-      MF.ui.router.refresh('stats');
-    }));
+    var outBtn = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Abmelden' });
+    util.onTap(outBtn, function () {
+      MF.ui.modal.confirm({
+        title: 'Abmelden?',
+        text: 'Der Spielstand bleibt in der Cloud erhalten und wird von diesem Gerät '
+            + 'entfernt. Beim nächsten Anmelden geht es genau hier weiter.',
+        confirmLabel: 'Abmelden',
+        onConfirm: function () {
+          MF.game.state.saveNow();
+          /* Erst sicher in die Cloud, dann raus — sonst waere der letzte
+             Fortschritt nur auf diesem Geraet und gleich darauf geloescht. */
+          MF.core.cloud.pushNow(function (err) {
+            if (err) {
+              MF.ui.toast.show('Nicht abgemeldet: der Stand ließ sich nicht in die Cloud '
+                + 'schreiben (' + err + ').', 'bad');
+              return;
+            }
+            MF.core.cloud.signOut(function () {
+              MF.core.storage.reset();
+              MF.core.cloud.clearMarker();
+              window.location.reload();
+            });
+          });
+        }
+      });
+    });
+    row.appendChild(outBtn);
 
     box.appendChild(row);
     return box;
@@ -383,7 +501,7 @@
       saveBox.appendChild(saveBtn);
     }
     panel.appendChild(saveBox);
-    panel.appendChild(transferBox());
+    panel.appendChild(accountBox());
 
     /* Spieler zurücksetzen: löscht den Stand und führt direkt in die Anlage —
        sonst stünde man ohne Namen im Spiel. */
@@ -391,13 +509,17 @@
     util.onTap(resetBtn, function () {
       MF.ui.modal.confirm({
         title: 'Spieler löschen?',
-        text: 'Name, Tag, Level, Masse und Geld sind danach weg. Danach legst du einen '
-            + 'neuen Spieler an. Das lässt sich nicht rückgängig machen.',
+        text: 'Name, Tag, Level, Masse und Geld sind danach weg — auch in der Cloud. '
+            + 'Danach legst du einen neuen Spieler an. Das lässt sich nicht '
+            + 'rückgängig machen.',
         confirmLabel: 'Löschen',
         onConfirm: function () {
           MF.core.storage.reset();
           MF.game.state.set(MF.game.state.createNewState());
           MF.game.state.saveNow();
+          /* Sofort auch die Cloud-Zeile ersetzen — sonst wuerde der naechste
+             Start den alten Stand wiederbeleben. */
+          MF.core.cloud.pushNow();
           MF.ui.hud.render();
           MF.ui.router.go('gym');
           MF.ui.create.show(function (player) {
@@ -420,6 +542,8 @@
   function render(container) {
     util.clear(container);
     container.appendChild(cardPanel());
+    var hint = accountHintPanel();
+    if (hint) container.appendChild(hint);
     container.appendChild(sharePanel());
     container.appendChild(avatarPanel());
     container.appendChild(fitnessPanel());

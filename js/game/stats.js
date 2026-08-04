@@ -39,11 +39,17 @@
      wenn sie fleissig trainiert wurden. Der Hinweis soll Vernachlaessigung
      zeigen, nicht Genetik — die Balance selbst bleibt unveraendert. */
   function weakestMuscle() {
+    var ceiling = sizeCeiling();
+    var mult = growthMultiplier();
     var worst = null;
     MF.data.muscles.list.forEach(function (m) {
-      var s = state().muscles[m.id].size;
+      var data = state().muscles[m.id];
+      /* Der heute schon gesammelte Reiz zaehlt als erwarteter Nacht-Zuwachs
+         mit — sonst klebte der Hinweis bis zum Schlafen an derselben Partie,
+         egal wie fleissig sie gerade trainiert wird. */
+      var s = data.size + MF.game.day.nightGain(m, data, ceiling, mult);
       var rel = (s - 8) / m.growth;
-      if (!worst || rel < worst.rel) worst = { id: m.id, name: m.name, size: s, rel: rel };
+      if (!worst || rel < worst.rel) worst = { id: m.id, name: m.name, size: data.size, rel: rel };
     });
     return worst;
   }
