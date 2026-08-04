@@ -16,6 +16,17 @@
     }, 0);
   }
 
+  /* Was der gesammelte Reiz einer Partie in der naechsten Nacht bringt.
+     Wurzelkurve, gebremst je naeher die Partie an ihrer Decke liegt:
+     doppelt so viele Saetze bringen nicht doppelt so viel. Auch tagsueber
+     gefragt — der Nachholbedarf-Hinweis rechnet den Wert mit, damit er
+     nach jedem Satz weiterwandert statt bis zum Schlafen stehenzubleiben. */
+  function nightGain(def, m, ceiling, growthMult) {
+    if (m.pending <= 0) return 0;
+    var softCap = Math.pow(util.clamp(1 - m.size / ceiling, 0.02, 1), 0.9);
+    return Math.sqrt(m.pending) * GROWTH_K * def.growth * growthMult * softCap;
+  }
+
   function sleep() {
     var s = state();
     var massBefore = MF.game.stats.muscleMass();
@@ -31,13 +42,8 @@
       var m = s.muscles[def.id];
       var before = m.size;
 
-      /* Wachstum: Wurzelkurve auf den gesammelten Reiz, gebremst je naeher die
-         Partie an ihrer Decke liegt. Doppelt so viele Saetze bringen nicht
-         doppelt so viel — und ohne Substanzen ist bei ~86 Schluss. */
-      if (m.pending > 0) {
-        var softCap = Math.pow(util.clamp(1 - m.size / ceiling, 0.02, 1), 0.9);
-        m.size += Math.sqrt(m.pending) * GROWTH_K * def.growth * growthMult * softCap;
-      }
+      /* Wachstum aus dem gesammelten Reiz — ohne Substanzen ist bei ~86 Schluss. */
+      m.size += nightGain(def, m, ceiling, growthMult);
 
       /* Vernachlaessigte Partien gehen langsam zurueck. */
       var idle = s.day - m.lastTrainedDay;
@@ -115,6 +121,7 @@
 
   MF.game.day = {
     sleep: sleep,
-    setsToday: setsToday
+    setsToday: setsToday,
+    nightGain: nightGain
   };
 })(window.MacFit);
