@@ -530,4 +530,14 @@
   }
 
   MF.ui.router.register('shop', { elementId: 'screen-shop', render: render });
+
+  /* Der Zettel wird auch am Eingang gezeigt (siehe main.js) — deshalb liegt
+     die Darstellung hier offen. */
+  MF.ui.shop = {
+    showBoard: function () {
+      var def = MF.game.challenge.today();
+      if (!def) return;
+      showBoardInfo(def, MF.game.challenge.isDone(), MF.game.challenge.reward(def));
+    }
+  };
 })(window.MacFit);
