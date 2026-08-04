@@ -1,16 +1,18 @@
 /* Meldungen am oberen Rand.
 
-   Sie verschwinden NICHT von selbst: nach einem Satz kommen schnell mehrere
-   Nachrichten auf einmal (Praemie, Serie, Zettel), und die waren nach zwei
-   Sekunden weg, bevor man sie gelesen hatte. Jede Meldung bleibt stehen, bis
-   sie angetippt wird — deshalb traegt sie sichtbar ein Kreuz. */
+   Sie verschwinden nicht nach zwei Sekunden: nach einem Satz kommen schnell
+   mehrere Nachrichten auf einmal (Praemie, Serie, Zettel), und die waren weg,
+   bevor man sie gelesen hatte. Jede Meldung bleibt stehen, bis sie angetippt
+   wird — deshalb traegt sie sichtbar ein Kreuz. Nach zwanzig Sekunden raeumt
+   sie sich aber selbst ab, damit kein Rest den Bildschirm belegt. */
 (function (MF) {
   'use strict';
 
   var util = MF.core.util;
   var el = util.el;
 
-  var MAX_OPEN = 4;   /* darueber verdraengen neue Meldungen die aeltesten */
+  var MAX_OPEN = 4;      /* darueber verdraengen neue Meldungen die aeltesten */
+  var MAX_MS = 20000;    /* spaetestens dann geht sie von selbst */
 
   function close(node) {
     node.classList.remove('is-in');
@@ -31,6 +33,7 @@
     root.appendChild(node);
 
     window.requestAnimationFrame(function () { node.classList.add('is-in'); });
+    window.setTimeout(function () { close(node); }, MAX_MS);
 
     /* Der Bildschirm darf nicht zulaufen — die aeltesten weichen. */
     while (root.children.length > MAX_OPEN) root.removeChild(root.firstChild);
@@ -43,5 +46,5 @@
     while (root.firstChild) root.removeChild(root.firstChild);
   }
 
-  MF.ui.toast = { show: show, clear: clear };
+  MF.ui.toast = { show: show, clear: clear, MAX_MS: MAX_MS };
 })(window.MacFit);
