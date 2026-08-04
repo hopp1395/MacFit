@@ -11,6 +11,7 @@
 
   var ticker = null;
   var run = null;          /* laufender Satz */
+  var pending = null;      /* fertiger Satz, dessen Ergebnis noch aussteht */
   var scene = null;        /* Pixel-Szene mit Gerät und Figur */
   var nodes = {};
   var trackWidth = 0;
@@ -67,10 +68,9 @@
 
     /* Die Szene ist zugleich die Tippfläche — Blick und Daumen bleiben zusammen. */
     var stage = el('div.stage', { id: 'session-stage' });
-    var tap = el('button.taparea', { id: 'session-tap', type: 'button' }, [
-      stage,
-      el('span.taparea__hint', { text: 'Tippen, wenn der Marker in der grünen Zone ist' })
-    ]);
+    var hint = el('span.taparea__hint', { id: 'session-hint',
+      text: 'Tippen, wenn der Marker in der grünen Zone ist' });
+    var tap = el('button.taparea', { id: 'session-tap', type: 'button' }, [stage, hint]);
     util.onTap(tap, onTap);
     container.appendChild(tap);
 
@@ -87,7 +87,9 @@
       marker: util.byId('session-marker'),
       timer: util.byId('session-timer'),
       feedback: util.byId('session-feedback'),
-      tap: tap
+      tap: tap,
+      hint: hint,
+      container: container
     };
 
     measure();
@@ -332,7 +334,7 @@
       MF.core.audio.sfx('miss');
       MF.ui.toast.show('Der Spotter hat mehr gedrückt als du.', 'warn');
     }
-    showResult(result);
+    showEndBar(result);
   }
 
   function updateScores() {
@@ -356,7 +358,36 @@
     /* Beim Aufstieg spielt gleich die laengere Fanfare aus dem Modal — zwei
        Melodien uebereinander waeren Krach. */
     if (!result.levelUp) MF.core.audio.sfx('done');
-    showResult(result);
+    showEndBar(result);
+  }
+
+  /* Der Satz ist durch, das Bild bleibt aber stehen: Leiste, Zahlen und die
+     letzte Rueckmeldung kann man in Ruhe ansehen. Weiter geht es erst per
+     Schaltflaeche — nichts wechselt von selbst. */
+  function showEndBar(result) {
+    pending = result;
+
+    nodes.rep.textContent = 'Satz beendet';
+    nodes.hint.textContent = 'Satz beendet — sieh dir in Ruhe an, was du gedrückt hast.';
+    nodes.tap.classList.add('is-done');
+    nodes.timer.style.width = '0%';
+    nodes.feedback.classList.add('is-shown');   /* letzte Meldung stehen lassen */
+
+    var bar = el('div.session__end', { id: 'session-end' });
+    var resultBtn = el('button.btn.btn--primary', { type: 'button', text: '📊 Ergebnis ansehen' });
+    util.onTap(resultBtn, function () { showResult(result); });
+    bar.appendChild(resultBtn);
+
+    var gymBtn = el('button.btn.btn--ghost', { type: 'button', text: 'Zurück ins Gym' });
+    util.onTap(gymBtn, function () {
+      pending = null;
+      MF.ui.router.go('gym');
+      showAftermath(result);
+    });
+    bar.appendChild(gymBtn);
+
+    nodes.container.appendChild(bar);
+    MF.ui.hud.render();
   }
 
   /* Abbruch: gezaehlte Reps werden gewertet, die Energie ist ohnehin weg. */
@@ -379,10 +410,10 @@
 
   function showResult(result) {
     var container = util.byId('screen-session');
+    pending = null;
     util.clear(container);
     scene = null;
 
-    var s = state();
     var panel = el('div.result');
     panel.appendChild(el('div.result__icon', { text: result.exercise.icon }));
     panel.appendChild(el('h2.result__grade.is-' + result.grade.tone, { text: result.grade.text }));
@@ -435,6 +466,13 @@
     container.appendChild(panel);
 
     MF.ui.hud.render();
+    showAftermath(result);
+  }
+
+  /* Was nach dem Satz noch gesagt werden muss. Laeuft auf beiden Wegen —
+     ueber das Ergebnis oder direkt zurueck ins Gym. */
+  function showAftermath(result) {
+    var s = state();
 
     /* Die Zerrung geht vor: sie sperrt die Partie und muss ankommen. */
     if (result.injured) {
@@ -475,6 +513,7 @@
   function leave() {
     if (ticker) ticker.stop();
     run = null;
+    pending = null;
     scene = null;
   }
 
