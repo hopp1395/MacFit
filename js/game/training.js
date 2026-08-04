@@ -61,6 +61,52 @@
     return sp;
   }
 
+  /* Pump-Flow: ab drei perfekten Reps in Folge zaehlt jede Flow-Rep 4 %
+     Bonus-Reiz. Der Deckel waechst mit dem Fitness-Index — wer weit ist,
+     holt mehr aus dem Flow (+12 % untrainiert bis +30 % Elite). */
+  function flowScore(hits) {
+    var streak = 0, best = 0, bonus = 0;
+    for (var i = 0; i < hits.length; i++) {
+      if (hits[i] === 'perfect') {
+        streak += 1;
+        if (streak > best) best = streak;
+        if (streak >= 3) bonus += 0.04;
+      } else {
+        streak = 0;
+      }
+    }
+    var cap = 0.12 + 0.18 * (MF.game.fitness.index() / MF.game.fitness.MAX);
+    return { bonus: Math.min(bonus, cap), bestStreak: best };
+  }
+
+  /* Instabile Hantel: ab "Schwer" schwankt die Trefferzone. Amplitude als
+     Anteil der Leiste — Ermuedung verstaerkt das Zittern, eine saubere
+     Technik-Historie beruhigt die Hand. */
+  function driftAmp(exercise, weightIndex) {
+    if (weightIndex < 2) return 0;
+    var m = state().muscles[exercise.muscle];
+    var amp = (weightIndex >= 3 ? 0.07 : 0.04) + m.fatigue * 0.04;
+    if (MF.game.fitness.technique() >= 0.5) amp *= 0.7;
+    return amp;
+  }
+
+  /* Bietet der Spotter nach dem letzten Rep eine Extra-Rep an? Nur nach
+     vollen Saetzen mit ordentlicher Form an ausgeruhten Partien — und erst
+     ab "Schwer"; wer als "Durchtrainiert" gilt, bekommt ihn schon ab Normal. */
+  function spotterOffer(exercise, weightIndex, hits) {
+    if (hits.length < exercise.reps) return false;
+    var minWeight = MF.game.fitness.index() >= 600 ? 1 : 2;
+    if (weightIndex < minWeight) return false;
+    if (state().muscles[exercise.muscle].fatigue > 0.85) return false;
+
+    var perfect = 0, ok = 0;
+    hits.forEach(function (h) {
+      if (h === 'perfect') perfect++;
+      else if (h === 'ok') ok++;
+    });
+    return (perfect + ok * 0.5) / hits.length >= 0.6;
+  }
+
   /* Energie sofort abziehen, sobald der Satz startet. */
   function beginSet(exercise, weightIndex) {
     var s = state();
@@ -69,8 +115,10 @@
     MF.game.state.saveSoon();
   }
 
-  /* hits: Array aus 'perfect' | 'ok' | 'miss' */
-  function finishSet(exercise, weightIndex, hits) {
+  /* hits: Array aus 'perfect' | 'ok' | 'miss'.
+     forced: Ausgang der Spotter-Extra-Rep — 'hit' | 'fail' | undefined.
+     Die Extra-Rep steht NICHT in hits, sie veraendert die Form nicht. */
+  function finishSet(exercise, weightIndex, hits, forced) {
     var s = state();
     var m = s.muscles[exercise.muscle];
     var weight = weightAt(weightIndex);
@@ -84,16 +132,20 @@
 
     var reps = hits.length || 1;
     var formScore = util.clamp((perfect + ok * 0.5) / reps, 0, 1);
+    var flow = flowScore(hits);
 
     var stimulus = exercise.stimulus * weight.stim * formScore * (1 - m.fatigue * 0.60);
     stimulus = Math.max(0, stimulus);
+    stimulus *= 1 + flow.bonus;
+    if (forced === 'hit') stimulus *= 1.30;
 
     m.pending += stimulus;
-    m.fatigue = util.clamp(m.fatigue + 0.15 * weight.energy, 0, 1);
+    m.fatigue = util.clamp(m.fatigue + 0.15 * weight.energy
+      + (forced === 'fail' ? 0.20 : 0), 0, 1);
     m.lastTrainedDay = s.day;
     m.setsToday += 1;
 
-    var xp = Math.round(stimulus * 1.5 + perfect * 2);
+    var xp = Math.round(stimulus * 1.5 + perfect * 2) + (forced === 'hit' ? 10 : 0);
     var levelUp = MF.game.progression.addXp(xp);
 
     s.stats.totalSets += 1;
@@ -104,6 +156,13 @@
     /* Ein völlig verrissener Satz drückt auf die Laune. */
     if (formScore < 0.35) {
       s.health.laune = util.clamp(s.health.laune - 1.5, 0, 100);
+    }
+
+    /* Die verrissene Spotter-Rep tut weh — und wer angeschlagen ist,
+       zahlt obendrein mit Energie ("Zerrung light"). */
+    if (forced === 'fail') {
+      s.health.laune = util.clamp(s.health.laune - 2, 0, 100);
+      if (MF.game.stats.healthAvg() < 45) s.energy = Math.max(0, s.energy - 10);
     }
 
     var result = {
@@ -117,7 +176,10 @@
       stimulus: stimulus,
       xp: xp,
       levelUp: levelUp,
-      grade: gradeFor(formScore)
+      grade: gradeFor(formScore),
+      bestStreak: flow.bestStreak,
+      flowBonus: flow.bonus,
+      forced: forced || null
     };
 
     MF.core.events.emit('set:finished', result);
@@ -141,6 +203,8 @@
     canTrain: canTrain,
     zoneWidth: zoneWidth,
     markerSpeed: markerSpeed,
+    driftAmp: driftAmp,
+    spotterOffer: spotterOffer,
     beginSet: beginSet,
     finishSet: finishSet
   };

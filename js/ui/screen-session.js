@@ -121,7 +121,12 @@
       pos: 0.5,
       dir: 1,
       center: 0.5,
+      baseCenter: 0.5,   /* Ruhelage — bei Drift schwankt center darum */
+      amp: 0,            /* Drift-Amplitude der instabilen Hantel */
       zone: 0.3,
+      streak: 0,         /* perfekte Reps in Folge (Pump-Flow) */
+      extra: false,      /* laeuft gerade die Spotter-Extra-Rep? */
+      awaiting: false,   /* Spotter-Frage offen — Satz pausiert */
       repTime: 0,
       lock: 0,
       done: false
@@ -135,28 +140,37 @@
     ticker.start();
   }
 
-  function nextRep() {
-    if (!run) return;
-    run.zone = MF.game.training.zoneWidth(run.ex, run.weightIndex, run.repIndex);
-    /* Zonenmitte zufaellig, aber nicht direkt am Rand. */
-    var margin = run.zone / 2 + 0.06;
-    run.center = margin + Math.random() * (1 - margin * 2);
-    run.repTime = 0;
-    run.lock = LOCK_AFTER_TAP;
-
+  /* Zone und Okay-Band an die aktuelle Mitte setzen — bei Drift jedes Frame. */
+  function placeZone() {
     var okWidth = Math.min(1, run.zone * 2.1);
     nodes.zone.style.left = ((run.center - run.zone / 2) * 100).toFixed(2) + '%';
     nodes.zone.style.width = (run.zone * 100).toFixed(2) + '%';
     nodes.ok.style.left = ((run.center - okWidth / 2) * 100).toFixed(2) + '%';
     nodes.ok.style.width = (okWidth * 100).toFixed(2) + '%';
+  }
+
+  function nextRep() {
+    if (!run) return;
+    run.zone = MF.game.training.zoneWidth(run.ex, run.weightIndex, run.repIndex);
+    run.amp = MF.game.training.driftAmp(run.ex, run.weightIndex);
+    /* Zonenmitte zufaellig, aber nicht direkt am Rand — die Drift-Amplitude
+       zaehlt zum Rand dazu, sonst wandert die Zone aus der Leiste. */
+    var margin = run.zone / 2 + 0.06 + run.amp;
+    run.baseCenter = margin + Math.random() * (1 - margin * 2);
+    run.center = run.baseCenter;
+    run.repTime = 0;
+    run.lock = LOCK_AFTER_TAP;
+
+    placeZone();
 
     nodes.rep.textContent = 'Rep ' + (run.repIndex + 1) + '/' + run.ex.reps;
   }
 
   function frame(dt) {
-    if (!run || run.done) return;
+    if (!run || run.done || run.awaiting) return;
 
     var speed = MF.game.training.markerSpeed(run.ex, run.weightIndex, run.repIndex);
+    if (run.extra) speed *= 1.15;   /* die Extra-Rep hat mehr Zug drauf */
     run.pos += run.dir * speed * dt;
     if (run.pos >= 1) { run.pos = 1; run.dir = -1; }
     if (run.pos <= 0) { run.pos = 0; run.dir = 1; }
@@ -168,7 +182,15 @@
     nodes.timer.style.width = (left * 100).toFixed(1) + '%';
     nodes.timer.classList.toggle('is-low', left < 0.3);
 
+    /* Instabile Hantel: die Zone schwankt langsam (0,4 Hz) um die Ruhelage —
+       vorhersehbar wie eine pendelnde Langhantel, kein Reaktionstest. */
+    if (run.amp > 0) {
+      run.center = run.baseCenter + run.amp * Math.sin(run.repTime * 2 * Math.PI * 0.4);
+      placeZone();
+    }
+
     if (run.repTime >= REP_TIMEOUT) {
+      if (run.extra) { concludeExtra('fail', 'ZU LANGSAM'); return; }
       register('miss', 'ZU LANGSAM');
       return;
     }
@@ -181,9 +203,15 @@
   }
 
   function onTap() {
-    if (!run || run.done || run.lock > 0) return;
+    if (!run || run.done || run.awaiting || run.lock > 0) return;
 
     var dist = Math.abs(run.pos - run.center);
+    if (run.extra) {
+      /* Die Extra-Rep kennt nur Treffer oder Verriss — auch "okay" zaehlt. */
+      if (dist <= run.zone * 1.05) concludeExtra('hit', 'GESCHAFFT!');
+      else concludeExtra('fail', 'VERRISSEN');
+      return;
+    }
     if (dist <= run.zone / 2) {
       register('perfect', 'PERFEKT');
     } else if (dist <= run.zone * 1.05) {
@@ -197,8 +225,25 @@
     run.hits.push(kind);
     run.lock = LOCK_AFTER_TAP;
 
-    MF.core.haptics.buzz(kind === 'perfect' ? 'perfect' : (kind === 'ok' ? 'ok' : 'miss'));
-    MF.core.audio.sfx(kind);
+    /* Pump-Flow: ab drei perfekten Reps in Folge glueht die Leiste und der
+       Zaehler steht im Feedback — ein Verriss beendet die Serie. */
+    if (kind === 'perfect') {
+      run.streak += 1;
+      if (run.streak >= 3) {
+        label = 'PERFEKT ×' + run.streak;
+        nodes.track.classList.add('is-flow');
+        MF.core.haptics.buzz('flow');
+        MF.core.audio.sfx('combo', run.streak);
+      } else {
+        MF.core.haptics.buzz('perfect');
+        MF.core.audio.sfx('perfect');
+      }
+    } else {
+      run.streak = 0;
+      nodes.track.classList.remove('is-flow');
+      MF.core.haptics.buzz(kind === 'ok' ? 'ok' : 'miss');
+      MF.core.audio.sfx(kind);
+    }
 
     nodes.feedback.textContent = label;
     nodes.feedback.className = 'session__feedback is-shown is-' + kind;
@@ -215,8 +260,79 @@
     updateScores();
 
     run.repIndex += 1;
-    if (run.repIndex >= run.ex.reps) finish();
-    else nextRep();
+    if (run.repIndex >= run.ex.reps) {
+      if (MF.game.training.spotterOffer(run.ex, run.weightIndex, run.hits)) offerSpotter();
+      else finish();
+    } else {
+      nextRep();
+    }
+  }
+
+  /* --- Der Spotter -------------------------------------------------------- */
+
+  function offerSpotter() {
+    run.awaiting = true;
+    MF.ui.modal.open({
+      title: '💪 Der Spotter taucht auf',
+      subtitle: '„Eine geht noch. ALLES DU!“',
+      body: el('p.card__desc', {
+        text: 'Eine Extra-Rep mit enger Zone und mehr Zug: Treffer bringt +30 % '
+            + 'Reiz und 10 XP obendrauf — ein Verriss kostet Kraft und Laune.'
+      }),
+      dismissible: false,
+      actions: [
+        {
+          label: 'Noch eine!',
+          tone: 'primary',
+          onTap: function () { startExtraRep(); }
+        },
+        {
+          label: 'Reicht für heute',
+          onTap: function () {
+            run.awaiting = false;
+            finish();
+          }
+        }
+      ]
+    });
+  }
+
+  function startExtraRep() {
+    run.awaiting = false;
+    run.extra = true;
+
+    /* Enge Zone, aber nie unter 8 % der Leiste — kein unfaires Fenster. */
+    run.zone = Math.max(0.08,
+      MF.game.training.zoneWidth(run.ex, run.weightIndex, run.repIndex) * 0.6);
+    run.amp = MF.game.training.driftAmp(run.ex, run.weightIndex);
+    var margin = run.zone / 2 + 0.06 + run.amp;
+    run.baseCenter = margin + Math.random() * (1 - margin * 2);
+    run.center = run.baseCenter;
+    run.repTime = 0;
+    run.lock = LOCK_AFTER_TAP;
+
+    placeZone();
+    nodes.rep.textContent = 'Extra-Rep!';
+    MF.core.audio.sfx('rack');
+  }
+
+  function concludeExtra(forced, label) {
+    run.done = true;
+    if (ticker) ticker.stop();
+
+    nodes.feedback.textContent = label;
+    nodes.feedback.className = 'session__feedback is-shown is-' + (forced === 'hit' ? 'perfect' : 'miss');
+
+    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, forced);
+    if (forced === 'hit') {
+      MF.core.haptics.buzz('levelUp');
+      if (!result.levelUp) MF.core.audio.sfx('done');
+    } else {
+      MF.core.haptics.buzz('miss');
+      MF.core.audio.sfx('miss');
+      MF.ui.toast.show('Der Spotter hat mehr gedrückt als du.', 'warn');
+    }
+    showResult(result);
   }
 
   function updateScores() {
@@ -272,13 +388,20 @@
     panel.appendChild(el('h2.result__grade.is-' + result.grade.tone, { text: result.grade.text }));
     panel.appendChild(el('div.result__form', { text: Math.round(result.formScore * 100) + '% Form' }));
 
-    panel.appendChild(el('div.result__rows', null, [
+    var rows = el('div.result__rows', null, [
       row('Perfekt', result.perfect + ' / ' + result.reps),
       row('Verrissen', String(result.miss)),
       row('Reiz auf ' + MF.data.muscles.get(result.exercise.muscle).name,
           '+' + util.formatNum(result.stimulus, 1)),
       row('Erfahrung', '+' + result.xp + ' XP')
-    ]));
+    ]);
+    if (result.flowBonus > 0) {
+      rows.appendChild(row('Flow-Bonus (beste Serie ×' + result.bestStreak + ')',
+        '+' + Math.round(result.flowBonus * 100) + ' %'));
+    }
+    if (result.forced === 'hit') rows.appendChild(row('Spotter-Rep', '+30 % Reiz'));
+    if (result.forced === 'fail') rows.appendChild(row('Spotter-Rep', 'verrissen'));
+    panel.appendChild(rows);
 
     if (result.levelUp) {
       panel.appendChild(el('div.result__levelup', {

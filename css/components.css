@@ -1914,3 +1914,11 @@
   line-height: 1.45;
   color: var(--text-dim);
 }
+
+/* Pump-Flow: ab drei perfekten Reps in Folge glueht die Leiste. */
+.track.is-flow {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(255, 179, 92, .4), inset 0 0 10px rgba(255, 179, 92, .12);
+}
+
+.track.is-flow .track__zone { filter: brightness(1.25); }
