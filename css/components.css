@@ -1922,3 +1922,17 @@
 }
 
 .track.is-flow .track__zone { filter: brightness(1.25); }
+
+/* ---------- Muskelzerrung -------------------------------------------------- */
+
+/* Gezerrte Partie: rot umrandet und ausgegraut — antippbar bleibt sie, der
+   Startversuch erklaert dann, wie lange die Pause noch dauert. */
+.mtile.is-hurt {
+  border-color: var(--bad);
+  opacity: .72;
+}
+
+.mtile.is-hurt .mtile__sub { color: var(--bad); }
+
+.exhead__note.is-bad,
+.muscle-row__note.is-bad { color: var(--bad); }

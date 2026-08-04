@@ -27,8 +27,9 @@
   }
 
   /* Das stärkste freigeschaltete Gerät einer Partie — oder null, wenn es
-     noch keins gibt (frühe Level). */
+     noch keins gibt (frühe Level) oder die Partie gerade gezerrt ist. */
   function bestExercise(muscleId) {
+    if (MF.game.training.isInjured(muscleId)) return null;
     var best = null;
     MF.data.exercises.byMuscle(muscleId).forEach(function (ex) {
       if (!MF.game.training.isUnlocked(ex)) return;
@@ -154,6 +155,13 @@
       healthFlags: flags
     };
   }
+
+  /* Eine frische Zerrung macht die Tagesziele ungueltig — die gezerrte
+     Partie darf nicht weiter als Auftrag dastehen. */
+  MF.core.events.on('muscle:injured', function () {
+    var s = MF.game.state.get();
+    if (s && s.coach) s.coach.todayPlan = null;
+  });
 
   MF.game.coach = {
     splitToday: splitToday,

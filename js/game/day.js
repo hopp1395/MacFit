@@ -39,6 +39,8 @@
     var coachEval = MF.game.coach.evaluateDay();
 
     var gains = [];
+    var healed = [];        /* Partien, deren Zerrung heute Nacht ausheilt */
+    var injured = [];       /* noch gesperrte Partien mit Resttagen */
 
     MF.data.muscles.list.forEach(function (def) {
       var m = s.muscles[def.id];
@@ -61,7 +63,14 @@
       m.size = util.clamp(m.size, 5, 100);
       m.pending = 0;
       m.setsToday = 0;
+      /* Eine Zerrung heilt pro Nacht einen Tag ab. */
+      if (m.injuryDays > 0) {
+        m.injuryDays -= 1;
+        if (m.injuryDays === 0) healed.push(def.name);
+      }
       m.fatigue = util.clamp(m.fatigue * (1 - util.clamp(def.regen * regenMult, 0.1, 0.95)), 0, 1);
+
+      if (m.injuryDays > 0) injured.push({ name: def.name, days: m.injuryDays });
 
       var delta = m.size - before;
       if (Math.abs(delta) >= 0.01) {
@@ -111,7 +120,9 @@
       burnout: burnout,
       growthMult: growthMult,
       coach: coachEval,
-      abo: abo
+      abo: abo,
+      healed: healed,
+      injured: injured
     };
 
     s.lastReport = {

@@ -333,11 +333,14 @@
       var note = data.lastTrainedDay === 0
         ? 'noch nie trainiert'
         : (since === 0 ? 'heute trainiert' : 'vor ' + since + ' Tagen');
+      if (data.injuryDays > 0) {
+        note = 'gezerrt — noch ' + data.injuryDays + (data.injuryDays === 1 ? ' Tag' : ' Tage');
+      }
 
       panel.appendChild(el('div.muscle-row' + (m.id === weakest.id ? '.is-weak' : ''), null, [
         el('div.muscle-row__head', null, [
-          el('span.muscle-row__name', { text: m.name }),
-          el('span.muscle-row__note', { text: note }),
+          el('span.muscle-row__name', { text: (data.injuryDays > 0 ? '🤕 ' : '') + m.name }),
+          el('span.muscle-row__note' + (data.injuryDays > 0 ? '.is-bad' : ''), { text: note }),
           el('span.muscle-row__value', { text: util.formatNum(data.size, 1) })
         ]),
         el('div.bar.bar--muscle', null, [

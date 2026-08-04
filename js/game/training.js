@@ -27,17 +27,33 @@
     return state().level >= exercise.unlockLevel;
   }
 
+  /* Zerrung: nach zu vielen verrissenen Wiederholungen ist die Partie
+     drei Tage gesperrt. */
+  var INJURY_DAYS = 3;
+  var INJURY_MISS_RATIO = 0.5;   /* mehr als die Haelfte verrissen */
+  var INJURY_MIN_REPS = 5;       /* Mini-Saetze koennen nichts zerren */
+
+  function isInjured(muscleId) {
+    return state().muscles[muscleId].injuryDays > 0;
+  }
+
   /* Darf dieser Satz gestartet werden? */
   function canTrain(exercise, weightIndex) {
     var s = state();
     if (!isUnlocked(exercise)) {
       return { ok: false, reason: 'Erst ab Level ' + exercise.unlockLevel + ' verfügbar.' };
     }
+    var m = s.muscles[exercise.muscle];
+    var name = MF.data.muscles.get(exercise.muscle).name;
+    if (m.injuryDays > 0) {
+      return { ok: false, reason: name + ' ist gezerrt — noch ' + m.injuryDays
+        + (m.injuryDays === 1 ? ' Tag' : ' Tage') + ' Pause.' };
+    }
     if (s.energy < energyCost(exercise, weightIndex)) {
       return { ok: false, reason: 'Zu wenig Energie. Zeit zu schlafen.' };
     }
-    if (s.muscles[exercise.muscle].fatigue >= 0.95) {
-      return { ok: false, reason: MF.data.muscles.get(exercise.muscle).name + ' ist komplett platt.' };
+    if (m.fatigue >= 0.95) {
+      return { ok: false, reason: name + ' ist komplett platt.' };
     }
     return { ok: true };
   }
@@ -165,6 +181,23 @@
       if (MF.game.stats.healthAvg() < 45) s.energy = Math.max(0, s.energy - 10);
     }
 
+    /* Muskelzerrung: wer den halben Satz verreisst, hat es uebertrieben —
+       die Partie ist drei Tage gesperrt. Eine verrissene Spotter-Rep an
+       einer schon muerben Partie reicht ebenfalls. */
+    var injured = false;
+    if ((reps >= INJURY_MIN_REPS && miss / reps > INJURY_MISS_RATIO)
+        || (forced === 'fail' && m.fatigue >= 0.60)) {
+      m.injuryDays = INJURY_DAYS;
+      m.pending = 0;                    /* der Reiz dieses Satzes ist futsch */
+      s.health.laune = util.clamp(s.health.laune - 4, 0, 100);
+      injured = true;
+      MF.core.events.emit('muscle:injured', {
+        id: exercise.muscle,
+        name: MF.data.muscles.get(exercise.muscle).name,
+        days: INJURY_DAYS
+      });
+    }
+
     var result = {
       exercise: exercise,
       weight: weight,
@@ -179,7 +212,9 @@
       grade: gradeFor(formScore),
       bestStreak: flow.bestStreak,
       flowBonus: flow.bonus,
-      forced: forced || null
+      forced: forced || null,
+      injured: injured,
+      injuryDays: injured ? INJURY_DAYS : 0
     };
 
     MF.core.events.emit('set:finished', result);
@@ -197,9 +232,11 @@
 
   MF.game.training = {
     WEIGHTS: WEIGHTS,
+    INJURY_DAYS: INJURY_DAYS,
     weightAt: weightAt,
     energyCost: energyCost,
     isUnlocked: isUnlocked,
+    isInjured: isInjured,
     canTrain: canTrain,
     zoneWidth: zoneWidth,
     markerSpeed: markerSpeed,

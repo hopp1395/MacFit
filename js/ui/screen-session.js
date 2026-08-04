@@ -436,8 +436,25 @@
 
     MF.ui.hud.render();
 
-    if (result.levelUp) MF.ui.report.showLevelUp(result.levelUp);
-    else if (s.energy <= 0) MF.ui.toast.show('Energie leer — Zeit zu schlafen.', 'warn');
+    /* Die Zerrung geht vor: sie sperrt die Partie und muss ankommen. */
+    if (result.injured) {
+      MF.core.haptics.buzz('miss');
+      MF.ui.modal.open({
+        title: '🤕 Muskelzerrung',
+        subtitle: 'Zu viel Schwung, zu wenig Kontrolle.',
+        body: el('p.card__desc', {
+          text: 'Es hat dich in der ' + MF.data.muscles.get(result.exercise.muscle).name
+              + ' erwischt. ' + result.injuryDays + ' Tage Pause für diese Partie — '
+              + 'der Reiz aus diesem Satz ist dahin. Andere Partien darfst du weiter '
+              + 'trainieren; ausgeheilt wird über Nacht.'
+        }),
+        actions: [{ label: 'Verstanden', tone: 'primary' }]
+      });
+    } else if (result.levelUp) {
+      MF.ui.report.showLevelUp(result.levelUp);
+    } else if (s.energy <= 0) {
+      MF.ui.toast.show('Energie leer — Zeit zu schlafen.', 'warn');
+    }
   }
 
   function row(label, value) {
