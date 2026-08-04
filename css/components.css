@@ -1825,15 +1825,9 @@
 
 /* ---------- Shop-Kategorien und Coaching (v1.3.0) -------------------------- */
 
-/* Sechs Chips passen nicht in eine Reihe — umbrechen statt quetschen. */
-.shoptabs {
-  flex-wrap: wrap;
-  margin-bottom: 4px;
-}
-.shoptabs .segmented__btn {
-  flex: 0 1 auto;
-  padding: 0 12px;
-}
+/* Die Bereiche im Shop nutzen dasselbe Kachelraster wie die Muskelgruppen
+   im Gym — nur mit etwas Luft nach unten, weil darunter das Sortiment folgt. */
+.shopgrid { margin-bottom: 6px; }
 
 /* Laufendes Abo im Sortiment: dezent markiert, kein zweiter Kauf-Reiz. */
 .card--running { border-color: var(--accent); }
