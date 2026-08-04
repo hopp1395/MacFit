@@ -68,63 +68,6 @@
     return bar;
   }
 
-  /* Der Zettel vom Schwarzen Brett — eine Zeile, kein eigener Bildschirm.
-     Antippen erklaert die Aufgabe samt Praemie und Fortschritt. */
-  function boardNote() {
-    var def = MF.game.challenge.today();
-    if (!def) return null;
-    var done = MF.game.challenge.isDone();
-    var pay = MF.game.challenge.reward(def);
-
-    /* Bewusst einzeilig: die Hauptseite hat schon genug zu tragen. Titel,
-       ganzer Text und Fortschritt stehen im Fenster hinter dem Tipp. */
-    var note = el('div.board' + (done ? '.is-done' : ''), null, [
-      el('span.board__pin', { text: done ? '✔' : '📌' }),
-      el('span.board__text', { text: def.short || def.title }),
-      el('span.board__prize', {
-        text: done ? 'kassiert' : '+' + util.formatMoney(pay.money)
-      })
-    ]);
-
-    util.onTap(note, function () { showBoardInfo(def, done, pay); });
-    return note;
-  }
-
-  function showBoardInfo(def, done, pay) {
-    var body = el('div');
-    body.appendChild(el('p.card__desc', { text: def.text }));
-
-    var tags = el('div.card__meta');
-    tags.appendChild(el('span.tag.tag--good', { text: '+' + util.formatMoney(pay.money) }));
-    tags.appendChild(el('span.tag.tag--good', { text: '+' + pay.xp + ' XP' }));
-    tags.appendChild(el('span.tag.tag--good', { text: 'Laune +3' }));
-    body.appendChild(tags);
-
-    var status;
-    if (done) {
-      status = 'Erledigt und kassiert. Morgen früh hängt der nächste Zettel aus.';
-    } else if (def.kind === 'sets') {
-      status = 'Bisher heute: ' + MF.game.day.setsToday() + ' von ' + def.n + ' Sätzen.';
-    } else {
-      status = 'Noch offen — es zählt jeder Satz an jedem Gerät. '
-             + 'Was zählt, ist die Ausführung, nicht die Muskelgruppe.';
-    }
-
-    var block = el('div.runinfo');
-    block.appendChild(el('p.runinfo__text', {
-      text: status + ' Jeden Tag hängt genau ein Zettel aus; schwerere kommen '
-          + 'mit steigendem Fitness-Index dazu.'
-    }));
-    body.appendChild(block);
-
-    MF.ui.modal.open({
-      title: (done ? '✔ ' : '📌 ') + def.title,
-      subtitle: 'Schwarzes Brett',
-      body: body,
-      actions: [{ label: 'Alles klar', tone: 'primary' }]
-    });
-  }
-
   /* ---------- Muskelgruppen als Kachelraster ------------------------------ */
 
   function muscleGrid() {
@@ -286,9 +229,6 @@
       container.appendChild(hall);
       MF.ui.scene.mountAmbient(hall);
     }
-
-    var board = boardNote();
-    if (board) container.appendChild(board);
 
     var banner = planBanner();
     if (banner) container.appendChild(banner);

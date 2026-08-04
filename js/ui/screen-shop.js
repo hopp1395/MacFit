@@ -19,25 +19,14 @@
 
   /* ---------- Kategorie-Chips ---------------------------------------------- */
 
-  /* Laeuft gerade irgendetwas — Kur, Einbruch oder Abo? */
-  function hasRunning() {
-    var s = state();
-    return MF.game.stats.activeCourses().length > 0 || !!s.crash
-        || MF.game.abos.planActive() || MF.game.abos.trainerActive();
-  }
-
   function shopTab() {
-    var tab = state().settings.shopTab || 'alle';
-    /* Der Laufend-Chip verschwindet, wenn nichts mehr laeuft — die
-       gespeicherte Auswahl darf dann nicht ins Leere zeigen. */
-    if (tab === 'laufend' && !hasRunning()) return 'alle';
-    return tab;
+    return state().settings.shopTab || 'alle';
   }
 
   function shopTabs() {
     var wrap = el('div.segmented.segmented--compact.shoptabs', { id: 'shop-tabs' });
-    var tabs = [{ key: 'alle', name: 'Alle' }];
-    if (hasRunning()) tabs.push({ key: 'laufend', name: 'Laufend' });
+    /* "Laufend" gibt es immer: dort haengt auch der Zettel des Tages. */
+    var tabs = [{ key: 'alle', name: 'Alle' }, { key: 'laufend', name: 'Laufend' }];
     Object.keys(MF.data.supplements.tiers)
       .sort(function (a, b) {
         return MF.data.supplements.tiers[a].order - MF.data.supplements.tiers[b].order;
@@ -111,10 +100,69 @@
     });
   }
 
+  /* Der Zettel vom Schwarzen Brett. Er haengt im Shop statt im Gym — dort
+     soll nur stehen, was fuers Training selbst zaehlt. Eine Zeile, alles
+     Weitere im Fenster hinter dem Tipp. */
+  function boardNote() {
+    var def = MF.game.challenge.today();
+    if (!def) return null;
+    var done = MF.game.challenge.isDone();
+    var pay = MF.game.challenge.reward(def);
+
+    var note = el('div.board' + (done ? '.is-done' : ''), null, [
+      el('span.board__pin', { text: done ? '✔' : '📌' }),
+      el('span.board__text', { text: def.short || def.title }),
+      el('span.board__prize', {
+        text: done ? 'kassiert' : '+' + util.formatMoney(pay.money)
+      })
+    ]);
+    util.onTap(note, function () { showBoardInfo(def, done, pay); });
+    return note;
+  }
+
+  function showBoardInfo(def, done, pay) {
+    var body = el('div');
+    body.appendChild(el('p.card__desc', { text: def.text }));
+
+    body.appendChild(el('div.card__meta', null, [
+      el('span.tag.tag--good', { text: '+' + util.formatMoney(pay.money) }),
+      el('span.tag.tag--good', { text: '+' + pay.xp + ' XP' }),
+      el('span.tag.tag--good', { text: 'Laune +3' })
+    ]));
+
+    var status;
+    if (done) {
+      status = 'Erledigt und kassiert. Morgen früh hängt der nächste Zettel aus.';
+    } else if (def.kind === 'sets') {
+      status = 'Bisher heute: ' + MF.game.day.setsToday() + ' von ' + def.n + ' Sätzen.';
+    } else {
+      status = 'Noch offen — es zählt jeder Satz an jedem Gerät. '
+             + 'Entscheidend ist die Ausführung, nicht die Muskelgruppe.';
+    }
+
+    body.appendChild(el('div.runinfo', null, [
+      el('p.runinfo__text', {
+        text: status + ' Jeden Tag hängt genau ein Zettel aus; schwerere kommen '
+            + 'mit steigendem Fitness-Index dazu.'
+      })
+    ]));
+
+    MF.ui.modal.open({
+      title: (done ? '✔ ' : '📌 ') + def.title,
+      subtitle: 'Schwarzes Brett',
+      body: body,
+      actions: [{ label: 'Alles klar', tone: 'primary' }]
+    });
+  }
+
   function activePanel() {
     var courses = MF.game.stats.activeCourses();
     var s = state();
     var panel = el('section.active-panel');
+
+    panel.appendChild(el('div.section-title', { text: 'Schwarzes Brett' }));
+    var board = boardNote();
+    if (board) panel.appendChild(board);
 
     panel.appendChild(el('div.section-title', { text: 'Laufend' }));
 
