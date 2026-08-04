@@ -68,6 +68,25 @@
     return bar;
   }
 
+  /* Der Zettel vom Schwarzen Brett — eine Zeile, kein eigener Bildschirm. */
+  function boardNote() {
+    var def = MF.game.challenge.today();
+    if (!def) return null;
+    var done = MF.game.challenge.isDone();
+    var pay = MF.game.challenge.reward(def);
+
+    return el('div.board' + (done ? '.is-done' : ''), null, [
+      el('span.board__pin', { text: done ? '✔' : '📌' }),
+      el('span.board__body', null, [
+        el('span.board__title', { text: def.title }),
+        el('span.board__text', { text: def.text })
+      ]),
+      el('span.board__prize', {
+        text: done ? 'kassiert' : '+' + util.formatMoney(pay.money)
+      })
+    ]);
+  }
+
   /* ---------- Muskelgruppen als Kachelraster ------------------------------ */
 
   function muscleGrid() {
@@ -229,6 +248,9 @@
       container.appendChild(hall);
       MF.ui.scene.mountAmbient(hall);
     }
+
+    var board = boardNote();
+    if (board) container.appendChild(board);
 
     var banner = planBanner();
     if (banner) container.appendChild(banner);

@@ -1960,3 +1960,49 @@
 }
 
 .taparea.is-done:active { border-color: var(--line); }
+
+/* ---------- Schwarzes Brett ------------------------------------------------ */
+
+/* Der Zettel des Tages im Gym: eine Zeile ueber dem Kachelraster. */
+.board {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border-left: 3px solid var(--warn);
+}
+
+.board__pin { font-size: 14px; flex: 0 0 auto; }
+
+.board__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.board__title { font-size: 12px; font-weight: 800; }
+
+.board__text {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+
+.board__prize {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--warn);
+}
+
+.board.is-done {
+  border-left-color: var(--good);
+  opacity: .78;
+}
+
+.board.is-done .board__prize { color: var(--good); }

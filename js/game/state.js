@@ -37,6 +37,8 @@
          der Zielpartien (nur IDs, muss durch JSON und Cloud passen). */
       coach: { planDays: 0, planAuto: true, planStart: 0, trainer: false,
                todayPlan: null },
+      /* Zettel vom Schwarzen Brett: gilt fuer genau einen Tag. */
+      challenge: { day: 0, id: '', done: false },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -99,6 +101,9 @@
     });
     Object.keys(fresh.coach).forEach(function (k) {
       if (loaded.coach[k] === undefined) loaded.coach[k] = fresh.coach[k];
+    });
+    Object.keys(fresh.challenge).forEach(function (k) {
+      if (loaded.challenge[k] === undefined) loaded.challenge[k] = fresh.challenge[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];

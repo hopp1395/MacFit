@@ -277,6 +277,15 @@
       MF.ui.hud.render();
     });
 
+    /* Zettel vom Schwarzen Brett geschafft — Kasse klingelt sofort. */
+    on('challenge:done', function (info) {
+      MF.core.audio.sfx('coin');
+      MF.ui.toast.show('📌 ' + info.def.title + ' geschafft — +'
+        + MF.core.util.formatMoney(info.reward.money) + ' und +'
+        + info.reward.xp + ' XP.', 'good');
+      MF.ui.hud.render();
+    });
+
     on('day:ended', function () {
       MF.ui.hud.render();
       MF.ui.router.refresh();

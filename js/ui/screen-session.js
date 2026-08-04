@@ -432,6 +432,10 @@
     }
     if (result.forced === 'hit') rows.appendChild(row('Spotter-Rep', '+30 % Reiz'));
     if (result.forced === 'fail') rows.appendChild(row('Spotter-Rep', 'verrissen'));
+    if (result.board) {
+      rows.appendChild(row('📌 ' + result.board.def.title,
+        '+' + util.formatMoney(result.board.reward.money)));
+    }
     panel.appendChild(rows);
 
     if (result.levelUp) {
@@ -473,6 +477,9 @@
      ueber das Ergebnis oder direkt zurueck ins Gym. */
   function showAftermath(result) {
     var s = state();
+    /* Immer abholen, auch wenn der Satz selbst schon aufsteigen liess —
+       sonst poppt der geparkte Aufstieg beim naechsten Satz auf. */
+    var boardLevelUp = MF.game.challenge.takeLevelUp();
 
     /* Die Zerrung geht vor: sie sperrt die Partie und muss ankommen. */
     if (result.injured) {
@@ -488,8 +495,8 @@
         }),
         actions: [{ label: 'Verstanden', tone: 'primary' }]
       });
-    } else if (result.levelUp) {
-      MF.ui.report.showLevelUp(result.levelUp);
+    } else if (result.levelUp || boardLevelUp) {
+      MF.ui.report.showLevelUp(result.levelUp || boardLevelUp);
     } else if (s.energy <= 0) {
       MF.ui.toast.show('Energie leer — Zeit zu schlafen.', 'warn');
     }
