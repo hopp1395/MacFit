@@ -297,11 +297,51 @@
     if (!info || info.mode !== 'arrive') return;
     var s = MF.game.state.get();
     if (!s || !s.player.created || MF.ui.create.needed()) return;
-    if (s.challenge.shownDay === s.day) return;
 
+    if (s.challenge.shownDay === s.day) {
+      askForEmail();
+      return;
+    }
     s.challenge.shownDay = s.day;
     MF.game.state.saveSoon();
-    MF.ui.shop.showBoard();
+    MF.ui.shop.showBoard(askForEmail);
+  }
+
+  /* Wer noch mit der Mitgliedsnummer angemeldet ist, wird am Eingang einmal
+     pro Tag daran erinnert — und kann direkt in den Ablauf springen. Wer
+     schon eine echte Adresse hinterlegt hat, sieht das nie. */
+  function askForEmail() {
+    var s = MF.game.state.get();
+    var cloud = MF.core.cloud;
+    var cs = cloud.status();
+    if (!s || !cs.signedIn || !cloud.isMemberEmail(cs.email)) return;
+    if (s.player.mailAskedDay === s.day) return;
+
+    s.player.mailAskedDay = s.day;
+    MF.game.state.saveSoon();
+
+    MF.ui.modal.open({
+      title: '✉️ Konto vervollständigen',
+      subtitle: 'Nur mit E-Mail geht es auf jedem Gerät weiter.',
+      body: MF.core.util.el('p.card__desc', {
+        text: 'Dein Konto läuft noch über die Mitgliedsnummer. Trag eine E-Mail '
+            + 'und ein eigenes Passwort nach — danach meldest du dich damit auch '
+            + 'am Handy, Tablet oder Rechner an, und dein Trainingsstand kommt '
+            + 'automatisch mit. Dauert eine Minute.'
+      }),
+      actions: [
+        {
+          label: 'Jetzt nachtragen',
+          tone: 'primary',
+          onTap: function () {
+            MF.ui.router.go('stats');
+            var node = MF.core.util.byId('account-hint');
+            if (node && node.scrollIntoView) node.scrollIntoView();
+          }
+        },
+        { label: 'Später' }
+      ]
+    });
   }
 
   function wireEvents() {

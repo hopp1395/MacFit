@@ -65,7 +65,7 @@
     if (!cs.signedIn || !cloud.isMemberEmail(cs.email)) return null;
 
     var p = state().player;
-    var box = el('section.savebox');
+    var box = el('section.savebox', { id: 'account-hint' });
 
     box.appendChild(el('div.savebox__head', null, [
       el('span.savebox__dot.is-warn'),
