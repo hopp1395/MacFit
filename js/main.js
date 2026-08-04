@@ -290,8 +290,24 @@
     greetStreak();
   }
 
+  /* Am Eingang haengt das Schwarze Brett: nach der Anfahrt einmal pro Tag
+     den Zettel zeigen. Waehrend der Anlage und nach dem Feierabend-Film
+     bleibt es zu. */
+  function showBoardAtEntrance(info) {
+    if (!info || info.mode !== 'arrive') return;
+    var s = MF.game.state.get();
+    if (!s || !s.player.created || MF.ui.create.needed()) return;
+    if (s.challenge.shownDay === s.day) return;
+
+    s.challenge.shownDay = s.day;
+    MF.game.state.saveSoon();
+    MF.ui.shop.showBoard();
+  }
+
   function wireEvents() {
     var on = MF.core.events.on;
+
+    on('intro:done', showBoardAtEntrance);
 
     on('set:finished', function () {
       MF.ui.hud.render();

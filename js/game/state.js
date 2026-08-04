@@ -38,7 +38,7 @@
       coach: { planDays: 0, planAuto: true, planStart: 0, trainer: false,
                todayPlan: null },
       /* Zettel vom Schwarzen Brett: gilt fuer genau einen Tag. */
-      challenge: { day: 0, id: '', done: false },
+      challenge: { day: 0, id: '', done: false, shownDay: 0 },
       /* Trainingsserie ueber echte Kalendertage (siehe game/streak.js). */
       streak: { lastDay: '', days: 0, best: 0 },
       stats: {

@@ -665,7 +665,13 @@
   /* mode: 'arrive' (Standard) oder 'leave' */
   function play(onDone, mode) {
     var root = util.byId('intro-root');
-    var done = onDone || function () {};
+    var key = mode === 'leave' ? 'leave' : 'arrive';
+    /* Nach dem Film Bescheid geben — am Eingang haengt das Schwarze Brett,
+       und main.js zeigt den Zettel des Tages daran auf. */
+    var done = function () {
+      MF.core.events.emit('intro:done', { mode: key });
+      (onDone || function () {})();
+    };
     if (!root) { done(); return function () {}; }
 
     var stageEl = el('div.cine__stage');
@@ -686,7 +692,6 @@
     }
 
     var t = 0, since = STEP, capIdx = -1, finished = false;
-    var key = mode === 'leave' ? 'leave' : 'arrive';
     var lines = CAPTIONS[key];
     var cues = CUES[key], cueIdx = 0;
 
