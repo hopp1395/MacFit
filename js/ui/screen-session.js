@@ -47,6 +47,12 @@
         el('span.score__value', { id: 'session-form', text: '–' }),
         el('span.score__label', { text: 'Form' })
       ]),
+      /* Die Erfahrung waechst sichtbar mit jeder Wiederholung — das ist der
+         Grund, warum man den naechsten Rep noch sauber ziehen will. */
+      el('div.score.score--xp', null, [
+        el('span.score__value', { id: 'session-xp', text: '0' }),
+        el('span.score__label', { text: 'XP' })
+      ]),
       el('div.score', null, [
         el('span.score__value', { id: 'session-miss', text: '0' }),
         el('span.score__label', { text: 'verrissen' })
@@ -64,6 +70,9 @@
       el('div.timer__fill', { id: 'session-timer' })
     ]));
 
+    /* Eigene, null Pixel hohe Ebene fuer die XP-Krumen: die Leiste schneidet
+       ab, und die Feedback-Zeile wird bei jeder Rep neu beschriftet. */
+    container.appendChild(el('div.xplayer', { id: 'session-xplayer' }));
     container.appendChild(el('div.session__feedback', { id: 'session-feedback', text: '' }));
 
     /* Die Szene ist zugleich die Tippfläche — Blick und Daumen bleiben zusammen. */
@@ -80,12 +89,14 @@
       rep: util.byId('session-rep'),
       perfect: util.byId('session-perfect'),
       form: util.byId('session-form'),
+      xp: util.byId('session-xp'),
       miss: util.byId('session-miss'),
       track: track,
       ok: util.byId('session-ok'),
       zone: util.byId('session-zone'),
       marker: util.byId('session-marker'),
       timer: util.byId('session-timer'),
+      xplayer: util.byId('session-xplayer'),
       feedback: util.byId('session-feedback'),
       tap: tap,
       hint: hint,
@@ -127,6 +138,7 @@
       amp: 0,            /* Drift-Amplitude der instabilen Hantel */
       zone: 0.3,
       streak: 0,         /* perfekte Reps in Folge (Pump-Flow) */
+      xp: 0,             /* bis hierher verdiente Erfahrung, live sichtbar */
       extra: false,      /* laeuft gerade die Spotter-Extra-Rep? */
       awaiting: false,   /* Spotter-Frage offen — Satz pausiert */
       repTime: 0,
@@ -226,6 +238,17 @@
   function register(kind, label) {
     run.hits.push(kind);
     run.lock = LOCK_AFTER_TAP;
+
+    /* Erfahrung sofort sichtbar machen: die Zahl oben zaehlt hoch, und am
+       Treffer selbst fliegt der Gewinn weg. Ab der Flow-Serie gibt es einen
+       Aufschlag — deshalb lohnt sich die naechste saubere Rep doppelt. */
+    var gain = kind === 'perfect' ? MF.game.training.XP_PERFECT
+             : kind === 'ok' ? MF.game.training.XP_OK : 0;
+    if (kind === 'perfect' && run.streak >= 2) gain += 2;   /* ab der dritten in Folge */
+    if (gain > 0) {
+      run.xp += gain;
+      popXp(gain, kind);
+    }
 
     /* Pump-Flow: ab drei perfekten Reps in Folge glueht die Leiste und der
        Zaehler steht im Feedback — ein Verriss beendet die Serie. */
@@ -348,6 +371,18 @@
     nodes.miss.textContent = miss;
     var form = (perfect + ok * 0.5) / Math.max(1, run.hits.length);
     nodes.form.textContent = Math.round(form * 100) + '%';
+    nodes.xp.textContent = run.xp;
+  }
+
+  /* Die verdiente Erfahrung fliegt am Ort des Treffers nach oben weg —
+     ein kurzer, klarer Moment pro Wiederholung. */
+  function popXp(amount, kind) {
+    var pop = el('span.xppop.is-' + kind, { text: '+' + amount + ' XP' });
+    if (trackWidth) pop.style.left = (run.pos * trackWidth).toFixed(0) + 'px';
+    nodes.xplayer.appendChild(pop);
+    window.setTimeout(function () {
+      if (pop.parentNode) pop.parentNode.removeChild(pop);
+    }, 700);
   }
 
   function finish() {

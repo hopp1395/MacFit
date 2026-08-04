@@ -39,6 +39,8 @@
                todayPlan: null },
       /* Zettel vom Schwarzen Brett: gilt fuer genau einen Tag. */
       challenge: { day: 0, id: '', done: false },
+      /* Trainingsserie ueber echte Kalendertage (siehe game/streak.js). */
+      streak: { lastDay: '', days: 0, best: 0 },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -104,6 +106,9 @@
     });
     Object.keys(fresh.challenge).forEach(function (k) {
       if (loaded.challenge[k] === undefined) loaded.challenge[k] = fresh.challenge[k];
+    });
+    Object.keys(fresh.streak).forEach(function (k) {
+      if (loaded.streak[k] === undefined) loaded.streak[k] = fresh.streak[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];

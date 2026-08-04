@@ -2000,3 +2000,38 @@
 /* Der Zettel ist antippbar — Tap erklaert die Aufgabe. */
 .board { cursor: pointer; }
 .board:active { border-left-color: var(--accent); }
+
+/* ---------- Erfahrung im Satz ---------------------------------------------- */
+
+/* Die XP-Anzeige zwischen den Satzwerten — der Wert, der beim Tippen waechst. */
+.score--xp .score__value { color: var(--accent); }
+
+/* Null Pixel hohe Ebene direkt unter der Leiste — die Krumen fliegen
+   daraus nach oben weg, ohne Layout zu verschieben. */
+.xplayer {
+  position: relative;
+  height: 0;
+  flex: 0 0 auto;
+}
+
+/* Verdiente Erfahrung fliegt am Treffer nach oben weg. */
+.xppop {
+  position: absolute;
+  bottom: 100%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+  pointer-events: none;
+  color: var(--good);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+  animation: xpfly .7s ease-out forwards;
+}
+
+.xppop.is-ok { color: var(--warn); }
+
+@keyframes xpfly {
+  0%   { opacity: 0; transform: translate(-50%, 6px) scale(.85); }
+  18%  { opacity: 1; transform: translate(-50%, -2px) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+}
