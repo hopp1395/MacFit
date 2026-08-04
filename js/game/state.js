@@ -54,7 +54,8 @@
       /* created bleibt false, bis die Anlage durchlaufen ist. Alte Spielstände
          ohne diesen Block laufen dadurch einmalig durch die Anlage.
          photo ist ein verkleinertes JPEG als data-URL oder leer. */
-      player: { name: '', outfit: 'blau', photo: '', number: '', since: 1, created: false },
+      player: { name: '', outfit: 'blau', photo: '', number: '', since: 1, created: false,
+                mailAskedDay: 0 },
       /* autoResume: nach der Nacht ohne Tippen weiterspielen (Wahl am
          Schlaf-Countdown, bleibt über Sitzungen erhalten). */
       settings: { haptics: true, music: true, sound: true, muscle: 'brust', weight: 1,

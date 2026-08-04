@@ -151,7 +151,7 @@
     return note;
   }
 
-  function showBoardInfo(def, done, pay) {
+  function showBoardInfo(def, done, pay, onClose) {
     var body = el('div');
     body.appendChild(el('p.card__desc', { text: def.text }));
 
@@ -182,7 +182,9 @@
       title: (done ? '✔ ' : '📌 ') + def.title,
       subtitle: 'Schwarzes Brett',
       body: body,
-      actions: [{ label: 'Alles klar', tone: 'primary' }]
+      /* onClose haengt am Eingang dran: dort folgt danach ggf. der Hinweis
+         auf die E-Mail. */
+      actions: [{ label: 'Alles klar', tone: 'primary', onTap: onClose || null }]
     });
   }
 
@@ -534,10 +536,10 @@
   /* Der Zettel wird auch am Eingang gezeigt (siehe main.js) — deshalb liegt
      die Darstellung hier offen. */
   MF.ui.shop = {
-    showBoard: function () {
+    showBoard: function (onClose) {
       var def = MF.game.challenge.today();
-      if (!def) return;
-      showBoardInfo(def, MF.game.challenge.isDone(), MF.game.challenge.reward(def));
+      if (!def) { if (onClose) onClose(); return; }
+      showBoardInfo(def, MF.game.challenge.isDone(), MF.game.challenge.reward(def), onClose);
     }
   };
 })(window.MacFit);
