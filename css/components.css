@@ -1936,3 +1936,27 @@
 
 .exhead__note.is-bad,
 .muscle-row__note.is-bad { color: var(--bad); }
+
+/* ---------- Satzende: Bild bleibt stehen ----------------------------------- */
+
+/* Nach dem letzten Rep wechselt nichts von selbst — diese Leiste fuehrt
+   weiter, solange kann man Leiste und Zahlen in Ruhe ansehen. */
+.session__end {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.session__end .btn {
+  flex: 1 1 0;
+  min-height: 46px;
+}
+
+/* Die Tippflaeche nimmt keine Eingaben mehr an. */
+.taparea.is-done {
+  border-color: var(--line);
+  opacity: .82;
+}
+
+.taparea.is-done:active { border-color: var(--line); }
