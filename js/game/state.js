@@ -31,6 +31,11 @@
       active: [],            /* laufende Kuren: { id, daysLeft, total } */
       crash: null,           /* { daysLeft, name } nach einer Anabol-Kur */
       owned: {},             /* wie oft schon gekauft: { supplementId: n } */
+      /* Coaching-Abos — bewusst getrennt von active: der Burnout leert active,
+         ein bezahltes Abo darf er nicht mitreißen. todayPlan ist der Tagescache
+         der Zielpartien (nur IDs, muss durch JSON und Cloud passen). */
+      coach: { planDays: 0, planAuto: true, planStart: 0, trainer: false,
+               todayPlan: null },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -48,7 +53,7 @@
       /* autoResume: nach der Nacht ohne Tippen weiterspielen (Wahl am
          Schlaf-Countdown, bleibt über Sitzungen erhalten). */
       settings: { haptics: true, music: true, sound: true, muscle: 'brust', weight: 1,
-                  autoResume: false },
+                  autoResume: false, shopTab: 'alle' },
       seenIntro: false,
       lastReport: null
     };
@@ -90,6 +95,9 @@
     });
     Object.keys(fresh.stats).forEach(function (k) {
       if (loaded.stats[k] === undefined) loaded.stats[k] = fresh.stats[k];
+    });
+    Object.keys(fresh.coach).forEach(function (k) {
+      if (loaded.coach[k] === undefined) loaded.coach[k] = fresh.coach[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];
