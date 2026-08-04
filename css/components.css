@@ -2006,3 +2006,7 @@
 }
 
 .board.is-done .board__prize { color: var(--good); }
+
+/* Der Zettel ist antippbar — Tap erklaert die Aufgabe. */
+.board { cursor: pointer; }
+.board:active { border-left-color: var(--accent); }
