@@ -303,31 +303,95 @@
 
   /* --- Der Spotter -------------------------------------------------------- */
 
+  /* Die Form des laufenden Satzes — fuer Angebote, die vor der Auswertung
+     entschieden werden muessen. */
+  function currentForm() {
+    var perfect = 0, ok = 0;
+    run.hits.forEach(function (h) {
+      if (h === 'perfect') perfect++;
+      else if (h === 'ok') ok++;
+    });
+    return (perfect + ok * 0.5) / Math.max(1, run.hits.length);
+  }
+
   function offerSpotter() {
     run.awaiting = true;
+
+    /* Wer keine Extra-Rep will, soll trotzdem direkt weiterkoennen: das
+       Dropset steht gleich hier zur Wahl, statt ueber den Ergebnisschirm. */
+    var drop = MF.game.training.dropOffer({
+      exercise: run.ex,
+      weightIndex: run.weightIndex,
+      formScore: currentForm(),
+      dropStep: run.drop
+    });
+
+    var body = el('div');
+    body.appendChild(el('p.card__desc', {
+      text: 'Eine Extra-Rep mit enger Zone und mehr Zug: Treffer bringt +30 % '
+          + 'Reiz und 10 XP obendrauf — ein Verriss kostet Kraft und Laune.'
+    }));
+    if (drop) {
+      body.appendChild(el('p.hint', {
+        text: 'Oder du gehst runter im Gewicht: ' + drop.weight.name + ', '
+            + drop.reps + ' Reps für ⚡ ' + drop.cost + ' — mit 25 % mehr Reiz.'
+      }));
+    }
+
+    var actions = [{
+      label: 'Noch eine!',
+      tone: 'primary',
+      onTap: function () { startExtraRep(); }
+    }];
+    if (drop) {
+      actions.push({
+        label: '↓ Dropset: ' + drop.weight.name,
+        tone: 'drop',
+        onTap: function () {
+          run.awaiting = false;
+          finishInto(drop.step);
+        }
+      });
+    }
+    actions.push({
+      label: 'Reicht für heute',
+      onTap: function () {
+        run.awaiting = false;
+        finish();
+      }
+    });
+
     MF.ui.modal.open({
       title: '💪 Der Spotter taucht auf',
       subtitle: '„Eine geht noch. ALLES DU!“',
-      body: el('p.card__desc', {
-        text: 'Eine Extra-Rep mit enger Zone und mehr Zug: Treffer bringt +30 % '
-            + 'Reiz und 10 XP obendrauf — ein Verriss kostet Kraft und Laune.'
-      }),
+      body: body,
       dismissible: false,
-      actions: [
-        {
-          label: 'Noch eine!',
-          tone: 'primary',
-          onTap: function () { startExtraRep(); }
-        },
-        {
-          label: 'Reicht für heute',
-          onTap: function () {
-            run.awaiting = false;
-            finish();
-          }
-        }
-      ]
+      actions: actions
     });
+  }
+
+  /* Satz werten und ohne Umweg ueber das Ergebnis ins Dropset starten. */
+  function finishInto(step) {
+    run.done = true;
+    if (ticker) ticker.stop();
+
+    var ex = run.ex;
+    var result = MF.game.training.finishSet(ex, run.weightIndex, run.hits, null, run.drop);
+    var drop = MF.game.training.dropOffer(result);
+
+    /* Zwischendurch etwas dazwischengekommen (Zerrung, Energie)? Dann bleibt
+       es beim normalen Weg ueber den Ergebnisschirm. */
+    if (!drop || drop.step !== step) {
+      showEndBar(result);
+      return;
+    }
+
+    MF.ui.router.go('session', {
+      exerciseId: ex.id,
+      weightIndex: drop.weightIndex,
+      dropStep: drop.step
+    });
+    showAftermath(result);
   }
 
   function startExtraRep() {

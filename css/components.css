@@ -2061,3 +2061,6 @@
   color: #fff;
   font-size: 13px;
 }
+
+/* Der Dropset-Knopf im Spotter-Fenster traegt dieselbe Farbe wie im Ergebnis. */
+.btn--drop.btn { color: #fff; }
