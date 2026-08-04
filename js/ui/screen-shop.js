@@ -19,13 +19,25 @@
 
   /* ---------- Kategorie-Chips ---------------------------------------------- */
 
+  /* Laeuft gerade irgendetwas — Kur, Einbruch oder Abo? */
+  function hasRunning() {
+    var s = state();
+    return MF.game.stats.activeCourses().length > 0 || !!s.crash
+        || MF.game.abos.planActive() || MF.game.abos.trainerActive();
+  }
+
   function shopTab() {
-    return state().settings.shopTab || 'alle';
+    var tab = state().settings.shopTab || 'alle';
+    /* Der Laufend-Chip verschwindet, wenn nichts mehr laeuft — die
+       gespeicherte Auswahl darf dann nicht ins Leere zeigen. */
+    if (tab === 'laufend' && !hasRunning()) return 'alle';
+    return tab;
   }
 
   function shopTabs() {
     var wrap = el('div.segmented.segmented--compact.shoptabs', { id: 'shop-tabs' });
     var tabs = [{ key: 'alle', name: 'Alle' }];
+    if (hasRunning()) tabs.push({ key: 'laufend', name: 'Laufend' });
     Object.keys(MF.data.supplements.tiers)
       .sort(function (a, b) {
         return MF.data.supplements.tiers[a].order - MF.data.supplements.tiers[b].order;
@@ -313,7 +325,13 @@
     util.clear(container);
     var tab = shopTab();
     container.appendChild(shopTabs());
-    container.appendChild(activePanel());
+
+    /* Laufendes stoert beim Stoebern — es hat seinen eigenen Chip und
+       taucht im Sortiment nicht mehr auf. */
+    if (tab === 'laufend') {
+      container.appendChild(activePanel());
+      return;
+    }
 
     Object.keys(MF.data.supplements.tiers)
       .sort(function (a, b) {
