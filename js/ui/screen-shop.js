@@ -39,10 +39,14 @@
     var wrap = el('div.mgrid.shopgrid', { id: 'shop-tabs' });
     var total = MF.data.supplements.list.length + MF.data.abos.list.length;
 
-    /* "Laufend" gibt es immer: dort haengt auch der Zettel des Tages. */
+    var board = MF.game.challenge.today();
     var tabs = [
       { key: 'alle', name: 'Alle', sub: total + ' Artikel' },
-      { key: 'laufend', name: 'Laufend', sub: runningCount() + ' aktiv' }
+      { key: 'laufend', name: 'Laufend', sub: runningCount() + ' aktiv' },
+      { key: 'brett', name: 'Brett',
+        sub: MF.game.challenge.isDone()
+          ? 'erledigt'
+          : '+' + util.formatMoney(MF.game.challenge.reward(board).money) }
     ];
     Object.keys(MF.data.supplements.tiers)
       .sort(function (a, b) {
@@ -182,14 +186,29 @@
     });
   }
 
+  /* Eigener Bereich fuers Brett — ein Zettel, mehr haengt da nicht. */
+  function boardPanel() {
+    var panel = el('section.active-panel');
+    panel.appendChild(el('div.section-title', { text: 'Schwarzes Brett' }));
+
+    var note = boardNote();
+    if (note) panel.appendChild(note);
+
+    var def = MF.game.challenge.today();
+    panel.appendChild(el('p.hint', {
+      text: MF.game.challenge.isDone()
+        ? 'Heute erledigt und kassiert. Morgen früh hängt der nächste Zettel aus.'
+        : def.text + ' Es zählt jeder Satz an jedem Gerät — antippen für Prämie '
+          + 'und Fortschritt.'
+    }));
+
+    return panel;
+  }
+
   function activePanel() {
     var courses = MF.game.stats.activeCourses();
     var s = state();
     var panel = el('section.active-panel');
-
-    panel.appendChild(el('div.section-title', { text: 'Schwarzes Brett' }));
-    var board = boardNote();
-    if (board) panel.appendChild(board);
 
     panel.appendChild(el('div.section-title', { text: 'Laufend' }));
 
@@ -470,10 +489,14 @@
     var tab = shopTab();
     container.appendChild(shopTabs());
 
-    /* Laufendes stoert beim Stoebern — es hat seinen eigenen Chip und
-       taucht im Sortiment nicht mehr auf. */
+    /* Laufendes und der Zettel stoeren beim Stoebern — beide haben ihre
+       eigene Kachel und tauchen im Sortiment nicht mehr auf. */
     if (tab === 'laufend') {
       container.appendChild(activePanel());
+      return;
+    }
+    if (tab === 'brett') {
+      container.appendChild(boardPanel());
       return;
     }
 
