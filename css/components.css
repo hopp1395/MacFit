@@ -2078,3 +2078,18 @@
   flex: 0 0 auto;
   font-size: 13px;
 }
+
+/* Ausreisser-Rep: die Leiste wackelt kurz, bevor der Marker umdreht — die
+   Vorwarnung ist der Unterschied zwischen Ueberraschung und Gemeinheit. */
+.track.is-wobble {
+  border-color: var(--warn);
+  animation: wobbleShake .5s ease-in-out;
+}
+
+@keyframes wobbleShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
