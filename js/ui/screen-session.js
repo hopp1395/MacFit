@@ -24,7 +24,7 @@
 
   /* --- Aufbau ------------------------------------------------------------ */
 
-  function buildSetUi(container, ex, weight) {
+  function buildSetUi(container, ex, weight, drop) {
     util.clear(container);
 
     var top = el('div.session__top');
@@ -33,7 +33,10 @@
     top.appendChild(back);
     top.appendChild(el('div.session__name', null, [
       el('strong', { text: ex.name }),
-      el('span', { text: weight.name + ' · ' + MF.data.muscles.get(ex.muscle).name })
+      el('span', {
+        text: (drop ? '↓ Dropset ' + drop + ' · ' : '') + weight.name
+            + ' · ' + MF.data.muscles.get(ex.muscle).name
+      })
     ]));
     top.appendChild(el('div.session__rep', { id: 'session-rep', text: '' }));
     container.appendChild(top);
@@ -108,27 +111,30 @@
 
   /* --- Ablauf ------------------------------------------------------------ */
 
-  function start(exerciseId, weightIndex, container) {
+  function start(exerciseId, weightIndex, container, dropStep) {
     var ex = MF.data.exercises.get(exerciseId);
     if (!ex) {
       MF.ui.router.go('gym');
       return;
     }
 
-    var check = MF.game.training.canTrain(ex, weightIndex);
+    var drop = dropStep || 0;
+    var check = MF.game.training.canTrain(ex, weightIndex, drop);
     if (!check.ok) {
       MF.ui.toast.show(check.reason, 'warn');
       MF.ui.router.go('gym');
       return;
     }
 
-    MF.game.training.beginSet(ex, weightIndex);
+    MF.game.training.beginSet(ex, weightIndex, drop);
     MF.ui.hud.render();
 
     run = {
       ex: ex,
       weightIndex: weightIndex,
       weight: MF.game.training.weightAt(weightIndex),
+      drop: drop,
+      totalReps: MF.game.training.repCount(ex, drop),
       repIndex: 0,
       hits: [],
       pos: 0.5,
@@ -146,7 +152,7 @@
       done: false
     };
 
-    buildSetUi(container, ex, run.weight);
+    buildSetUi(container, ex, run.weight, drop);
     nextRep();
     MF.core.audio.sfx('rack');   /* Gewicht aufgelegt */
 
@@ -177,7 +183,7 @@
 
     placeZone();
 
-    nodes.rep.textContent = 'Rep ' + (run.repIndex + 1) + '/' + run.ex.reps;
+    nodes.rep.textContent = 'Rep ' + (run.repIndex + 1) + '/' + run.totalReps;
   }
 
   function frame(dt) {
@@ -285,8 +291,10 @@
     updateScores();
 
     run.repIndex += 1;
-    if (run.repIndex >= run.ex.reps) {
-      if (MF.game.training.spotterOffer(run.ex, run.weightIndex, run.hits)) offerSpotter();
+    if (run.repIndex >= run.totalReps) {
+      if (!run.drop && MF.game.training.spotterOffer(run.ex, run.weightIndex, run.hits)) {
+        offerSpotter();
+      }
       else finish();
     } else {
       nextRep();
@@ -295,31 +303,95 @@
 
   /* --- Der Spotter -------------------------------------------------------- */
 
+  /* Die Form des laufenden Satzes — fuer Angebote, die vor der Auswertung
+     entschieden werden muessen. */
+  function currentForm() {
+    var perfect = 0, ok = 0;
+    run.hits.forEach(function (h) {
+      if (h === 'perfect') perfect++;
+      else if (h === 'ok') ok++;
+    });
+    return (perfect + ok * 0.5) / Math.max(1, run.hits.length);
+  }
+
   function offerSpotter() {
     run.awaiting = true;
+
+    /* Wer keine Extra-Rep will, soll trotzdem direkt weiterkoennen: das
+       Dropset steht gleich hier zur Wahl, statt ueber den Ergebnisschirm. */
+    var drop = MF.game.training.dropOffer({
+      exercise: run.ex,
+      weightIndex: run.weightIndex,
+      formScore: currentForm(),
+      dropStep: run.drop
+    });
+
+    var body = el('div');
+    body.appendChild(el('p.card__desc', {
+      text: 'Eine Extra-Rep mit enger Zone und mehr Zug: Treffer bringt +30 % '
+          + 'Reiz und 10 XP obendrauf — ein Verriss kostet Kraft und Laune.'
+    }));
+    if (drop) {
+      body.appendChild(el('p.hint', {
+        text: 'Oder du gehst runter im Gewicht: ' + drop.weight.name + ', '
+            + drop.reps + ' Reps für ⚡ ' + drop.cost + ' — mit 25 % mehr Reiz.'
+      }));
+    }
+
+    var actions = [{
+      label: 'Noch eine!',
+      tone: 'primary',
+      onTap: function () { startExtraRep(); }
+    }];
+    if (drop) {
+      actions.push({
+        label: '↓ Dropset: ' + drop.weight.name,
+        tone: 'drop',
+        onTap: function () {
+          run.awaiting = false;
+          finishInto(drop.step);
+        }
+      });
+    }
+    actions.push({
+      label: 'Reicht für heute',
+      onTap: function () {
+        run.awaiting = false;
+        finish();
+      }
+    });
+
     MF.ui.modal.open({
       title: '💪 Der Spotter taucht auf',
       subtitle: '„Eine geht noch. ALLES DU!“',
-      body: el('p.card__desc', {
-        text: 'Eine Extra-Rep mit enger Zone und mehr Zug: Treffer bringt +30 % '
-            + 'Reiz und 10 XP obendrauf — ein Verriss kostet Kraft und Laune.'
-      }),
+      body: body,
       dismissible: false,
-      actions: [
-        {
-          label: 'Noch eine!',
-          tone: 'primary',
-          onTap: function () { startExtraRep(); }
-        },
-        {
-          label: 'Reicht für heute',
-          onTap: function () {
-            run.awaiting = false;
-            finish();
-          }
-        }
-      ]
+      actions: actions
     });
+  }
+
+  /* Satz werten und ohne Umweg ueber das Ergebnis ins Dropset starten. */
+  function finishInto(step) {
+    run.done = true;
+    if (ticker) ticker.stop();
+
+    var ex = run.ex;
+    var result = MF.game.training.finishSet(ex, run.weightIndex, run.hits, null, run.drop);
+    var drop = MF.game.training.dropOffer(result);
+
+    /* Zwischendurch etwas dazwischengekommen (Zerrung, Energie)? Dann bleibt
+       es beim normalen Weg ueber den Ergebnisschirm. */
+    if (!drop || drop.step !== step) {
+      showEndBar(result);
+      return;
+    }
+
+    MF.ui.router.go('session', {
+      exerciseId: ex.id,
+      weightIndex: drop.weightIndex,
+      dropStep: drop.step
+    });
+    showAftermath(result);
   }
 
   function startExtraRep() {
@@ -348,7 +420,7 @@
     nodes.feedback.textContent = label;
     nodes.feedback.className = 'session__feedback is-shown is-' + (forced === 'hit' ? 'perfect' : 'miss');
 
-    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, forced);
+    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, forced, run.drop);
     if (forced === 'hit') {
       MF.core.haptics.buzz('levelUp');
       if (!result.levelUp) MF.core.audio.sfx('done');
@@ -389,7 +461,7 @@
     run.done = true;
     if (ticker) ticker.stop();
 
-    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits);
+    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, null, run.drop);
     /* Beim Aufstieg spielt gleich die laengere Fanfare aus dem Modal — zwei
        Melodien uebereinander waeren Krach. */
     if (!result.levelUp) MF.core.audio.sfx('done');
@@ -439,7 +511,7 @@
       MF.ui.router.go('gym');
       return;
     }
-    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits);
+    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, null, run.drop);
     showResult(result);
   }
 
@@ -467,6 +539,7 @@
     }
     if (result.forced === 'hit') rows.appendChild(row('Spotter-Rep', '+30 % Reiz'));
     if (result.forced === 'fail') rows.appendChild(row('Spotter-Rep', 'verrissen'));
+    if (result.dropStep) rows.appendChild(row('↓ Dropset ' + result.dropStep, '+25 % Reiz'));
     if (result.board) {
       rows.appendChild(row('📌 ' + result.board.def.title,
         '+' + util.formatMoney(result.board.reward.money)));
@@ -496,6 +569,24 @@
       });
     });
     actions.appendChild(againBtn);
+
+    /* Dropset: sofort eine Stufe leichter weiter, ohne Pause. Nur wenn der
+       Satz sauber war und die Kette noch nicht am Ende ist. */
+    var drop = MF.game.training.dropOffer(result);
+    if (drop) {
+      var dropBtn = el('button.btn.btn--drop', {
+        type: 'button',
+        text: '↓ Dropset: ' + drop.weight.name + ' · ' + drop.reps + ' Reps · ⚡ ' + drop.cost
+      });
+      util.onTap(dropBtn, function () {
+        MF.ui.router.go('session', {
+          exerciseId: result.exercise.id,
+          weightIndex: drop.weightIndex,
+          dropStep: drop.step
+        });
+      });
+      actions.appendChild(dropBtn);
+    }
 
     var backBtn = el('button.btn.btn--ghost', { type: 'button', text: 'Zurück ins Gym' });
     util.onTap(backBtn, function () { MF.ui.router.go('gym'); });
@@ -546,7 +637,9 @@
 
   function render(container, params) {
     if (params && params.exerciseId) {
-      start(params.exerciseId, params.weightIndex === undefined ? 1 : params.weightIndex, container);
+      start(params.exerciseId,
+        params.weightIndex === undefined ? 1 : params.weightIndex,
+        container, params.dropStep);
     } else if (!run || run.done) {
       MF.ui.router.go('gym');
     }

@@ -24,8 +24,24 @@
     return WEIGHTS[util.clamp(index, 0, WEIGHTS.length - 1)];
   }
 
-  function energyCost(exercise, weightIndex) {
-    return Math.round(exercise.energy * weightAt(weightIndex).energy);
+  /* Dropset: direkt im Anschluss eine Stufe leichter weitermachen. Halber
+     Satz, halbe Energie, mehr Reiz — und maximal zwei Stufen, sonst haengt
+     man bis zum Umfallen an einem Geraet. */
+  var DROP_MAX = 2;
+  var DROP_ENERGY = 0.5;
+  var DROP_STIM = 1.25;
+  var DROP_MIN_FORM = 0.55;
+  var DROP_MIN_INDEX = 300;   /* "Solide Basis" — vorher verbrennt es nur Kraft */
+
+  function energyCost(exercise, weightIndex, dropStep) {
+    var cost = exercise.energy * weightAt(weightIndex).energy;
+    if (dropStep) cost *= DROP_ENERGY;
+    return Math.round(cost);
+  }
+
+  /* Wie viele Wiederholungen hat dieser Satz? Ein Dropset ist ein halber. */
+  function repCount(exercise, dropStep) {
+    return dropStep ? Math.max(2, Math.ceil(exercise.reps / 2)) : exercise.reps;
   }
 
   function isUnlocked(exercise) {
@@ -42,8 +58,9 @@
     return state().muscles[muscleId].injuryDays > 0;
   }
 
-  /* Darf dieser Satz gestartet werden? */
-  function canTrain(exercise, weightIndex) {
+  /* Darf dieser Satz gestartet werden? dropStep > 0 rechnet mit den
+     guenstigeren Konditionen der Dropset-Kette. */
+  function canTrain(exercise, weightIndex, dropStep) {
     var s = state();
     if (!isUnlocked(exercise)) {
       return { ok: false, reason: 'Erst ab Level ' + exercise.unlockLevel + ' verfügbar.' };
@@ -54,7 +71,7 @@
       return { ok: false, reason: name + ' ist gezerrt — noch ' + m.injuryDays
         + (m.injuryDays === 1 ? ' Tag' : ' Tage') + ' Pause.' };
     }
-    if (s.energy < energyCost(exercise, weightIndex)) {
+    if (s.energy < energyCost(exercise, weightIndex, dropStep)) {
       return { ok: false, reason: 'Zu wenig Energie. Zeit zu schlafen.' };
     }
     if (m.fatigue >= 0.95) {
@@ -128,10 +145,33 @@
     return (perfect + ok * 0.5) / hits.length >= 0.6;
   }
 
+  /* Lohnt sich direkt im Anschluss ein Dropset? Gibt die naechste Stufe
+     zurueck oder null. result ist das Ergebnis des eben beendeten Satzes. */
+  function dropOffer(result) {
+    var step = (result.dropStep || 0) + 1;
+    if (step > DROP_MAX) return null;
+    if (result.weightIndex < 1) return null;                 /* leichter geht nicht */
+    if (result.formScore < DROP_MIN_FORM) return null;       /* erst sauber ziehen */
+    if (MF.game.fitness.index() < DROP_MIN_INDEX) return null;
+    if (result.injured) return null;
+
+    var next = result.weightIndex - 1;
+    var check = canTrain(result.exercise, next, step);
+    if (!check.ok) return null;
+
+    return {
+      step: step,
+      weightIndex: next,
+      weight: weightAt(next),
+      reps: repCount(result.exercise, step),
+      cost: energyCost(result.exercise, next, step)
+    };
+  }
+
   /* Energie sofort abziehen, sobald der Satz startet. */
-  function beginSet(exercise, weightIndex) {
+  function beginSet(exercise, weightIndex, dropStep) {
     var s = state();
-    s.energy = Math.max(0, s.energy - energyCost(exercise, weightIndex));
+    s.energy = Math.max(0, s.energy - energyCost(exercise, weightIndex, dropStep));
     MF.core.events.emit('energy:changed');
     MF.game.state.saveSoon();
   }
@@ -139,7 +179,7 @@
   /* hits: Array aus 'perfect' | 'ok' | 'miss'.
      forced: Ausgang der Spotter-Extra-Rep — 'hit' | 'fail' | undefined.
      Die Extra-Rep steht NICHT in hits, sie veraendert die Form nicht. */
-  function finishSet(exercise, weightIndex, hits, forced) {
+  function finishSet(exercise, weightIndex, hits, forced, dropStep) {
     var s = state();
     var m = s.muscles[exercise.muscle];
     var weight = weightAt(weightIndex);
@@ -159,6 +199,9 @@
     stimulus = Math.max(0, stimulus);
     stimulus *= 1 + flow.bonus;
     if (forced === 'hit') stimulus *= 1.30;
+    /* Der halbe Satz direkt im Anschluss zaehlt ueberproportional — genau
+       dafuer quaelt man sich die Kette runter. */
+    if (dropStep) stimulus *= DROP_STIM;
 
     m.pending += stimulus;
     m.fatigue = util.clamp(m.fatigue + 0.15 * weight.energy
@@ -225,6 +268,7 @@
       bestStreak: flow.bestStreak,
       flowBonus: flow.bonus,
       forced: forced || null,
+      dropStep: dropStep || 0,
       injured: injured,
       injuryDays: injured ? INJURY_DAYS : 0
     };
@@ -247,6 +291,10 @@
     INJURY_DAYS: INJURY_DAYS,
     XP_PERFECT: XP_PERFECT,
     XP_OK: XP_OK,
+    DROP_MAX: DROP_MAX,
+    DROP_MIN_INDEX: DROP_MIN_INDEX,
+    repCount: repCount,
+    dropOffer: dropOffer,
     weightAt: weightAt,
     energyCost: energyCost,
     isUnlocked: isUnlocked,
