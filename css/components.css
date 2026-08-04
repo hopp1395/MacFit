@@ -1894,3 +1894,7 @@
   padding: 2px 6px;
   align-self: flex-start;
 }
+
+/* Laufende Posten sind antippbar — Tap oeffnet die Erklaerung. */
+.course { cursor: pointer; }
+.course:active { border-color: var(--accent); }

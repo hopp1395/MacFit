@@ -80,6 +80,25 @@
     return wrap;
   }
 
+  /* Erklaerung eines laufenden Postens — dieselben Infos wie auf der
+     Shop-Karte, nur als Fenster: Beschreibung, Wirkungen, Restlaufzeit. */
+  function showInfo(def, statusText) {
+    var body = el('div');
+    body.appendChild(el('p.card__desc', { text: def.desc }));
+    if (def.effects) body.appendChild(effectTags(def));
+    if (def.crash) {
+      body.appendChild(el('p.card__warning', {
+        text: '⚠ Danach ' + def.crash + ' Tage Einbruch: Wachstum halbiert, Masse geht zurück.'
+      }));
+    }
+    if (statusText) body.appendChild(el('p.hint', { text: statusText }));
+    MF.ui.modal.open({
+      title: def.icon + ' ' + def.name,
+      body: body,
+      actions: [{ label: 'Alles klar', tone: 'primary' }]
+    });
+  }
+
   function activePanel() {
     var courses = MF.game.stats.activeCourses();
     var s = state();
@@ -91,7 +110,7 @@
     if (MF.game.abos.planActive()) {
       var plan = MF.data.abos.get('trainingsplan');
       var ppct = (s.coach.planDays / plan.days) * 100;
-      panel.appendChild(el('div.course', null, [
+      var planRow = el('div.course', null, [
         el('div.course__icon', { text: plan.icon }),
         el('div.course__body', null, [
           el('div.course__name', { text: plan.name }),
@@ -100,18 +119,30 @@
           ])
         ]),
         el('div.course__days', { text: s.coach.planDays + ' T' })
-      ]));
+      ]);
+      util.onTap(planRow, function () {
+        showInfo(plan, 'Noch ' + state().coach.planDays + ' von ' + plan.days + ' Tagen — '
+          + (state().coach.planAuto
+              ? 'verlängert sich danach automatisch für ' + util.formatMoney(plan.price) + '.'
+              : 'läuft danach aus (Verlängerung ist abgewählt).'));
+      });
+      panel.appendChild(planRow);
     }
     if (MF.game.abos.trainerActive()) {
       var trainer = MF.data.abos.get('trainer');
-      panel.appendChild(el('div.course', null, [
+      var trainerRow = el('div.course', null, [
         el('div.course__icon', { text: trainer.icon }),
         el('div.course__body', null, [
           el('div.course__name', { text: trainer.name }),
           el('div.course__sub', { text: util.formatMoney(trainer.price) + ' pro Tag, jederzeit kündbar.' })
         ]),
         el('div.course__days', { text: '∞' })
-      ]));
+      ]);
+      util.onTap(trainerRow, function () {
+        showInfo(trainer, util.formatMoney(trainer.price) + ' pro Nacht, solange er engagiert ist. '
+          + 'Kündigen jederzeit über die Coaching-Karte.');
+      });
+      panel.appendChild(trainerRow);
     }
 
     if (!courses.length && !s.crash) {
@@ -126,7 +157,7 @@
 
     courses.forEach(function (c) {
       var pct = (c.daysLeft / c.total) * 100;
-      panel.appendChild(el('div.course', null, [
+      var row = el('div.course', null, [
         el('div.course__icon', { text: c.def.icon }),
         el('div.course__body', null, [
           el('div.course__name', { text: c.def.name }),
@@ -135,18 +166,34 @@
           ])
         ]),
         el('div.course__days', { text: c.daysLeft + ' T' })
-      ]));
+      ]);
+      util.onTap(row, function () {
+        showInfo(c.def, 'Noch ' + c.daysLeft + ' von ' + c.total + ' Tagen.');
+      });
+      panel.appendChild(row);
     });
 
     if (s.crash) {
-      panel.appendChild(el('div.course.course--crash', null, [
+      var crashRow = el('div.course.course--crash', null, [
         el('div.course__icon', { text: '📉' }),
         el('div.course__body', null, [
           el('div.course__name', { text: 'Einbruch nach ' + s.crash.name }),
           el('div.course__sub', { text: 'Weniger Wachstum, Masse geht zurück.' })
         ]),
         el('div.course__days', { text: s.crash.daysLeft + ' T' })
-      ]));
+      ]);
+      util.onTap(crashRow, function () {
+        MF.ui.modal.open({
+          title: '📉 Einbruch',
+          body: el('p.card__desc', {
+            text: 'Nach ' + state().crash.name + ' zieht der Körper die Notbremse: '
+                + 'halbes Wachstum, ein Teil der Masse geht jede Nacht verloren. '
+                + 'Noch ' + state().crash.daysLeft + ' Tage — durchhalten.'
+          }),
+          actions: [{ label: 'Alles klar', tone: 'primary' }]
+        });
+      });
+      panel.appendChild(crashRow);
     }
 
     return panel;
