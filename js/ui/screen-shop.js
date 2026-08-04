@@ -23,29 +23,56 @@
     return state().settings.shopTab || 'alle';
   }
 
+  /* Wie viele Posten laufen gerade — fuer den Untertitel der Laufend-Kachel. */
+  function runningCount() {
+    var s = state();
+    var n = MF.game.stats.activeCourses().length;
+    if (s.crash) n += 1;
+    if (MF.game.abos.planActive()) n += 1;
+    if (MF.game.abos.trainerActive()) n += 1;
+    return n;
+  }
+
+  /* Die Bereiche als Kachelraster — dieselbe Bauart wie die Muskelgruppen
+     im Gym, damit sich beide Auswahlflaechen gleich anfuehlen. */
   function shopTabs() {
-    var wrap = el('div.segmented.segmented--compact.shoptabs', { id: 'shop-tabs' });
+    var wrap = el('div.mgrid.shopgrid', { id: 'shop-tabs' });
+    var total = MF.data.supplements.list.length + MF.data.abos.list.length;
+
     /* "Laufend" gibt es immer: dort haengt auch der Zettel des Tages. */
-    var tabs = [{ key: 'alle', name: 'Alle' }, { key: 'laufend', name: 'Laufend' }];
+    var tabs = [
+      { key: 'alle', name: 'Alle', sub: total + ' Artikel' },
+      { key: 'laufend', name: 'Laufend', sub: runningCount() + ' aktiv' }
+    ];
     Object.keys(MF.data.supplements.tiers)
       .sort(function (a, b) {
         return MF.data.supplements.tiers[a].order - MF.data.supplements.tiers[b].order;
       })
       .forEach(function (tier) {
-        tabs.push({ key: tier, name: MF.data.supplements.tiers[tier].name });
+        var n = MF.data.supplements.byTier(tier).length;
+        tabs.push({
+          key: tier,
+          name: MF.data.supplements.tiers[tier].name,
+          sub: n + ' Artikel'
+        });
       });
-    tabs.push({ key: 'coaching', name: 'Coaching' });
+    tabs.push({
+      key: 'coaching', name: 'Coaching',
+      sub: MF.data.abos.list.length + ' Angebote'
+    });
 
     tabs.forEach(function (t) {
-      var btn = el('button.segmented__btn' + (shopTab() === t.key ? '.is-active' : ''), {
-        type: 'button', text: t.name
-      });
-      util.onTap(btn, function () {
+      var tile = el('button.mtile' + (shopTab() === t.key ? '.is-active' : ''),
+        { type: 'button' }, [
+          el('span.mtile__name', { text: t.name }),
+          el('span.mtile__sub', { text: t.sub })
+        ]);
+      util.onTap(tile, function () {
         state().settings.shopTab = t.key;
         MF.game.state.saveSoon();
         MF.ui.router.refresh('shop');
       });
-      wrap.appendChild(btn);
+      wrap.appendChild(tile);
     });
     return wrap;
   }
