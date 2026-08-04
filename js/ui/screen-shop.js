@@ -81,8 +81,10 @@
   }
 
   /* Erklaerung eines laufenden Postens — dieselben Infos wie auf der
-     Shop-Karte, nur als Fenster: Beschreibung, Wirkungen, Restlaufzeit. */
-  function showInfo(def, statusText) {
+     Shop-Karte, nur als Fenster. Die Restlaufzeit steht abgesetzt in einem
+     eigenen Block unter einer Trennlinie, mit Balken wie in der Liste.
+     status: { text, daysLeft, total } — ohne total gibt es nur den Text. */
+  function showInfo(def, status) {
     var body = el('div');
     body.appendChild(el('p.card__desc', { text: def.desc }));
     if (def.effects) body.appendChild(effectTags(def));
@@ -91,7 +93,17 @@
         text: '⚠ Danach ' + def.crash + ' Tage Einbruch: Wachstum halbiert, Masse geht zurück.'
       }));
     }
-    if (statusText) body.appendChild(el('p.hint', { text: statusText }));
+    if (status && status.text) {
+      var block = el('div.runinfo');
+      if (status.total) {
+        var pct = (status.daysLeft / status.total) * 100;
+        block.appendChild(el('div.bar.bar--course', null, [
+          el('div.bar__fill', { style: 'width:' + pct.toFixed(0) + '%' })
+        ]));
+      }
+      block.appendChild(el('p.runinfo__text', { text: status.text }));
+      body.appendChild(block);
+    }
     MF.ui.modal.open({
       title: def.icon + ' ' + def.name,
       body: body,
@@ -121,10 +133,14 @@
         el('div.course__days', { text: s.coach.planDays + ' T' })
       ]);
       util.onTap(planRow, function () {
-        showInfo(plan, 'Noch ' + state().coach.planDays + ' von ' + plan.days + ' Tagen — '
-          + (state().coach.planAuto
-              ? 'verlängert sich danach automatisch für ' + util.formatMoney(plan.price) + '.'
-              : 'läuft danach aus (Verlängerung ist abgewählt).'));
+        showInfo(plan, {
+          text: 'Noch ' + state().coach.planDays + ' von ' + plan.days + ' Tagen — '
+            + (state().coach.planAuto
+                ? 'verlängert sich danach automatisch für ' + util.formatMoney(plan.price) + '.'
+                : 'läuft danach aus (Verlängerung ist abgewählt).'),
+          daysLeft: state().coach.planDays,
+          total: plan.days
+        });
       });
       panel.appendChild(planRow);
     }
@@ -139,8 +155,10 @@
         el('div.course__days', { text: '∞' })
       ]);
       util.onTap(trainerRow, function () {
-        showInfo(trainer, util.formatMoney(trainer.price) + ' pro Nacht, solange er engagiert ist. '
-          + 'Kündigen jederzeit über die Coaching-Karte.');
+        showInfo(trainer, {
+          text: util.formatMoney(trainer.price) + ' pro Nacht, solange er engagiert ist. '
+            + 'Kündigen jederzeit über die Coaching-Karte.'
+        });
       });
       panel.appendChild(trainerRow);
     }
@@ -168,7 +186,11 @@
         el('div.course__days', { text: c.daysLeft + ' T' })
       ]);
       util.onTap(row, function () {
-        showInfo(c.def, 'Noch ' + c.daysLeft + ' von ' + c.total + ' Tagen.');
+        showInfo(c.def, {
+          text: 'Noch ' + c.daysLeft + ' von ' + c.total + ' Tagen.',
+          daysLeft: c.daysLeft,
+          total: c.total
+        });
       });
       panel.appendChild(row);
     });

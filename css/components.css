@@ -1898,3 +1898,19 @@
 /* Laufende Posten sind antippbar — Tap oeffnet die Erklaerung. */
 .course { cursor: pointer; }
 .course:active { border-color: var(--accent); }
+
+/* Restlaufzeit im Erklaerfenster: abgesetzt unter einer Trennlinie,
+   mit demselben Tage-Balken wie in der Laufend-Liste. */
+.runinfo {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.runinfo .bar--course { margin-bottom: 8px; }
+
+.runinfo__text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
