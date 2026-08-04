@@ -169,11 +169,26 @@
   }
 
   /* Energie sofort abziehen, sobald der Satz startet. */
-  function beginSet(exercise, weightIndex, dropStep) {
-    var s = state();
-    s.energy = Math.max(0, s.energy - energyCost(exercise, weightIndex, dropStep));
+  /* Der Satz beginnt — Energie kostet er erst Wiederholung fuer Wiederholung
+     (siehe chargeRep). Wer nach zwei Reps abbricht, zahlt auch nur zwei. */
+  function beginSet() {
     MF.core.events.emit('energy:changed');
     MF.game.state.saveSoon();
+  }
+
+  /* Eine Wiederholung abrechnen. Der letzte Rep traegt den Rundungsrest,
+     damit ein voller Satz exakt so viel kostet wie angeschrieben. */
+  function chargeRep(exercise, weightIndex, dropStep, repIndex, totalReps) {
+    var s = state();
+    var total = energyCost(exercise, weightIndex, dropStep);
+    var reps = Math.max(1, totalReps);
+    var share = repIndex + 1 >= reps
+      ? total - Math.round((total / reps) * (reps - 1) * 100) / 100
+      : Math.round((total / reps) * 100) / 100;
+
+    s.energy = Math.max(0, s.energy - share);
+    MF.core.events.emit('energy:changed');
+    return share;
   }
 
   /* hits: Array aus 'perfect' | 'ok' | 'miss'.
@@ -305,6 +320,7 @@
     driftAmp: driftAmp,
     spotterOffer: spotterOffer,
     beginSet: beginSet,
+    chargeRep: chargeRep,
     finishSet: finishSet
   };
 })(window.MacFit);
