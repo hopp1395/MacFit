@@ -1117,17 +1117,35 @@
 /* ---------- Toast --------------------------------------------------------- */
 
 .toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   background: var(--bg-card-hi);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 9px 13px;
+  padding: 9px 11px 9px 13px;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.35;
   box-shadow: var(--shadow);
   opacity: 0;
   transform: translateY(-10px);
   transition: opacity .2s, transform .2s;
+  cursor: pointer;
 }
+
+.toast__text { flex: 1 1 auto; min-width: 0; }
+
+/* Meldungen bleiben stehen, bis man sie wegtippt — das Kreuz sagt es an. */
+.toast__close {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 900;
+  opacity: .55;
+  padding: 0 2px;
+}
+
+.toast:active { border-color: var(--accent); }
 
 .toast.is-in { opacity: 1; transform: translateY(0); }
 .toast--good { border-color: var(--good); color: var(--good); }
