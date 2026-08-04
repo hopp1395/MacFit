@@ -132,6 +132,75 @@
   }
 
   /* Die Trainer-Analyse für den Körper-Bildschirm. */
+  /* --- Der Trainer schickt einen einkaufen ------------------------------- */
+
+  /* Kommt nur, was jetzt gekauft werden kann: freigeschaltet und nicht
+     schon aktiv. Der Preis darf drueber liegen — dann ist es ein Sparziel. */
+  function shopCandidates() {
+    return MF.data.supplements.list.filter(function (def) {
+      return MF.game.supplements.isUnlocked(def) && !MF.game.supplements.isActive(def.id);
+    });
+  }
+
+  /* Bestes Mittel fuer eine Wirkung — nach Staerke, nicht nach Preis. */
+  function bestFor(key) {
+    var best = null;
+    shopCandidates().forEach(function (def) {
+      var v = def.effects[key] || 0;
+      if (v <= 0) return;
+      if (!best || v > (best.effects[key] || 0)) best = def;
+    });
+    return best;
+  }
+
+  /* Bestes Mittel, das einen Gesundheitswert wieder hochbringt. */
+  function bestHealer(key) {
+    var best = null;
+    shopCandidates().forEach(function (def) {
+      var v = def.health[key] || 0;
+      if (v <= 0) return;
+      if (!best || v > (best.health[key] || 0)) best = def;
+    });
+    return best;
+  }
+
+  /* Die Kaufempfehlung des Trainers: erst Gesundheit retten, dann die
+     schwaechste Saeule des Index stuetzen. Gibt { def, reason } oder null. */
+  function recommendation(worstKey) {
+    var s = state();
+
+    /* Ein Wert im Keller wiegt schwerer als jeder Wachstumsbonus. */
+    var lowKey = null, lowVal = 50;
+    Object.keys(HEALTH_LABELS).forEach(function (k) {
+      if (s.health[k] < lowVal) { lowVal = s.health[k]; lowKey = k; }
+    });
+    if (lowKey) {
+      var healer = bestHealer(lowKey);
+      if (healer) {
+        return { def: healer, reason: HEALTH_LABELS[lowKey] + ' liegt bei '
+          + Math.round(lowVal) + ' — das bremst dein Wachstum jede Nacht.' };
+      }
+    }
+
+    if (worstKey === 'technik') {
+      var focus = bestFor('focus');
+      if (focus) return { def: focus, reason: 'Breitere Trefferzone hilft dir, sauber zu ziehen.' };
+    }
+    if (worstKey === 'masse' || worstKey === 'symmetrie') {
+      var growth = bestFor('growth');
+      if (growth) return { def: growth, reason: 'Mehr Aufbau pro Nacht aus demselben Training.' };
+    }
+    if (worstKey === 'konstanz') {
+      var energy = bestFor('energy');
+      if (energy) return { def: energy, reason: 'Mehr Energie pro Tag — dann bleibt öfter ein Satz drin.' };
+    }
+
+    /* Nichts Dringendes? Dann das staerkste Wachstumsmittel, das noch fehlt. */
+    var fallback = bestFor('growth') || bestFor('regen');
+    if (fallback) return { def: fallback, reason: 'Solide Grundlage, solange nichts brennt.' };
+    return null;
+  }
+
   function analysis() {
     var s = state();
     var ranked = MF.game.stats.weakestMuscles();
@@ -152,7 +221,8 @@
     return {
       weakest3: ranked.slice(0, 3),
       componentAdvice: { name: worst.name, text: ADVICE[worst.key] || '' },
-      healthFlags: flags
+      healthFlags: flags,
+      shopTip: recommendation(worst.key)
     };
   }
 
@@ -170,6 +240,7 @@
     isTargetMuscle: isTargetMuscle,
     isTargetExercise: isTargetExercise,
     evaluateDay: evaluateDay,
+    recommendation: recommendation,
     analysis: analysis
   };
 })(window.MacFit);
