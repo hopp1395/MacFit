@@ -627,4 +627,8 @@
   }
 
   MF.ui.router.register('stats', { elementId: 'screen-stats', render: render });
+
+  /* Die Aufschluesselung wird auch woanders gebraucht: der FIT-Wert in der
+     Kopfleiste zeigt sie beim Antippen im Fenster. */
+  MF.ui.stats = { fitnessPanel: fitnessPanel };
 })(window.MacFit);

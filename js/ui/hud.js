@@ -7,6 +7,24 @@
   var el = util.el;
   var nodes = null;
 
+  /* Der FIT-Wert in der Kopfleiste erklaert sich selbst: ein Tipp zeigt
+     dieselbe Aufschluesselung wie der Koerper-Bildschirm, ohne dass man
+     den Bildschirm wechseln muss. */
+  function showFitInfo() {
+    if (!MF.game.state.get() || !MF.ui.stats) return;
+    var rank = MF.game.fitness.rank();
+
+    MF.ui.modal.open({
+      title: 'Fitness-Index',
+      subtitle: rank.name,
+      body: MF.ui.stats.fitnessPanel(),
+      actions: [
+        { label: 'Alles klar', tone: 'primary' },
+        { label: 'Zum Körper', onTap: function () { MF.ui.router.go('stats'); } }
+      ]
+    });
+  }
+
   function build() {
     var hud = util.byId('hud');
     util.clear(hud);
@@ -21,6 +39,7 @@
       el('span.hud__fit-label', { text: 'FIT' }),
       el('span.hud__fit-value', { id: 'hud-fit-value', text: '0' })
     ]);
+    util.onTap(fit, showFitInfo);
     var money = el('div.hud__money', { id: 'hud-money', text: '0 €' });
     var save = el('div.hud__save', {
       id: 'hud-save', title: 'Spielstand wird automatisch gespeichert'

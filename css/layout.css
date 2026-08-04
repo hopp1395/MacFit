@@ -76,11 +76,16 @@
   display: flex;
   align-items: baseline;
   gap: 4px;
-  padding: 2px 8px;
+  /* Etwas mehr Flaeche als noetig: der Wert ist antippbar und zeigt die
+     Aufschluesselung des Fitness-Index. */
+  padding: 4px 10px;
   border-radius: 999px;
   background: var(--bg-card-hi);
   border: 1px solid var(--line);
+  cursor: pointer;
 }
+
+.hud__fit:active { border-color: var(--accent); }
 
 .hud__fit-label {
   font-size: 9px;
