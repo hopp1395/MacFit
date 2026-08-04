@@ -81,14 +81,20 @@
         return MF.game.training.isUnlocked(ex);
       }).length;
 
+      var hurt = data.injuryDays > 0;
       var tile = el('button.mtile' + (filterId() === m.id ? '.is-active' : ''), { type: 'button' }, [
-        el('span.mtile__name', { text: m.name }),
-        el('span.mtile__sub', { text: available + ' Gerät' + (available === 1 ? '' : 'e') }),
+        el('span.mtile__name', { text: (hurt ? '🤕 ' : '') + m.name }),
+        el('span.mtile__sub', {
+          text: hurt
+            ? 'gezerrt · ' + data.injuryDays + (data.injuryDays === 1 ? ' Tag' : ' Tage')
+            : available + ' Gerät' + (available === 1 ? '' : 'e')
+        }),
         el('span.mtile__bar', null, [
           el('i', { style: 'width:' + (data.fatigue * 100).toFixed(0) + '%' })
         ])
       ]);
 
+      if (hurt) tile.classList.add('is-hurt');
       if (m.id === weakest.id) tile.classList.add('is-weak');
       if (MF.game.coach.isTargetMuscle(m.id)) tile.classList.add('is-planned');
 
@@ -231,8 +237,10 @@
 
     container.appendChild(el('div.exhead', null, [
       el('span.exhead__title', { text: muscle.name }),
-      el('span.exhead__note', {
-        text: 'Ermüdung ' + Math.round(data.fatigue * 100) + '%'
+      el('span.exhead__note' + (data.injuryDays > 0 ? '.is-bad' : ''), {
+        text: data.injuryDays > 0
+          ? '🤕 gezerrt — noch ' + data.injuryDays + (data.injuryDays === 1 ? ' Tag' : ' Tage')
+          : 'Ermüdung ' + Math.round(data.fatigue * 100) + '%'
       })
     ]));
 

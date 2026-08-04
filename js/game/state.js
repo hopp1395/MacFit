@@ -15,7 +15,8 @@
         fatigue: 0,         /* 0..1 */
         pending: 0,         /* gesammelter Reiz, wird nachts umgewandelt */
         lastTrainedDay: 0,
-        setsToday: 0
+        setsToday: 0,
+        injuryDays: 0       /* Zerrung: so viele Tage gesperrt */
       };
     });
 

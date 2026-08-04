@@ -103,6 +103,23 @@
       body.appendChild(eblock);
     }
 
+    if (report.healed && report.healed.length) {
+      body.appendChild(el('div.report__title', { text: 'Wieder fit' }));
+      var hb = el('div.report__block');
+      report.healed.forEach(function (name) {
+        hb.appendChild(line(name, 'Zerrung ausgeheilt', 'good'));
+      });
+      body.appendChild(hb);
+    }
+
+    if (report.injured && report.injured.length) {
+      body.appendChild(el('div.report__warning', {
+        text: 'Zwangspause: ' + report.injured.map(function (i) {
+          return i.name + ' (noch ' + i.days + (i.days === 1 ? ' Tag' : ' Tage') + ')';
+        }).join(', ') + '. Gezerrte Partien lassen sich nicht trainieren.'
+      }));
+    }
+
     if (report.abo && report.abo.trainerCancelled) {
       body.appendChild(el('div.report__warning', {
         text: 'Dein Trainer ist weg — der Tagessatz war nicht mehr drin. '

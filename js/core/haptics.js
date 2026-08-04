@@ -9,6 +9,7 @@
     perfect: 18,
     ok: 10,
     miss: [0, 30, 40, 30],
+    flow: [0, 18, 40, 18],          /* Pump-Flow: Doppel-Tick fuer die Serie */
     levelUp: [0, 40, 60, 40, 60, 80],
     sleep: [0, 25, 80, 25]
   };

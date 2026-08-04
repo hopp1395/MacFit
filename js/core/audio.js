@@ -374,6 +374,13 @@
       pluck(at, 79, 0.18, 0.16);
       pluck(at + 0.08, 84, 0.2, 0.3);
     },
+    /* Pump-Flow: wie perfect, aber mit jeder Serienstufe zwei Halbtoene
+       hoeher — die Treppe nach oben ist die Belohnung. */
+    combo: function (at, streak) {
+      var up = Math.min(12, ((streak || 3) - 3) * 2);
+      pluck(at, 81 + up, 0.17, 0.14);
+      pluck(at + 0.07, 86 + up, 0.19, 0.28);
+    },
     /* Unsauber: ein einzelner, dunklerer Ton ohne Glanz. */
     ok: function (at) {
       tone(at, hz(72), 0.2, 0.16, { type: 'triangle', cut: 1400, attack: 0.006 });
@@ -435,7 +442,8 @@
     }
   };
 
-  function sfx(name) {
+  /* arg reicht Zusatzinfo an das Geraeusch durch (z. B. die Flow-Serie). */
+  function sfx(name, arg) {
     if (!sfxOn || !supported) return;
     var make = SFX[name];
     if (!make || !build()) return;
@@ -444,7 +452,7 @@
     }
     if (ctx.state === 'suspended') return;
     try {
-      make(ctx.currentTime + 0.005);
+      make(ctx.currentTime + 0.005, arg);
     } catch (err) {
       /* Ein misslungenes Geraeusch darf das Training nicht anhalten. */
     }
