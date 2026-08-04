@@ -2064,3 +2064,17 @@
 
 /* Der Dropset-Knopf im Spotter-Fenster traegt dieselbe Farbe wie im Ergebnis. */
 .btn--drop.btn { color: #fff; }
+
+/* Energie im Satz: schmale Zeile unter dem Kopf, weil die Kopfleiste hier
+   ausgeblendet ist und jede Wiederholung sichtbar etwas kostet. */
+.session__energy {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session__energy-icon {
+  flex: 0 0 auto;
+  font-size: 13px;
+}

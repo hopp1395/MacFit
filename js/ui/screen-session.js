@@ -41,6 +41,16 @@
     top.appendChild(el('div.session__rep', { id: 'session-rep', text: '' }));
     container.appendChild(top);
 
+    /* Energie bleibt im Blick: die Kopfleiste ist im Satz ausgeblendet, und
+       jede Wiederholung kostet sichtbar etwas. */
+    container.appendChild(el('div.session__energy', null, [
+      el('span.session__energy-icon', { text: '⚡' }),
+      el('div.bar.bar--energy', null, [
+        el('div.bar__fill', { id: 'session-energy-fill' }),
+        el('span.bar__label', { id: 'session-energy-label', text: '' })
+      ])
+    ]));
+
     container.appendChild(el('div.session__scores', null, [
       el('div.score', null, [
         el('span.score__value', { id: 'session-perfect', text: '0' }),
@@ -99,6 +109,8 @@
       zone: util.byId('session-zone'),
       marker: util.byId('session-marker'),
       timer: util.byId('session-timer'),
+      energyFill: util.byId('session-energy-fill'),
+      energyLabel: util.byId('session-energy-label'),
       xplayer: util.byId('session-xplayer'),
       feedback: util.byId('session-feedback'),
       tap: tap,
@@ -126,7 +138,7 @@
       return;
     }
 
-    MF.game.training.beginSet(ex, weightIndex, drop);
+    MF.game.training.beginSet();
     MF.ui.hud.render();
 
     run = {
@@ -153,6 +165,7 @@
     };
 
     buildSetUi(container, ex, run.weight, drop);
+    updateEnergy();
     nextRep();
     MF.core.audio.sfx('rack');   /* Gewicht aufgelegt */
 
@@ -244,6 +257,11 @@
   function register(kind, label) {
     run.hits.push(kind);
     run.lock = LOCK_AFTER_TAP;
+
+    /* Jede Wiederholung kostet ihren Anteil — sichtbar, waehrend man tippt. */
+    MF.game.training.chargeRep(run.ex, run.weightIndex, run.drop,
+      run.repIndex, run.totalReps);
+    updateEnergy();
 
     /* Erfahrung sofort sichtbar machen: die Zahl oben zaehlt hoch, und am
        Treffer selbst fliegt der Gewinn weg. Ab der Flow-Serie gibt es einen
@@ -446,6 +464,17 @@
     nodes.xp.textContent = run.xp;
   }
 
+  /* Energieleiste im Satz — dieselbe Optik wie in der Kopfleiste. */
+  function updateEnergy() {
+    if (!nodes.energyFill) return;
+    var s = state();
+    var max = MF.game.stats.energyMax();
+    var ratio = util.clamp(s.energy / max, 0, 1);
+    nodes.energyFill.style.width = (ratio * 100).toFixed(1) + '%';
+    nodes.energyFill.classList.toggle('is-low', ratio < 0.25);
+    nodes.energyLabel.textContent = Math.round(s.energy) + ' / ' + max;
+  }
+
   /* Die verdiente Erfahrung fliegt am Ort des Treffers nach oben weg —
      ein kurzer, klarer Moment pro Wiederholung. */
   function popXp(amount, kind) {
@@ -497,7 +526,8 @@
     MF.ui.hud.render();
   }
 
-  /* Abbruch: gezaehlte Reps werden gewertet, die Energie ist ohnehin weg. */
+  /* Abbruch: gezaehlte Reps werden gewertet — bezahlt hat man ohnehin nur
+     die Wiederholungen, die man wirklich gezogen hat. */
   function abort() {
     if (!run || run.done) {
       MF.ui.router.go('gym');
