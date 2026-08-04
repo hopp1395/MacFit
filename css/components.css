@@ -2053,3 +2053,11 @@
   18%  { opacity: 1; transform: translate(-50%, -2px) scale(1.1); }
   100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
 }
+
+/* Dropset-Knopf im Ergebnis: kein zweiter Hauptknopf, aber deutlich mehr
+   Gewicht als "Zurueck ins Gym" — es ist ein Angebot, keine Pflicht. */
+.btn--drop {
+  background: linear-gradient(180deg, #7a4bd0, #5a34a8);
+  color: #fff;
+  font-size: 13px;
+}
