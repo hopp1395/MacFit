@@ -41,13 +41,33 @@
       el('span.report__hero-label', { text: 'Muskelmasse über Nacht' })
     ]));
 
-    body.appendChild(el('div.report__block', null, [
+    var block = el('div.report__block', null, [
       line('Gesamtmasse', util.formatKg(report.massAfter), 'flat'),
       line('Fitness-Index', report.fitAfter + ' (' + deltaText(report.fitDelta, 0) + ')',
            deltaTone(report.fitDelta)),
       line('Sätze gestern', String(report.setsTrained), 'flat'),
       line('Einnahmen', '+' + util.formatMoney(report.income), 'good')
-    ]));
+    ]);
+    if (report.coach) {
+      var c = report.coach;
+      block.appendChild(line('Tagesziel (' + c.title + ')',
+        c.status === 'erfuellt' ? 'erfüllt ✔'
+          : c.status === 'teilweise' ? c.done + ' von ' + c.total : 'nicht erfüllt',
+        c.status === 'erfuellt' ? 'good' : c.status === 'teilweise' ? 'warn' : 'bad'));
+    }
+    if (report.abo) {
+      if (report.abo.planRenewed) {
+        block.appendChild(line('Trainingsplan verlängert',
+          '−' + util.formatMoney(MF.data.abos.get('trainingsplan').price), 'flat'));
+      }
+      if (report.abo.planExpired) {
+        block.appendChild(line('Trainingsplan', 'abgelaufen', 'warn'));
+      }
+      if (report.abo.trainerCost) {
+        block.appendChild(line('Personal Trainer', '−' + util.formatMoney(report.abo.trainerCost), 'flat'));
+      }
+    }
+    body.appendChild(block);
 
     if (report.gains.length) {
       body.appendChild(el('div.report__title', { text: 'Entwicklung der Partien' }));
@@ -81,6 +101,13 @@
         if (def) eblock.appendChild(line(def.icon + ' ' + def.name, 'Kur vorbei', 'flat'));
       });
       body.appendChild(eblock);
+    }
+
+    if (report.abo && report.abo.trainerCancelled) {
+      body.appendChild(el('div.report__warning', {
+        text: 'Dein Trainer ist weg — der Tagessatz war nicht mehr drin. '
+            + 'Im Shop kannst du ihn jederzeit neu engagieren.'
+      }));
     }
 
     if (report.burnout) {

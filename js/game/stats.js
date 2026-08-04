@@ -38,20 +38,25 @@
      und standen nach roher Groesse fast immer als Nachholbedarf da, selbst
      wenn sie fleissig trainiert wurden. Der Hinweis soll Vernachlaessigung
      zeigen, nicht Genetik — die Balance selbst bleibt unveraendert. */
-  function weakestMuscle() {
+  /* Alle Partien, die schwaechste zuerst — der Trainer will die ganze Liste. */
+  function weakestMuscles() {
     var ceiling = sizeCeiling();
     var mult = growthMultiplier();
-    var worst = null;
+    var out = [];
     MF.data.muscles.list.forEach(function (m) {
       var data = state().muscles[m.id];
       /* Der heute schon gesammelte Reiz zaehlt als erwarteter Nacht-Zuwachs
          mit — sonst klebte der Hinweis bis zum Schlafen an derselben Partie,
          egal wie fleissig sie gerade trainiert wird. */
       var s = data.size + MF.game.day.nightGain(m, data, ceiling, mult);
-      var rel = (s - 8) / m.growth;
-      if (!worst || rel < worst.rel) worst = { id: m.id, name: m.name, size: data.size, rel: rel };
+      out.push({ id: m.id, name: m.name, size: data.size, rel: (s - 8) / m.growth });
     });
-    return worst;
+    out.sort(function (a, b) { return a.rel - b.rel; });
+    return out;
+  }
+
+  function weakestMuscle() {
+    return weakestMuscles()[0];
   }
 
   /* --- Gesundheit -------------------------------------------------------- */
@@ -154,6 +159,7 @@
     sizeCeiling: sizeCeiling,
     symmetry: symmetry,
     weakestMuscle: weakestMuscle,
+    weakestMuscles: weakestMuscles,
     healthAvg: healthAvg,
     healthLabel: healthLabel,
     activeCourses: activeCourses,

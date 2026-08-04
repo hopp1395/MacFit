@@ -35,6 +35,8 @@
     var regenMult = MF.game.stats.regenMultiplier();
     var ceiling = MF.game.stats.sizeCeiling();
     var trained = setsToday();
+    /* Plan-Auswertung VOR dem Muskel-Loop — der setzt setsToday zurueck. */
+    var coachEval = MF.game.coach.evaluateDay();
 
     var gains = [];
 
@@ -71,9 +73,11 @@
     var supp = MF.game.supplements.tickNight();
     var burnout = MF.game.supplements.checkBurnout();
 
-    /* Geld */
+    /* Geld — erst verdienen, dann die Abos abrechnen: der Tagessatz soll
+       aus dem frischen Einkommen bezahlbar sein. */
     var income = MF.game.stats.dailyIncome();
     MF.game.economy.earn(income);
+    var abo = MF.game.abos.tickNight();
 
     /* Neuer Tag */
     if (trained > 0) s.stats.daysTrained += 1;
@@ -105,7 +109,9 @@
       endedCourses: supp.ended,
       crash: s.crash,
       burnout: burnout,
-      growthMult: growthMult
+      growthMult: growthMult,
+      coach: coachEval,
+      abo: abo
     };
 
     s.lastReport = {
