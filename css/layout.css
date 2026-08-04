@@ -214,8 +214,13 @@ body[data-screen="session"] #hud {
   flex-direction: column;
   gap: 6px;
   z-index: 60;
+  /* Der Streifen selbst laesst alles durch — sonst waere der halbe
+     Bildschirm blockiert. Die Meldungen darin fangen den Tipp aber ab,
+     denn sie schliessen sich nur noch per Antippen (siehe ui/toast.js). */
   pointer-events: none;
 }
+
+#toasts > * { pointer-events: auto; }
 
 #modal-root {
   position: fixed;
