@@ -76,12 +76,11 @@
     var done = MF.game.challenge.isDone();
     var pay = MF.game.challenge.reward(def);
 
+    /* Bewusst einzeilig: die Hauptseite hat schon genug zu tragen. Titel,
+       ganzer Text und Fortschritt stehen im Fenster hinter dem Tipp. */
     var note = el('div.board' + (done ? '.is-done' : ''), null, [
       el('span.board__pin', { text: done ? '✔' : '📌' }),
-      el('span.board__body', null, [
-        el('span.board__title', { text: def.title }),
-        el('span.board__text', { text: def.text })
-      ]),
+      el('span.board__text', { text: def.short || def.title }),
       el('span.board__prize', {
         text: done ? 'kassiert' : '+' + util.formatMoney(pay.money)
       })

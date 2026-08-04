@@ -1963,34 +1963,30 @@
 
 /* ---------- Schwarzes Brett ------------------------------------------------ */
 
-/* Der Zettel des Tages im Gym: eine Zeile ueber dem Kachelraster. */
+/* Der Zettel des Tages im Gym: bewusst nur eine schmale Zeile — alles
+   Weitere steht im Fenster hinter dem Tipp. */
 .board {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 9px;
+  gap: 7px;
+  padding: 5px 9px;
   border-radius: var(--radius-sm);
   background: var(--bg-card);
   border-left: 3px solid var(--warn);
 }
 
-.board__pin { font-size: 14px; flex: 0 0 auto; }
-
-.board__body {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.board__title { font-size: 12px; font-weight: 800; }
+.board__pin { font-size: 12px; flex: 0 0 auto; }
 
 .board__text {
-  font-size: 10.5px;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--text-dim);
-  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .board__prize {
@@ -2002,7 +1998,7 @@
 
 .board.is-done {
   border-left-color: var(--good);
-  opacity: .78;
+  opacity: .7;
 }
 
 .board.is-done .board__prize { color: var(--good); }
