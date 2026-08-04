@@ -397,9 +397,14 @@
   function recordsPanel() {
     var s = state();
     var acc = s.stats.totalReps ? (s.stats.perfectReps / s.stats.totalReps) * 100 : 0;
+    var st = MF.game.streak.status();
     var panel = el('section');
     panel.appendChild(el('div.section-title', { text: 'Statistik' }));
     panel.appendChild(el('div.report__block', null, [
+      statRow('🔥 Serie', st.days === 0
+        ? 'noch keine' + (st.best ? ' (Bestwert ' + st.best + ')' : '')
+        : st.days + (st.days === 1 ? ' Tag' : ' Tage') + ' in Folge'
+          + (st.best > st.days ? ' (Bestwert ' + st.best + ')' : '')),
       statRow('Sätze insgesamt', util.formatNum(s.stats.totalSets)),
       statRow('Wiederholungen', util.formatNum(s.stats.totalReps)),
       statRow('Perfekte Reps', util.formatNum(s.stats.perfectReps) + ' (' + Math.round(acc) + '%)'),

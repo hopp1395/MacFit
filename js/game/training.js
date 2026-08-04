@@ -13,6 +13,11 @@
     { key: 'brutal', name: 'Brutal',  stim: 1.80, speed: 1.30, zone: 0.66, energy: 1.65 }
   ];
 
+  /* Erfahrung je Wiederholung — dieselben Werte zeigt der Satz-Bildschirm
+     im Moment des Treffers an. */
+  var XP_PERFECT = 4;
+  var XP_OK = 1;
+
   function state() { return MF.game.state.get(); }
 
   function weightAt(index) {
@@ -161,7 +166,13 @@
     m.lastTrainedDay = s.day;
     m.setsToday += 1;
 
-    var xp = Math.round(stimulus * 1.5 + perfect * 2) + (forced === 'hit' ? 10 : 0);
+    /* Jede Wiederholung zahlt fuer sich: perfekt deutlich mehr als okay,
+       dazu der Reiz des Satzes. So sieht man beim Tippen, wofuer man
+       arbeitet — die Zahl steigt sichtbar mit jeder sauberen Rep. */
+    var xp = Math.round(stimulus * 1.5)
+           + perfect * XP_PERFECT + ok * XP_OK
+           + Math.round(flow.bonus * 40)          /* Serie zahlt sich doppelt aus */
+           + (forced === 'hit' ? 10 : 0);
     var levelUp = MF.game.progression.addXp(xp);
 
     s.stats.totalSets += 1;
@@ -234,6 +245,8 @@
   MF.game.training = {
     WEIGHTS: WEIGHTS,
     INJURY_DAYS: INJURY_DAYS,
+    XP_PERFECT: XP_PERFECT,
+    XP_OK: XP_OK,
     weightAt: weightAt,
     energyCost: energyCost,
     isUnlocked: isUnlocked,

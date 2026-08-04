@@ -244,6 +244,23 @@
     afterCreate();
   }
 
+  /* Begruessung beim Wiederkommen: was die Serie gerade wert ist. Nur ein
+     Toast, kein Fenster — es soll locken, nicht aufhalten. */
+  function greetStreak() {
+    var st = MF.game.streak.status();
+    if (st.claimedToday) return;
+
+    if (st.days > 0) {
+      var next = st.days + 1;
+      MF.ui.toast.show('🔥 ' + st.days + ' Tage in Folge. Ein Satz heute macht ' + next
+        + ' daraus — ' + MF.core.util.formatMoney(25 * Math.min(next, MF.game.streak.MAX_STEP))
+        + ' warten.', 'good');
+    } else if (st.broken) {
+      MF.ui.toast.show('Willkommen zurück. Deine längste Serie: ' + st.best
+        + ' Tage — heute geht eine neue los.', 'warn');
+    }
+  }
+
   function afterCreate() {
     var s = MF.game.state.get();
 
@@ -267,13 +284,30 @@
         }),
         actions: [{ label: 'Verstanden', tone: 'primary' }]
       });
+      return;
     }
+
+    greetStreak();
   }
 
   function wireEvents() {
     var on = MF.core.events.on;
 
     on('set:finished', function () {
+      MF.ui.hud.render();
+    });
+
+    /* Trainingsserie: der erste Satz des Tages zahlt sie aus. */
+    on('streak:day', function (info) {
+      MF.core.audio.sfx('coin');
+      MF.core.haptics.buzz('perfect');
+      MF.ui.toast.show(
+        info.continued
+          ? '🔥 Serie: ' + info.days + ' Tage in Folge — +'
+            + MF.core.util.formatMoney(info.reward.money) + ' und +' + info.reward.xp + ' XP.'
+          : 'Neue Serie gestartet — +' + MF.core.util.formatMoney(info.reward.money)
+            + ' und +' + info.reward.xp + ' XP. Morgen wieder, dann wird es mehr.',
+        'good');
       MF.ui.hud.render();
     });
 
