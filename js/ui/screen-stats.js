@@ -234,6 +234,67 @@
     return panel;
   }
 
+  /* Die Trainer-Analyse — nur wer den Tagessatz zahlt, bekommt Klartext.
+     Vor Level 7 taucht das Panel gar nicht auf, danach wirbt es dezent. */
+  function trainerPanel() {
+    var s = state();
+    var trainerDef = MF.data.abos.get('trainer');
+
+    if (!MF.game.abos.trainerActive()) {
+      if (s.level < trainerDef.unlockLevel) return null;
+      var box = el('div.savebox');
+      box.appendChild(el('div.savebox__head', null, [
+        el('span.savebox__dot'),
+        el('strong', { text: '🎯 Personal Trainer' })
+      ]));
+      box.appendChild(el('span.savebox__text', {
+        text: 'Engagier im Shop einen Trainer — er analysiert Körper und Training '
+            + 'und nimmt sich jeden Tag deine schwächsten Partien vor. '
+            + util.formatMoney(trainerDef.price) + ' pro Tag, jederzeit kündbar.'
+      }));
+      return box;
+    }
+
+    var a = MF.game.coach.analysis();
+    var plan = MF.game.coach.todayTargets();
+    var panel = el('section');
+    panel.appendChild(el('div.section-title', { text: '🎯 Trainer-Analyse' }));
+
+    panel.appendChild(el('div.report__block', null, [
+      el('div.report__row', null, [
+        el('span.report__label', { text: 'Größte Baustelle' }),
+        el('strong.report__value.is-warn', { text: a.componentAdvice.name })
+      ])
+    ]));
+    panel.appendChild(el('p.hint', { text: a.componentAdvice.text }));
+
+    var mblock = el('div.report__block');
+    a.weakest3.forEach(function (m) {
+      mblock.appendChild(el('div.report__row', null, [
+        el('span.report__label', { text: m.name }),
+        el('strong.report__value.is-flat', { text: 'Stand ' + util.formatNum(m.size, 1) })
+      ]));
+    });
+    panel.appendChild(el('div.report__title', { text: 'Nachholbedarf' }));
+    panel.appendChild(mblock);
+
+    a.healthFlags.forEach(function (flag) {
+      panel.appendChild(el('p.card__warning', { text: '⚠ ' + flag }));
+    });
+
+    if (plan && plan.targets.length) {
+      var names = [];
+      plan.targets.forEach(function (t) {
+        var ex = MF.data.exercises.get(t.exercise);
+        var m = MF.data.muscles.get(t.muscle);
+        if (ex && m) names.push(m.name + ' (' + ex.name + ')');
+      });
+      panel.appendChild(el('p.hint', { text: 'Heute dran: ' + names.join(', ') + '.' }));
+    }
+
+    return panel;
+  }
+
   function healthPanel() {
     var s = state();
     var label = MF.game.stats.healthLabel();
@@ -547,6 +608,8 @@
     container.appendChild(sharePanel());
     container.appendChild(avatarPanel());
     container.appendChild(fitnessPanel());
+    var trainer = trainerPanel();
+    if (trainer) container.appendChild(trainer);
     container.appendChild(healthPanel());
     container.appendChild(musclePanel());
     var hist = historyPanel();

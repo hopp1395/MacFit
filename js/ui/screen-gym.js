@@ -35,6 +35,39 @@
     return wrap;
   }
 
+  /* ---------- Tagesziel aus Trainingsplan oder Trainer -------------------- */
+
+  function planBanner() {
+    var plan = MF.game.coach.todayTargets();
+    if (!plan || !plan.targets.length) return null;
+
+    var s = state();
+    var head = plan.source === 'trainer'
+      ? '🎯 Trainer: ' + plan.title
+      : '📋 ' + plan.title;
+
+    var bar = el('div.planbar');
+    bar.appendChild(el('span.planbar__title', { text: head }));
+
+    plan.targets.forEach(function (t) {
+      var ex = MF.data.exercises.get(t.exercise);
+      var m = MF.data.muscles.get(t.muscle);
+      if (!ex || !m) return;
+      var done = s.muscles[t.muscle].setsToday > 0;
+      var chip = el('button.planbar__chip' + (done ? '.is-done' : ''), {
+        type: 'button',
+        text: (done ? '✔ ' : '') + ex.icon + ' ' + m.name
+      });
+      util.onTap(chip, function () {
+        remember('muscle', t.muscle);
+        MF.ui.router.refresh('gym');
+      });
+      bar.appendChild(chip);
+    });
+
+    return bar;
+  }
+
   /* ---------- Muskelgruppen als Kachelraster ------------------------------ */
 
   function muscleGrid() {
@@ -57,6 +90,7 @@
       ]);
 
       if (m.id === weakest.id) tile.classList.add('is-weak');
+      if (MF.game.coach.isTargetMuscle(m.id)) tile.classList.add('is-planned');
 
       util.onTap(tile, function () {
         remember('muscle', m.id);
@@ -81,14 +115,19 @@
     else if (!check.ok) row.classList.add('is-blocked');
 
     row.appendChild(el('span.exrow__icon', { text: ex.icon }));
-    row.appendChild(el('span.exrow__body', null, [
-      el('span.exrow__name', { text: ex.name }),
-      el('span.exrow__meta', {
-        text: unlocked
-          ? '⚡ ' + cost + ' · ' + ex.reps + ' Reps'
-          : 'gesperrt'
-      })
-    ]));
+    var bodyKids = [el('span.exrow__name', { text: ex.name })];
+    if (unlocked && MF.game.coach.isTargetExercise(ex.id)) {
+      var plan = MF.game.coach.todayTargets();
+      bodyKids.push(el('span.tag.tag--good.exrow__tag', {
+        text: plan && plan.source === 'trainer' ? 'Trainer-Tipp' : 'Plan'
+      }));
+    }
+    bodyKids.push(el('span.exrow__meta', {
+      text: unlocked
+        ? '⚡ ' + cost + ' · ' + ex.reps + ' Reps'
+        : 'gesperrt'
+    }));
+    row.appendChild(el('span.exrow__body', null, bodyKids));
 
     if (unlocked) {
       row.appendChild(difficultyDots(ex));
@@ -184,6 +223,9 @@
       container.appendChild(hall);
       MF.ui.scene.mountAmbient(hall);
     }
+
+    var banner = planBanner();
+    if (banner) container.appendChild(banner);
 
     container.appendChild(muscleGrid());
 
