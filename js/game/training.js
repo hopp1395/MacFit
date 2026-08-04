@@ -128,6 +128,25 @@
     return amp;
   }
 
+  /* Ausreisser-Rep: die Hantel kippt, der Marker dreht mitten in der
+     Wiederholung um. Kommt fruehestens ab der vierten Rep und nie zweimal
+     hintereinander; eine muede Partie zittert oefter, eine saubere Technik
+     haelt dagegen. Der Wechsel wird eine halbe Sekunde vorher angekuendigt
+     (siehe screen-session) — sonst waere er bei Touch-Latenz unfair. */
+  var WOBBLE_MIN_REP = 3;        /* Index, also ab der vierten Wiederholung */
+  var WOBBLE_BASE = 0.05;
+  var WOBBLE_FATIGUE = 0.15;
+  var WOBBLE_SICK = 0.05;
+
+  function wobbleChance(exercise, repIndex) {
+    if (repIndex < WOBBLE_MIN_REP) return 0;
+    var s = state();
+    var p = WOBBLE_BASE + s.muscles[exercise.muscle].fatigue * WOBBLE_FATIGUE;
+    if (MF.game.stats.healthAvg() < 45) p += WOBBLE_SICK;
+    if (MF.game.fitness.technique() > 0.6) p *= 0.5;
+    return util.clamp(p, 0, 0.4);
+  }
+
   /* Bietet der Spotter nach dem letzten Rep eine Extra-Rep an? Nur nach
      vollen Saetzen mit ordentlicher Form an ausgeruhten Partien — und erst
      ab "Schwer"; wer als "Durchtrainiert" gilt, bekommt ihn schon ab Normal. */
@@ -194,7 +213,7 @@
   /* hits: Array aus 'perfect' | 'ok' | 'miss'.
      forced: Ausgang der Spotter-Extra-Rep — 'hit' | 'fail' | undefined.
      Die Extra-Rep steht NICHT in hits, sie veraendert die Form nicht. */
-  function finishSet(exercise, weightIndex, hits, forced, dropStep) {
+  function finishSet(exercise, weightIndex, hits, forced, dropStep, wobbleHits) {
     var s = state();
     var m = s.muscles[exercise.muscle];
     var weight = weightAt(weightIndex);
@@ -209,6 +228,10 @@
     var reps = hits.length || 1;
     var formScore = util.clamp((perfect + ok * 0.5) / reps, 0, 1);
     var flow = flowScore(hits);
+    /* Wer eine kippende Hantel noch trifft, hat mehr geleistet als bei einer
+       ruhigen — das zahlt auf den Flow ein, ohne die Form zu verzerren. */
+    var wobbles = wobbleHits || 0;
+    if (wobbles) flow.bonus = Math.min(flow.bonus + wobbles * 0.02, 0.40);
 
     var stimulus = exercise.stimulus * weight.stim * formScore * (1 - m.fatigue * 0.60);
     stimulus = Math.max(0, stimulus);
@@ -230,6 +253,7 @@
     var xp = Math.round(stimulus * 1.5)
            + perfect * XP_PERFECT + ok * XP_OK
            + Math.round(flow.bonus * 40)          /* Serie zahlt sich doppelt aus */
+           + wobbles * 3                          /* jede gerettete Ausreisser-Rep */
            + (forced === 'hit' ? 10 : 0);
     var levelUp = MF.game.progression.addXp(xp);
 
@@ -284,6 +308,7 @@
       flowBonus: flow.bonus,
       forced: forced || null,
       dropStep: dropStep || 0,
+      wobbleHits: wobbles,
       injured: injured,
       injuryDays: injured ? INJURY_DAYS : 0
     };
@@ -318,6 +343,7 @@
     zoneWidth: zoneWidth,
     markerSpeed: markerSpeed,
     driftAmp: driftAmp,
+    wobbleChance: wobbleChance,
     spotterOffer: spotterOffer,
     beginSet: beginSet,
     chargeRep: chargeRep,

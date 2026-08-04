@@ -8,6 +8,8 @@
 
   var REP_TIMEOUT = 4.0;   /* Sekunden pro Wiederholung, dann gilt sie als verrissen */
   var LOCK_AFTER_TAP = 0.16;
+  var WOBBLE_WARN_AT = 0.6;   /* Sekunden bis zur Vorwarnung */
+  var WOBBLE_FLIP_AT = 1.1;   /* danach dreht der Marker um */
 
   var ticker = null;
   var run = null;          /* laufender Satz */
@@ -157,6 +159,11 @@
       zone: 0.3,
       streak: 0,         /* perfekte Reps in Folge (Pump-Flow) */
       xp: 0,             /* bis hierher verdiente Erfahrung, live sichtbar */
+      wobble: false,     /* kippt die Hantel in dieser Wiederholung? */
+      warned: false,     /* Vorwarnung schon gezeigt */
+      flipped: false,    /* Richtung schon gedreht */
+      lastWobble: false, /* nie zweimal hintereinander */
+      wobbleHits: 0,     /* gerettete Ausreisser-Reps */
       extra: false,      /* laeuft gerade die Spotter-Extra-Rep? */
       awaiting: false,   /* Spotter-Frage offen — Satz pausiert */
       repTime: 0,
@@ -194,6 +201,13 @@
     run.repTime = 0;
     run.lock = LOCK_AFTER_TAP;
 
+    /* Ausreisser wuerfeln — aber nie zweimal hintereinander. */
+    run.wobble = !run.lastWobble && !run.extra
+      && Math.random() < MF.game.training.wobbleChance(run.ex, run.repIndex);
+    run.warned = false;
+    run.flipped = false;
+    nodes.track.classList.remove('is-wobble');
+
     placeZone();
 
     nodes.rep.textContent = 'Rep ' + (run.repIndex + 1) + '/' + run.totalReps;
@@ -214,6 +228,23 @@
     var left = util.clamp(1 - run.repTime / REP_TIMEOUT, 0, 1);
     nodes.timer.style.width = (left * 100).toFixed(1) + '%';
     nodes.timer.classList.toggle('is-low', left < 0.3);
+
+    /* Ausreisser-Rep: erst wackelt die Leiste sichtbar und spuerbar, eine
+       halbe Sekunde spaeter dreht der Marker um. Nur mit dieser Vorwarnung
+       ist der Wechsel am Handy fair zu treffen. */
+    if (run.wobble && !run.flipped) {
+      if (!run.warned && run.repTime >= WOBBLE_WARN_AT) {
+        run.warned = true;
+        nodes.track.classList.add('is-wobble');
+        MF.core.haptics.buzz('ok');
+        MF.core.audio.sfx('rack');
+      }
+      if (run.repTime >= WOBBLE_FLIP_AT) {
+        run.flipped = true;
+        run.dir *= -1;
+        nodes.track.classList.remove('is-wobble');
+      }
+    }
 
     /* Instabile Hantel: die Zone schwankt langsam (0,4 Hz) um die Ruhelage —
        vorhersehbar wie eine pendelnde Langhantel, kein Reaktionstest. */
@@ -258,6 +289,17 @@
     run.hits.push(kind);
     run.lock = LOCK_AFTER_TAP;
 
+    /* Wer die gekippte Hantel noch trifft, bekommt Kredit — auch ein
+       "okay" zaehlt dort voll, sonst waere der Ausreisser reine Strafe. */
+    var saved = run.flipped && (kind === 'perfect' || kind === 'ok');
+    if (saved) {
+      run.wobbleHits += 1;
+      label = 'AUSREISSER GERETTET';
+    }
+    run.lastWobble = run.wobble;
+    run.wobble = false;
+    nodes.track.classList.remove('is-wobble');
+
     /* Jede Wiederholung kostet ihren Anteil — sichtbar, waehrend man tippt. */
     MF.game.training.chargeRep(run.ex, run.weightIndex, run.drop,
       run.repIndex, run.totalReps);
@@ -269,6 +311,7 @@
     var gain = kind === 'perfect' ? MF.game.training.XP_PERFECT
              : kind === 'ok' ? MF.game.training.XP_OK : 0;
     if (kind === 'perfect' && run.streak >= 2) gain += 2;   /* ab der dritten in Folge */
+    if (saved) gain += 3;                                  /* gerettete Ausreisser-Rep */
     if (gain > 0) {
       run.xp += gain;
       popXp(gain, kind);
@@ -394,7 +437,7 @@
     if (ticker) ticker.stop();
 
     var ex = run.ex;
-    var result = MF.game.training.finishSet(ex, run.weightIndex, run.hits, null, run.drop);
+    var result = MF.game.training.finishSet(ex, run.weightIndex, run.hits, null, run.drop, run.wobbleHits);
     var drop = MF.game.training.dropOffer(result);
 
     /* Zwischendurch etwas dazwischengekommen (Zerrung, Energie)? Dann bleibt
@@ -438,7 +481,7 @@
     nodes.feedback.textContent = label;
     nodes.feedback.className = 'session__feedback is-shown is-' + (forced === 'hit' ? 'perfect' : 'miss');
 
-    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, forced, run.drop);
+    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, forced, run.drop, run.wobbleHits);
     if (forced === 'hit') {
       MF.core.haptics.buzz('levelUp');
       if (!result.levelUp) MF.core.audio.sfx('done');
@@ -490,7 +533,7 @@
     run.done = true;
     if (ticker) ticker.stop();
 
-    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, null, run.drop);
+    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, null, run.drop, run.wobbleHits);
     /* Beim Aufstieg spielt gleich die laengere Fanfare aus dem Modal — zwei
        Melodien uebereinander waeren Krach. */
     if (!result.levelUp) MF.core.audio.sfx('done');
@@ -541,7 +584,7 @@
       MF.ui.router.go('gym');
       return;
     }
-    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, null, run.drop);
+    var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, null, run.drop, run.wobbleHits);
     showResult(result);
   }
 
@@ -570,6 +613,9 @@
     if (result.forced === 'hit') rows.appendChild(row('Spotter-Rep', '+30 % Reiz'));
     if (result.forced === 'fail') rows.appendChild(row('Spotter-Rep', 'verrissen'));
     if (result.dropStep) rows.appendChild(row('↓ Dropset ' + result.dropStep, '+25 % Reiz'));
+    if (result.wobbleHits) {
+      rows.appendChild(row('Ausreißer gerettet', result.wobbleHits + '×'));
+    }
     if (result.board) {
       rows.appendChild(row('📌 ' + result.board.def.title,
         '+' + util.formatMoney(result.board.reward.money)));
