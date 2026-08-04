@@ -35,8 +35,10 @@
     var regenMult = MF.game.stats.regenMultiplier();
     var ceiling = MF.game.stats.sizeCeiling();
     var trained = setsToday();
-    /* Plan-Auswertung VOR dem Muskel-Loop — der setzt setsToday zurueck. */
+    /* Plan und Zettel VOR dem Muskel-Loop auswerten — der setzt setsToday
+       zurueck, und der naechste Tag haengt einen neuen Zettel aus. */
     var coachEval = MF.game.coach.evaluateDay();
+    var chalEval = MF.game.challenge.evaluateDay();
 
     var gains = [];
     var healed = [];        /* Partien, deren Zerrung heute Nacht ausheilt */
@@ -120,6 +122,7 @@
       burnout: burnout,
       growthMult: growthMult,
       coach: coachEval,
+      challenge: chalEval,
       abo: abo,
       healed: healed,
       injured: injured

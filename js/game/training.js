@@ -201,6 +201,7 @@
     var result = {
       exercise: exercise,
       weight: weight,
+      weightIndex: weightIndex,
       perfect: perfect,
       ok: ok,
       miss: miss,

@@ -1960,3 +1960,49 @@
 }
 
 .taparea.is-done:active { border-color: var(--line); }
+
+/* ---------- Schwarzes Brett ------------------------------------------------ */
+
+/* Der Zettel des Tages im Gym: bewusst nur eine schmale Zeile — alles
+   Weitere steht im Fenster hinter dem Tipp. */
+.board {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border-left: 3px solid var(--warn);
+}
+
+.board__pin { font-size: 12px; flex: 0 0 auto; }
+
+.board__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board__prize {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--warn);
+}
+
+.board.is-done {
+  border-left-color: var(--good);
+  opacity: .7;
+}
+
+.board.is-done .board__prize { color: var(--good); }
+
+/* Der Zettel ist antippbar — Tap erklaert die Aufgabe. */
+.board { cursor: pointer; }
+.board:active { border-left-color: var(--accent); }

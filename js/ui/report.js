@@ -55,6 +55,12 @@
           : c.status === 'teilweise' ? c.done + ' von ' + c.total : 'nicht erfüllt',
         c.status === 'erfuellt' ? 'good' : c.status === 'teilweise' ? 'warn' : 'bad'));
     }
+    if (report.challenge) {
+      var ch = report.challenge;
+      block.appendChild(line('Schwarzes Brett (' + ch.title + ')',
+        ch.done ? 'erfüllt ✔ +' + util.formatMoney(ch.money) : 'nicht geschafft',
+        ch.done ? 'good' : 'warn'));
+    }
     if (report.abo) {
       if (report.abo.planRenewed) {
         block.appendChild(line('Trainingsplan verlängert',
