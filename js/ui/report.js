@@ -170,7 +170,11 @@
           }
         },
         /* Der neue Tag beginnt wie der erste: Anfahrt ans Studio. */
-        onTap: function () { MF.ui.intro.play(); }
+        /* Vor dem neuen Tag nachsehen, ob es eine neue Fassung gibt: nach
+           dem Schlafen stoert ein Neustart am wenigsten. */
+        onTap: function () {
+          MF.core.update.reloadIfNew(function () { MF.ui.intro.play(); });
+        }
       }]
     });
   }
