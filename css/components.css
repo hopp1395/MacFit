@@ -540,12 +540,17 @@
 
 /* ---------- Gym: Muskelgruppen als Kacheln -------------------------------- */
 
+/* Drei Spalten: acht Partien plus Kondition ergeben genau drei volle
+   Reihen — bei vier Spalten stand die neunte Kachel allein am Ende.
+   Die Kategorien im Shop sind acht Stueck und bleiben vierspaltig. */
 .mgrid {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 5px;
 }
+
+.shopgrid { grid-template-columns: repeat(4, 1fr); }
 
 .mtile {
   position: relative;
@@ -588,18 +593,9 @@
   background: var(--bad);
 }
 
-/* Kondition ist keine Partie: eigene Kachel über die ganze Breite, damit
-   sie sich vom Raster der acht Muskelgruppen absetzt. Der Balken zeigt,
-   wie weit der schwächste Gesundheitswert von 100 entfernt ist. */
-.mtile--kond {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.mtile--kond .mtile__sub { margin-left: auto; }
-.mtile--kond .mtile__bar { width: 34%; }
+/* Kondition sitzt als neunte Kachel im selben Raster wie die Partien —
+   nur der Balken meint etwas anderes: er zeigt, wie weit der schwächste
+   Gesundheitswert von 100 entfernt ist. */
 .mtile--kond .mtile__bar i { background: var(--warn); }
 .mtile--kond .mtile__bar i.is-bad { background: var(--bad); }
 
