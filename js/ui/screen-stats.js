@@ -258,6 +258,12 @@
     var a = MF.game.coach.analysis();
     var plan = MF.game.coach.todayTargets();
     var panel = el('section');
+
+    /* Zuerst die Ansage des Tages — dieselbe, die am Eingang kommt. Wer sie
+       dort weggetippt hat, findet sie hier wieder. */
+    var brief = MF.ui.trainer.panel();
+    if (brief) panel.appendChild(brief);
+
     panel.appendChild(el('div.section-title', { text: '🎯 Trainer-Analyse' }));
 
     panel.appendChild(el('div.report__block', null, [
