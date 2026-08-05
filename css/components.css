@@ -36,6 +36,20 @@
   margin-top: 6px;
 }
 
+/* Fassungsnummer ganz unten im Koerper-Bildschirm. */
+.version-note {
+  font-size: 11px;
+  text-align: center;
+  color: var(--text-faint);
+  margin-top: 10px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.version-note:active {
+  color: var(--accent);
+}
+
 .is-good { color: var(--good); }
 .is-warn { color: var(--warn); }
 .is-bad { color: var(--bad); }

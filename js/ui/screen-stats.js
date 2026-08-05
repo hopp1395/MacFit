@@ -717,6 +717,21 @@
           + 'holt sich Rat bei echten Fachleuten.'
     }));
 
+    /* Welche Fassung gerade laeuft. Steht sonst nur im Vorspann und am Gate —
+       hier ist sie jederzeit nachschlagbar, etwa wenn am Handy unklar ist,
+       ob eine Neuerung schon angekommen ist. Ein Tipp sieht sofort nach. */
+    var version = el('p.version-note', {
+      id: 'version-note',
+      text: 'MacFit v' + MF.version + ' · tippen, um auf eine neue Fassung zu prüfen'
+    });
+    util.onTap(version, function () {
+      MF.ui.toast.show('Suche nach einer neuen Fassung …');
+      MF.core.update.reloadIfNew(function () {
+        MF.ui.toast.show('v' + MF.version + ' ist schon die neueste Fassung.', 'good');
+      });
+    });
+    panel.appendChild(version);
+
     return panel;
   }
 
