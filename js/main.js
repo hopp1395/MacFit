@@ -391,6 +391,13 @@
       MF.ui.hud.render();
     });
 
+    /* Gekaufte Ware verschwindet sofort aus der Einkaufsliste des Trainers —
+       sonst stuende sie dort, bis der Bildschirm zufaellig neu zeichnet.
+       refresh() ruehrt nur den gerade sichtbaren Bildschirm an. */
+    on('supplement:bought', function () {
+      MF.ui.router.refresh('stats');
+    });
+
     on('energy:changed', function () {
       MF.ui.hud.render();
     });

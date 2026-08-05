@@ -239,40 +239,58 @@
 
   /* Die Kaufempfehlung des Trainers: erst Gesundheit retten, dann die
      schwaechste Saeule des Index stuetzen. Gibt { def, reason } oder null. */
-  function recommendation(worstKey) {
+  function recommendations(worstKey, max) {
     var s = state();
+    var out = [];
+    var seen = {};
 
-    /* Ein schwacher Wert wiegt schwerer als jeder Wachstumsbonus — und der
-       Trainer wartet nicht, bis er im Keller ist. */
-    var lowKey = null, lowVal = HEALTH_WATCH;
-    Object.keys(HEALTH_LABELS).forEach(function (k) {
-      if (s.health[k] < lowVal) { lowVal = s.health[k]; lowKey = k; }
-    });
-    if (lowKey) {
-      var healer = bestHealer(lowKey);
-      if (healer) {
-        return { def: healer, reason: HEALTH_LABELS[lowKey] + ' liegt bei '
-          + Math.round(lowVal) + ' — das bremst dein Wachstum jede Nacht.' };
-      }
+    function add(def, reason) {
+      if (!def || seen[def.id]) return;
+      seen[def.id] = true;
+      out.push({
+        def: def,
+        reason: reason,
+        afford: MF.game.economy.canAfford(def.price)
+      });
     }
 
+    /* 1. Jeder schwache Gesundheitswert kommt zuerst dran, vom schlechtesten
+          aufwaerts — und der Trainer wartet nicht, bis er im Keller ist. */
+    var low = [];
+    Object.keys(HEALTH_LABELS).forEach(function (k) {
+      if (s.health[k] < HEALTH_WATCH) low.push({ key: k, value: s.health[k] });
+    });
+    low.sort(function (a, b) { return a.value - b.value; });
+    low.forEach(function (entry) {
+      add(bestHealer(entry.key), HEALTH_LABELS[entry.key] + ' liegt bei '
+        + Math.round(entry.value) + ' — das bremst dein Wachstum jede Nacht.');
+    });
+
+    /* 2. Danach die schwaechste Saeule des Index. */
     if (worstKey === 'technik') {
-      var focus = bestFor('focus');
-      if (focus) return { def: focus, reason: 'Breitere Trefferzone hilft dir, sauber zu ziehen.' };
+      add(bestFor('focus'), 'Breitere Trefferzone hilft dir, sauber zu ziehen.');
     }
     if (worstKey === 'masse' || worstKey === 'symmetrie') {
-      var growth = bestFor('growth');
-      if (growth) return { def: growth, reason: 'Mehr Aufbau pro Nacht aus demselben Training.' };
+      add(bestFor('growth'), 'Mehr Aufbau pro Nacht aus demselben Training.');
     }
     if (worstKey === 'konstanz') {
-      var energy = bestFor('energy');
-      if (energy) return { def: energy, reason: 'Mehr Energie pro Tag — dann bleibt öfter ein Satz drin.' };
+      add(bestFor('energy'), 'Mehr Energie pro Tag — dann bleibt öfter ein Satz drin.');
     }
 
-    /* Nichts Dringendes? Dann das staerkste Wachstumsmittel, das noch fehlt. */
-    var fallback = bestFor('growth') || bestFor('regen');
-    if (fallback) return { def: fallback, reason: 'Solide Grundlage, solange nichts brennt.' };
-    return null;
+    /* 3. Und zum Schluss, was ohnehin jedem hilft: Aufbau, Erholung,
+          Trefferzone, Energie — in dieser Reihenfolge. */
+    add(bestFor('growth'), 'Solide Grundlage, solange nichts brennt.');
+    add(bestFor('regen'), 'Bessere Erholung heißt: öfter mit frischer Partie ran.');
+    add(bestFor('focus'), 'Breitere Zone, sauberere Sätze, mehr Reiz aus jedem Satz.');
+    add(bestFor('energy'), 'Mehr Energie pro Tag — mehr Sätze, bevor Schluss ist.');
+
+    return out.slice(0, max || 3);
+  }
+
+  /* Die wichtigste Empfehlung — der Rest steht in recommendations(). */
+  function recommendation(worstKey) {
+    var list = recommendations(worstKey, 1);
+    return list.length ? list[0] : null;
   }
 
   function analysis() {
@@ -299,7 +317,8 @@
       componentAdvice: { name: worst.name, text: ADVICE[worst.key] || '' },
       healthFlags: flags,
       healthTip: healthTip(),
-      shopTip: recommendation(worst.key)
+      shopTip: recommendation(worst.key),
+      shopTips: recommendations(worst.key, 3)
     };
   }
 
@@ -415,6 +434,7 @@
     isTargetExercise: isTargetExercise,
     evaluateDay: evaluateDay,
     recommendation: recommendation,
+    recommendations: recommendations,
     analysis: analysis,
     planCost: planCost,
     briefing: briefing

@@ -314,29 +314,14 @@
       panel.appendChild(hbox);
     }
 
-    /* Der Trainer schickt einen auch mal einkaufen. */
-    if (a.shopTip) {
-      var def = a.shopTip.def;
-      var afford = MF.game.economy.canAfford(def.price);
-      var tip = el('div.savebox');
-      tip.appendChild(el('div.savebox__head', null, [
-        el('span.savebox__dot' + (afford ? '.is-ok' : '.is-warn')),
-        el('strong', { text: def.icon + ' ' + def.name })
+    /* Der Trainer schickt einen auch mal einkaufen — mehrere Vorschläge,
+       vom dringendsten abwärts. */
+    if (a.shopTips && a.shopTips.length) {
+      panel.appendChild(el('div.section-title', null, [
+        el('span', { text: 'Einkaufsliste des Trainers' }),
+        el('span.section-title__note', { text: a.shopTips.length + ' Vorschläge' })
       ]));
-      tip.appendChild(el('span.savebox__text', {
-        text: a.shopTip.reason + ' ' + util.formatMoney(def.price) + ' für '
-            + def.days + ' Tage'
-            + (afford ? '.' : ' — dafür fehlt dir noch Geld.')
-      }));
-      var toShop = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Im Shop ansehen' });
-      util.onTap(toShop, function () {
-        state().settings.shopTab = def.tier;
-        MF.game.state.saveSoon();
-        MF.ui.router.go('shop');
-      });
-      tip.appendChild(toShop);
-      panel.appendChild(el('div.section-title', { text: 'Empfehlung des Trainers' }));
-      panel.appendChild(tip);
+      panel.appendChild(MF.ui.trainer.shopList(a.shopTips));
     }
 
     if (plan && plan.targets.length) {
