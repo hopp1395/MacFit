@@ -14,7 +14,18 @@
 
   /* Auswahl und Intensität gehören in den Spielstand — sonst steht man nach
      dem Neuladen wieder bei Brust und "Normal". */
+  /* Neben den acht Partien gibt es eine neunte Kachel: Kondition. Sie ist
+     keine Muskelgruppe, sondern ein Filter auf Laufband, Spinning und Yoga —
+     unter "Waden" sucht die niemand. Der Schluessel steht wie die Partien in
+     settings.muscle; ausser diesem Bildschirm liest ihn niemand. */
+  var KOND = 'kondition';
+
   function filterId() { return state().settings.muscle || 'brust'; }
+  function isKondition() { return filterId() === KOND; }
+
+  function konditionList() {
+    return MF.data.exercises.list.filter(function (ex) { return ex.kind === KOND; });
+  }
   function weightIdx() {
     var w = state().settings.weight;
     return typeof w === 'number' ? w : 1;
@@ -78,6 +89,34 @@
       });
       grid.appendChild(tile);
     });
+
+    /* Die neunte Kachel: Kondition. Der Balken zeigt den schwaechsten
+       Gesundheitswert — er sagt, wie noetig eine Runde Cardio waere. */
+    var open = konditionList().filter(function (ex) {
+      return MF.game.training.isUnlocked(ex);
+    }).length;
+    var worst = null;
+    ['herz', 'schlaf', 'laune', 'leber'].forEach(function (k) {
+      if (!worst || s.health[k] < worst.value) worst = { key: k, value: s.health[k] };
+    });
+
+    var kond = el('button.mtile.mtile--kond' + (isKondition() ? '.is-active' : ''),
+      { type: 'button' }, [
+        el('span.mtile__name', { text: '❤️ Kondition' }),
+        el('span.mtile__sub', {
+          text: open ? open + ' Einheit' + (open === 1 ? '' : 'en') : 'ab Level 1'
+        }),
+        el('span.mtile__bar', null, [
+          el('i' + (worst.value < 50 ? '.is-bad' : ''), {
+            style: 'width:' + (100 - worst.value).toFixed(0) + '%'
+          })
+        ])
+      ]);
+    util.onTap(kond, function () {
+      remember('muscle', KOND);
+      MF.ui.router.refresh('gym');
+    });
+    grid.appendChild(kond);
 
     return grid;
   }
@@ -151,7 +190,7 @@
   }
 
   function exerciseList() {
-    var list = MF.data.exercises.byMuscle(filterId()).slice();
+    var list = isKondition() ? konditionList() : MF.data.exercises.byMuscle(filterId()).slice();
     list.sort(function (a, b) {
       var ua = MF.game.training.isUnlocked(a) ? 0 : 1;
       var ub = MF.game.training.isUnlocked(b) ? 0 : 1;
@@ -330,8 +369,11 @@
 
   function render(container) {
     util.clear(container);
-    var muscle = MF.data.muscles.get(filterId());
-    var data = state().muscles[filterId()];
+    var s = state();
+    /* Kondition ist keine Partie — dann gibt es weder Muskeldaten noch
+       Ermuedung, sondern den Gesundheitsschnitt in der Kopfzeile. */
+    var muscle = isKondition() ? null : MF.data.muscles.get(filterId());
+    var data = muscle ? s.muscles[filterId()] : null;
 
     /* Blick in die Halle — nur wenn genug Platz da ist. Auf kurzen Displays
        hat die Geräteauswahl Vorrang; dann wird auch nichts gezeichnet. */
@@ -344,14 +386,24 @@
 
     container.appendChild(muscleGrid());
 
-    container.appendChild(el('div.exhead', null, [
-      el('span.exhead__title', { text: muscle.name }),
-      el('span.exhead__note' + (data.injuryDays > 0 ? '.is-bad' : ''), {
-        text: data.injuryDays > 0
-          ? '🤕 gezerrt — noch ' + data.injuryDays + (data.injuryDays === 1 ? ' Tag' : ' Tage')
-          : 'Ermüdung ' + Math.round(data.fatigue * 100) + '%'
-      })
-    ]));
+    if (muscle) {
+      container.appendChild(el('div.exhead', null, [
+        el('span.exhead__title', { text: muscle.name }),
+        el('span.exhead__note' + (data.injuryDays > 0 ? '.is-bad' : ''), {
+          text: data.injuryDays > 0
+            ? '🤕 gezerrt — noch ' + data.injuryDays + (data.injuryDays === 1 ? ' Tag' : ' Tage')
+            : 'Ermüdung ' + Math.round(data.fatigue * 100) + '%'
+        })
+      ]));
+    } else {
+      var avg = Math.round(MF.game.stats.healthAvg());
+      container.appendChild(el('div.exhead', null, [
+        el('span.exhead__title', { text: 'Kondition' }),
+        el('span.exhead__note' + (avg < 50 ? '.is-bad' : ''), {
+          text: 'Gesundheit ' + avg + ' von 100'
+        })
+      ]));
+    }
 
     container.appendChild(exerciseList());
     container.appendChild(intensityControl());
