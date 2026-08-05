@@ -148,20 +148,19 @@
   }
 
   /* Bietet der Spotter nach dem letzten Rep eine Extra-Rep an? Nur nach
-     vollen Saetzen mit ordentlicher Form an ausgeruhten Partien — und erst
-     ab "Schwer"; wer als "Durchtrainiert" gilt, bekommt ihn schon ab Normal. */
+     vollen Saetzen an ausgeruhten Partien — und erst ab "Schwer"; wer als
+     "Durchtrainiert" gilt, bekommt ihn schon ab Normal. Die Form muss dabei
+     makellos sein: ein einziges "okay" reicht, und er haelt sich raus. */
   function spotterOffer(exercise, weightIndex, hits) {
     if (hits.length < exercise.reps) return false;
     var minWeight = MF.game.fitness.index() >= 600 ? 1 : 2;
     if (weightIndex < minWeight) return false;
     if (state().muscles[exercise.muscle].fatigue > 0.85) return false;
 
-    var perfect = 0, ok = 0;
-    hits.forEach(function (h) {
-      if (h === 'perfect') perfect++;
-      else if (h === 'ok') ok++;
-    });
-    return (perfect + ok * 0.5) / hits.length >= 0.6;
+    for (var i = 0; i < hits.length; i++) {
+      if (hits[i] !== 'perfect') return false;
+    }
+    return true;
   }
 
   /* Lohnt sich direkt im Anschluss ein Dropset? Gibt die naechste Stufe
