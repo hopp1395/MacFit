@@ -272,6 +272,29 @@
     s.today.perfect += perfect;
     s.today.xp += xp;
 
+    /* Kondition (Cardio, Spinning, Yoga): der Satz zahlt auf die Gesundheit
+       ein statt auf die Masse — sauber ausgeführt bringt er den vollen Wert,
+       geschludert kaum etwas. Yoga löst zusätzlich Verspannungen, also
+       Ermüdung, in allen Partien. */
+    var healthGain = null;
+    if (exercise.health) {
+      healthGain = {};
+      Object.keys(exercise.health).forEach(function (k) {
+        var add = exercise.health[k] * formScore;
+        if (add <= 0) return;
+        var before = s.health[k];
+        s.health[k] = util.clamp(before + add, 0, 100);
+        var real = util.round(s.health[k] - before, 1);
+        if (real > 0) healthGain[k] = real;
+      });
+    }
+    if (exercise.recovery) {
+      var relief = exercise.recovery * formScore;
+      MF.data.muscles.ids.forEach(function (id) {
+        s.muscles[id].fatigue = util.clamp(s.muscles[id].fatigue - relief, 0, 1);
+      });
+    }
+
     /* Ein völlig verrissener Satz drückt auf die Laune. */
     if (formScore < 0.35) {
       s.health.laune = util.clamp(s.health.laune - 1.5, 0, 100);
@@ -320,7 +343,9 @@
       dropStep: dropStep || 0,
       wobbleHits: wobbles,
       injured: injured,
-      injuryDays: injured ? INJURY_DAYS : 0
+      injuryDays: injured ? INJURY_DAYS : 0,
+      healthGain: healthGain,
+      recovery: exercise.recovery ? util.round(exercise.recovery * formScore, 2) : 0
     };
 
     MF.core.events.emit('set:finished', result);

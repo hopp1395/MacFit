@@ -282,6 +282,32 @@
       panel.appendChild(el('p.card__warning', { text: '⚠ ' + flag }));
     });
 
+    /* Der Trainer schaut zuerst auf die Gesundheit — und sagt konkret,
+       welche Einheit den schwachen Wert wieder hochholt. */
+    if (a.healthTip) {
+      var hbox = el('div.savebox' + (a.healthTip.urgent ? '.savebox--bad' : ''), {
+        id: 'trainer-health'
+      });
+      hbox.appendChild(el('div.savebox__head', null, [
+        el('span.savebox__dot' + (a.healthTip.urgent ? '.is-bad' : '.is-warn')),
+        el('strong', { text: '❤️ Gesundheit zuerst' })
+      ]));
+      hbox.appendChild(el('span.savebox__text', { text: a.healthTip.text }));
+      if (a.healthTip.exercise) {
+        var ex = a.healthTip.exercise;
+        var toGym = el('button.btn.btn--ghost.btn--slim', {
+          type: 'button', text: ex.icon + ' ' + ex.name + ' im Gym'
+        });
+        util.onTap(toGym, function () {
+          state().settings.muscle = ex.muscle;
+          MF.game.state.saveSoon();
+          MF.ui.router.go('gym');
+        });
+        hbox.appendChild(toGym);
+      }
+      panel.appendChild(hbox);
+    }
+
     /* Der Trainer schickt einen auch mal einkaufen. */
     if (a.shopTip) {
       var def = a.shopTip.def;

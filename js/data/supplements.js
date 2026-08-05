@@ -89,7 +89,27 @@
       health: { herz: -8, leber: -8, schlaf: -8, laune: -8 },
       desc: 'Alles auf einmal, kurz vor der Bühne. Danach ist erstmal Pause.' },
 
-    /* ---------- Reha: Gesundheit zurückkaufen ---------------------------- */
+    /* ---------- Reha: Gesundheit zurückkaufen ----------------------------
+       Bewusst früh und günstig beginnend: wer erst ab Level 5 gegensteuern
+       kann, hat die Werte längst ruiniert. heal: verkürzt Zwangspausen. */
+    { id: 'sauna', name: 'Sauna-Abo', icon: '🧖', tier: 'reha',
+      price: 90, unlockLevel: 2, days: 6,
+      effects: { regen: 0.20 },
+      health: { schlaf: 3, herz: 1.5, laune: 2 },
+      desc: 'Aufguss, kaltes Becken, Ruheraum. Danach schläfst du wie ein Stein.' },
+
+    { id: 'ernaehrung', name: 'Ernährungsberatung', icon: '🥗', tier: 'reha',
+      price: 150, unlockLevel: 3, days: 9,
+      effects: { growth: 0.10 },
+      health: { leber: 4, laune: 1 },
+      desc: 'Weniger Dosen, mehr Gemüse. Unspektakulär, wirkt auf jedem Blutbild.' },
+
+    { id: 'physio', name: 'Physiotherapie', icon: '💆', tier: 'reha',
+      price: 220, unlockLevel: 4, days: 5, heal: 1,
+      effects: { regen: 0.30 },
+      health: { laune: 3, schlaf: 1 },
+      desc: 'Sie findet die Stelle, die weh tut, sofort. Zerrungen heilen doppelt so schnell.' },
+
     { id: 'leberkur', name: 'Leberkur & Blutbild', icon: '🩺', tier: 'reha',
       price: 300, unlockLevel: 5, days: 6,
       effects: { growth: -0.10 },
@@ -106,7 +126,19 @@
       price: 380, unlockLevel: 8, days: 7,
       effects: { focus: 0.20 },
       health: { laune: 11, schlaf: 3 },
-      desc: 'Reden hilft. Auch beim Kreuzheben.' }
+      desc: 'Reden hilft. Auch beim Kreuzheben.' },
+
+    { id: 'kardio-vorsorge', name: 'Kardio-Vorsorge', icon: '🫀', tier: 'reha',
+      price: 340, unlockLevel: 7, days: 6,
+      effects: { energy: 6 },
+      health: { herz: 12, schlaf: 2 },
+      desc: 'Belastungs-EKG, ehrliches Gespräch, Plan für den Puls. Das Herz kommt zurück.' },
+
+    { id: 'reha-woche', name: 'Reha-Woche "Alpenluft"', icon: '🏔️', tier: 'reha',
+      price: 780, unlockLevel: 9, days: 7,
+      effects: { growth: -0.15, regen: 0.35 },
+      health: { herz: 6, leber: 6, schlaf: 6, laune: 6 },
+      desc: 'Sieben Tage Berge, Wandern, keine Dose. Alle Werte gleichzeitig hoch — Gains pausieren.' }
   ];
 
   var TIERS = {

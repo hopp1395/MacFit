@@ -616,6 +616,18 @@
     if (result.wobbleHits) {
       rows.appendChild(row('Ausreißer gerettet', result.wobbleHits + '×'));
     }
+    /* Kondition zahlt nicht auf die Masse, sondern auf die Werte. */
+    if (result.healthGain) {
+      var HEALTH_NAMES = { herz: 'Herz', leber: 'Leber', schlaf: 'Schlaf', laune: 'Laune' };
+      Object.keys(HEALTH_NAMES).forEach(function (k) {
+        var v = result.healthGain[k];
+        if (v > 0) rows.appendChild(row(HEALTH_NAMES[k], '+' + util.formatNum(v, 1)));
+      });
+    }
+    if (result.recovery > 0) {
+      rows.appendChild(row('Verspannung gelöst',
+        '−' + Math.round(result.recovery * 100) + ' % Ermüdung'));
+    }
     if (result.board) {
       rows.appendChild(row('📌 ' + result.board.def.title,
         '+' + util.formatMoney(result.board.reward.money)));

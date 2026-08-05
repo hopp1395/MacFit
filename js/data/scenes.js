@@ -411,6 +411,48 @@
       hold: { hip: [100, 70], shoulder: [100, 44], head: [99, 31] },
       a: { knee: [110, 88], foot: [116, 103], elbow: [108, 58], hand: [112, 70] },
       b: { knee: [92, 90], foot: [86, 103], elbow: [92, 58], hand: [88, 70] }
+    },
+
+    /* Spinning: sitzend auf dem Rad, Oberkoerper am Lenker fest, die Beine
+       treten. Knie und Fuss laufen als orbit — der Tritt ist ein Kreis, da
+       wuerde jede Gerade sofort auffallen. */
+    bike: {
+      name: 'Spinning-Rad', face: 1,
+      equip: [
+        { t: 'rect', x: 72, y: 112, w: 74, h: 6, rx: 3, c: '#2f3a4a' },
+        { t: 'circle', cx: 140, cy: 96, r: 12, c: '#3d4756' },
+        frameLine(110, 102, 136, 98, 3),
+        frameLine(82, 80, 106, 104, 4),
+        frameLine(86, 82, 104, 79, 4),
+        frameLine(106, 104, 104, 80, 4),
+        frameLine(104, 80, 103, 60, 4),
+        frameLine(95, 60, 110, 58, 3),
+        { t: 'circle', cx: 110, cy: 102, r: 5, c: '#69748a' },
+        pad(69, 80, 24, 4),
+        frameLine(78, 80, 72, 58, 6)
+      ],
+      implement: 'none',
+      /* Sitzrad statt Rennhaltung: der Ruecken lehnt nach HINTEN an die
+         Lehne, die Arme greifen nach vorn an den Lenker. Sattel weit hinten,
+         damit sich das Bein am tiefsten Punkt fast durchstreckt. */
+      hold: { hip: [84, 78], shoulder: [78, 55], head: [74, 44], elbow: [90, 62], hand: [102, 62] },
+      a: { knee: [106, 78], foot: [117, 102] },
+      b: { knee: [106, 76], foot: [103, 102] },
+      orbit: { knee: 'hip', foot: 'knee' },
+      /* Der Tritt laeuft rund, nicht hin und her — siehe crankPose(). */
+      crank: { at: [110, 102], r: 7, rev: 1.1, thigh: 22, shin: 26 }
+    },
+
+    /* Yoga: stehend auf der Matte, die Arme wandern vom Brustbein nach oben.
+       Nur die Arme bewegen sich — Ruhe ist hier der Punkt. */
+    yoga: {
+      name: 'Yoga-Matte', face: -1,
+      equip: [{ t: 'rect', x: 68, y: 111, w: 66, h: 7, rx: 3, c: '#69748a' }],
+      implement: 'none',
+      hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [100, 44], head: [99, 32] },
+      a: { elbow: [87, 54], hand: [98, 60] },
+      b: { elbow: [96, 29], hand: [97, 16] },
+      orbit: { elbow: 'shoulder', hand: 'elbow' }
     }
   };
 
@@ -438,7 +480,10 @@
     'trizepsdruecken': 'tricep',
     'dips': 'dips',
     'wadenheben': 'calf',
-    'donkey-calf': 'donkeycalf'
+    'donkey-calf': 'donkeycalf',
+    'laufband': 'treadmill',
+    'spinning': 'bike',
+    'yoga': 'yoga'
   };
 
   /* Wer im Hintergrund trainiert. */
@@ -449,8 +494,52 @@
      starr in Blickrichtung. */
   var JOINTS = ['head', 'shoulder', 'elbow', 'hand', 'hip', 'knee', 'foot', 'toe'];
 
-  /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt). */
-  function poseAt(scene, t) {
+  /* Tretlager: der Fuß läuft eine gleichmäßige Kreisbahn um die Kurbel, das
+     Knie wird dazu gerechnet (Zwei-Knochen-Umkehr aus Oberschenkel und
+     Unterschenkel). Mit zwei Keyframes ginge nur die Sehne durch den Kreis —
+     der Tritt sähe eckig aus und stünde an beiden Enden kurz still.
+     Gedreht wird nach der Uhr (rev Umdrehungen je Sekunde), damit das Tempo
+     gleichmäßig bleibt; ohne Uhr (Vorschau, Test) übernimmt t die Phase. */
+  function crankPose(scene, out, t, time) {
+    var c = scene.crank;
+    var ang = (time === undefined || time === null ? t : time * c.rev) * Math.PI * 2;
+    var hip = out.hip;
+    if (!hip) return;
+
+    /* Beide Pedale sitzen sich gegenüber: das zweite Bein läuft eine halbe
+       Umdrehung versetzt. figure.js zeichnet farKnee/farFoot als hinteres,
+       abgedunkeltes Bein. */
+    var near = legAt(c, hip, ang);
+    var far = legAt(c, hip, ang + Math.PI);
+    out.foot = near.foot;
+    out.knee = near.knee;
+    out.farFoot = far.foot;
+    out.farKnee = far.knee;
+  }
+
+  /* Fuß auf der Kreisbahn, Knie per Zwei-Knochen-Umkehr dazu. */
+  function legAt(c, hip, ang) {
+    var foot = [c.at[0] + Math.cos(ang) * c.r, c.at[1] + Math.sin(ang) * c.r];
+    var dx = foot[0] - hip[0], dy = foot[1] - hip[1];
+    var d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 0.01) return { foot: foot, knee: hip };
+    var reach = Math.min(Math.max(d, Math.abs(c.thigh - c.shin) + 0.01), c.thigh + c.shin - 0.01);
+    var ux = dx / d, uy = dy / d;
+
+    /* Abstand des Kniefußpunkts auf der Verbindung Hüfte–Fuß, dazu die Höhe
+       senkrecht darauf. Das Knie zeigt nach vorn, also auf die Seite, die
+       (uy, -ux) trifft — bei Blick nach rechts nach oben-vorn. */
+    var along = (reach * reach + c.thigh * c.thigh - c.shin * c.shin) / (2 * reach);
+    var high = Math.sqrt(Math.max(0, c.thigh * c.thigh - along * along));
+    return {
+      foot: foot,
+      knee: [hip[0] + ux * along + uy * high, hip[1] + uy * along - ux * high]
+    };
+  }
+
+  /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt).
+     time (Sekunden) ist optional und treibt gleichmäßig laufende Teile. */
+  function poseAt(scene, t, time) {
     /* Zeitgefühl statt Metronom. Smootherstep ZWEIFACH hintereinander:
        an beiden Umkehrpunkten steht die Bewegung je rund ein Fünftel der
        Zeit fast still, dazwischen zieht sie entschlossen durch — einfach
@@ -503,6 +592,7 @@
         out[j] = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e];
       }
     }
+    if (scene.crank) crankPose(scene, out, t, time);
     return out;
   }
 
