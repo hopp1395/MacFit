@@ -1034,6 +1034,17 @@
   font-size: 13.5px;
 }
 
+/* Preis rechts in der Kopfzeile — nur die Einkaufsliste des Trainers. */
+.savebox__price {
+  margin-left: auto;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--good);
+  white-space: nowrap;
+}
+
+.savebox__price.is-bad { color: var(--bad); }
+
 .savebox__dot {
   width: 8px;
   height: 8px;

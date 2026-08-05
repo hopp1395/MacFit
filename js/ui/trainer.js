@@ -24,6 +24,36 @@
     return list;
   }
 
+  /* Die Einkaufsliste des Trainers: mehrere Vorschläge mit Begründung,
+     jeder mit dem Weg in die passende Shop-Kategorie. */
+  function shopList(tips, max) {
+    var box = el('div.grid.shoptips');
+    tips.slice(0, max || tips.length).forEach(function (tip) {
+      var def = tip.def;
+      var row = el('div.savebox');
+      row.appendChild(el('div.savebox__head', null, [
+        el('span.savebox__dot' + (tip.afford ? '.is-ok' : '.is-warn')),
+        el('strong', { text: def.icon + ' ' + def.name }),
+        el('span.savebox__price' + (tip.afford ? '' : '.is-bad'), {
+          text: util.formatMoney(def.price)
+        })
+      ]));
+      row.appendChild(el('span.savebox__text', {
+        text: tip.reason + ' Läuft ' + def.days + ' Tage'
+            + (tip.afford ? '.' : ' — dafür fehlt dir noch Geld.')
+      }));
+      var go = el('button.btn.btn--ghost.btn--slim', { type: 'button', text: 'Im Shop ansehen' });
+      util.onTap(go, function () {
+        MF.game.state.get().settings.shopTab = def.tier;
+        MF.game.state.saveSoon();
+        MF.ui.router.go('shop');
+      });
+      row.appendChild(go);
+      box.appendChild(row);
+    });
+    return box;
+  }
+
   /* Für den Körper-Bildschirm: Überschrift plus Hinweise, oder null. */
   function panel() {
     var brief = MF.game.coach.briefing();
@@ -54,20 +84,12 @@
     var body = el('div');
     body.appendChild(notesList(brief));
 
-    /* Die Kaufempfehlung steht am Ende — sie kostet Geld, also nicht oben. */
-    var tip = brief.analysis.shopTip;
-    if (tip) {
-      var afford = MF.game.economy.canAfford(tip.def.price);
-      var box = el('div.savebox');
-      box.appendChild(el('div.savebox__head', null, [
-        el('span.savebox__dot' + (afford ? '.is-ok' : '.is-warn')),
-        el('strong', { text: tip.def.icon + ' ' + tip.def.name })
-      ]));
-      box.appendChild(el('span.savebox__text', {
-        text: tip.reason + ' ' + util.formatMoney(tip.def.price)
-            + (afford ? '' : ' — dafür fehlt dir noch Geld.')
-      }));
-      body.appendChild(box);
+    /* Die Einkaufsliste steht am Ende — sie kostet Geld, also nicht oben.
+       Im Fenster zwei Vorschläge, der Rest steht im Körper-Bildschirm. */
+    var tips = brief.analysis.shopTips || [];
+    if (tips.length) {
+      body.appendChild(el('div.section-title', { text: 'Der Trainer würde kaufen' }));
+      body.appendChild(shopList(tips, 2));
     }
 
     MF.ui.modal.open({
@@ -82,5 +104,5 @@
     return true;
   }
 
-  MF.ui.trainer = { greet: greet, panel: panel, notesList: notesList };
+  MF.ui.trainer = { greet: greet, panel: panel, notesList: notesList, shopList: shopList };
 })(window.MacFit);
