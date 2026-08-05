@@ -411,6 +411,40 @@
       hold: { hip: [100, 70], shoulder: [100, 44], head: [99, 31] },
       a: { knee: [110, 88], foot: [116, 103], elbow: [108, 58], hand: [112, 70] },
       b: { knee: [92, 90], foot: [86, 103], elbow: [92, 58], hand: [88, 70] }
+    },
+
+    /* Spinning: sitzend auf dem Rad, Oberkoerper am Lenker fest, die Beine
+       treten. Knie und Fuss laufen als orbit — der Tritt ist ein Kreis, da
+       wuerde jede Gerade sofort auffallen. */
+    bike: {
+      name: 'Spinning-Rad', face: 1,
+      equip: [
+        { t: 'rect', x: 84, y: 112, w: 66, h: 6, rx: 3, c: '#2f3a4a' },
+        { t: 'circle', cx: 138, cy: 98, r: 13, c: '#3d4756' },
+        frameLine(96, 96, 128, 96, 4),
+        frameLine(94, 88, 98, 106, 4),
+        frameLine(126, 96, 124, 58, 4),
+        frameLine(117, 58, 133, 56, 3),
+        { t: 'circle', cx: 112, cy: 104, r: 5, c: '#69748a' },
+        pad(84, 84, 22, 5)
+      ],
+      implement: 'none',
+      hold: { hip: [92, 82], shoulder: [102, 60], head: [107, 48], elbow: [113, 66], hand: [122, 60] },
+      a: { knee: [114, 84], foot: [116, 110] },
+      b: { knee: [112, 72], foot: [108, 98] },
+      orbit: { knee: 'hip', foot: 'knee' }
+    },
+
+    /* Yoga: stehend auf der Matte, die Arme wandern vom Brustbein nach oben.
+       Nur die Arme bewegen sich — Ruhe ist hier der Punkt. */
+    yoga: {
+      name: 'Yoga-Matte', face: -1,
+      equip: [{ t: 'rect', x: 68, y: 111, w: 66, h: 7, rx: 3, c: '#69748a' }],
+      implement: 'none',
+      hold: { hip: [100, 70], knee: [100, 92], foot: [100, FLOOR], shoulder: [100, 44], head: [99, 32] },
+      a: { elbow: [87, 54], hand: [98, 60] },
+      b: { elbow: [96, 29], hand: [97, 16] },
+      orbit: { elbow: 'shoulder', hand: 'elbow' }
     }
   };
 
@@ -438,7 +472,10 @@
     'trizepsdruecken': 'tricep',
     'dips': 'dips',
     'wadenheben': 'calf',
-    'donkey-calf': 'donkeycalf'
+    'donkey-calf': 'donkeycalf',
+    'laufband': 'treadmill',
+    'spinning': 'bike',
+    'yoga': 'yoga'
   };
 
   /* Wer im Hintergrund trainiert. */
