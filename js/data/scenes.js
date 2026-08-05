@@ -638,9 +638,15 @@
     out.farFoot = far;
     out.farKnee = kneeFor(hip, far, g.thigh, g.shin);
 
-    /* Fußspitze: sie zeigt beim Abheben nach unten und richtet sich zum
-       Aufsetzen wieder auf — ein starrer Klotz am Bein sieht steif aus. */
-    out.toe = [near[0] + 5, near[1] + Math.min(3, (g.ground - near[1]) * 0.35)];
+    /* Fußspitzen: sie zeigen beim Abheben nach unten und richten sich zum
+       Aufsetzen wieder auf — ein starrer Klotz am Bein sieht steif aus.
+       Beide Füße brauchen ihre eigene Spitze, sonst hängt der hintere Schuh
+       am vorderen (siehe figure.js). */
+    function toeFor(pt) {
+      return [pt[0] + 5, pt[1] + Math.min(3, (g.ground - pt[1]) * 0.35)];
+    }
+    out.toe = toeFor(near);
+    out.farToe = toeFor(far);
 
     /* Arme gegengleich: das vordere Bein gehört zum hinteren Arm. */
     var swing = Math.sin(phase * Math.PI * 2) * 0.55;
