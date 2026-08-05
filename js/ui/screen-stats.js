@@ -385,20 +385,23 @@
     return panel;
   }
 
-  function historyPanel() {
-    var s = state();
-    if (s.history.length < 2) return null;
+  /* Der Verlauf: erst die Kurve, dann die Tage einzeln. Nur die Kurve war zu
+     wenig — man sieht daran, dass es aufwaerts ging, aber nicht, woran es lag.
+     Die Liste stellt jedem Tag gegenueber, wie viele Saetze er gekostet und
+     was die Nacht daraus gemacht hat. Standardmaessig die letzten sieben,
+     der Rest auf Wunsch. */
+  var HIST_SHORT = 7;
+  var histAll = false;
 
-    var panel = el('section');
-    panel.appendChild(el('div.section-title', { text: 'Verlauf' }));
-
-    var values = s.history.map(function (h) { return h.mass; });
+  /* Die Kurve. Welche Reihe gezeichnet wird, entscheidet pick(). */
+  function sparkline(rows, pick) {
+    var values = rows.map(pick);
     var min = Math.min.apply(null, values);
     var max = Math.max.apply(null, values);
     var span = Math.max(0.5, max - min);
 
     var points = values.map(function (v, i) {
-      var x = (i / (values.length - 1)) * 100;
+      var x = values.length < 2 ? 50 : (i / (values.length - 1)) * 100;
       var y = 34 - ((v - min) / span) * 30;
       return x.toFixed(2) + ',' + y.toFixed(2);
     }).join(' ');
@@ -408,13 +411,97 @@
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('class', 'spark');
     svg.innerHTML = '<polyline points="' + points + '" />';
-    panel.appendChild(svg);
+    return svg;
+  }
 
-    panel.appendChild(el('div.spark__legend', null, [
-      el('span', { text: util.formatKg(min) }),
-      el('span', { text: s.history.length + ' Tage' }),
-      el('span', { text: util.formatKg(max) })
+  /* Eine Zeile im Verlauf. Fehlende Felder kommen aus alten Spielstaenden,
+     die nur Tag und Masse gespeichert haben. */
+  function historyRow(h, prev) {
+    var gain = h.gain;
+    if (gain === undefined || gain === null) {
+      gain = prev ? util.round(h.mass - prev.mass, 2) : 0;
+    }
+    var tone = gain > 0.005 ? 'good' : (gain < -0.005 ? 'bad' : 'flat');
+
+    var meta = [];
+    if (h.sets !== undefined && h.sets !== null) {
+      meta.push(h.sets + (h.sets === 1 ? ' Satz' : ' Sätze'));
+    }
+    if (h.fit !== undefined && h.fit !== null) meta.push('FIT ' + h.fit);
+    if (h.level) meta.push('Lv ' + h.level);
+
+    var row = el('div.hist-row' + (h.sets === 0 ? '.is-rest' : ''), null, [
+      el('div.hist-row__head', null, [
+        el('span.hist-row__day', { text: 'Tag ' + h.day }),
+        el('span.hist-row__mass', { text: util.formatKg(h.mass) }),
+        el('strong.hist-row__delta.is-' + tone, {
+          text: (gain > 0 ? '+' : '') + util.formatNum(gain, 2) + ' kg'
+        })
+      ])
+    ]);
+    if (meta.length) {
+      row.appendChild(el('span.hist-row__meta', { text: meta.join(' · ') }));
+    }
+    return row;
+  }
+
+  function historyPanel() {
+    var s = state();
+    if (!s.history.length) return null;
+
+    var panel = el('section');
+    panel.appendChild(el('div.section-title', null, [
+      el('span', { text: 'Verlauf' }),
+      el('span.section-title__note', {
+        text: s.history.length + (s.history.length === 1 ? ' Tag' : ' Tage')
+      })
     ]));
+
+    if (s.history.length >= 2) {
+      panel.appendChild(sparkline(s.history, function (h) { return h.mass; }));
+
+      var values = s.history.map(function (h) { return h.mass; });
+      panel.appendChild(el('div.spark__legend', null, [
+        el('span', { text: util.formatKg(Math.min.apply(null, values)) }),
+        el('span', { text: 'Muskelmasse' }),
+        el('span', { text: util.formatKg(Math.max.apply(null, values)) })
+      ]));
+    }
+
+    /* Neueste zuerst — was gestern war, interessiert mehr als Tag 3. */
+    var rows = s.history.slice();
+    var hidden = 0;
+    if (!histAll && rows.length > HIST_SHORT) {
+      hidden = rows.length - HIST_SHORT;
+      rows = rows.slice(hidden);
+    }
+
+    var list = el('div.hist', { id: 'hist-list' });
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var idx = hidden + i;    /* Platz im vollen Verlauf — fuer den Vorgaenger */
+      list.appendChild(historyRow(rows[i], idx > 0 ? s.history[idx - 1] : null));
+    }
+    panel.appendChild(list);
+
+    if (hidden > 0 || histAll) {
+      var more = el('button.btn.btn--ghost.btn--slim', {
+        type: 'button',
+        id: 'hist-more',
+        text: histAll ? 'Nur die letzten ' + HIST_SHORT + ' Tage' : 'Alle ' + s.history.length + ' Tage zeigen'
+      });
+      util.onTap(more, function () {
+        histAll = !histAll;
+        MF.ui.router.refresh('stats');
+      });
+      panel.appendChild(more);
+    }
+
+    panel.appendChild(el('p.hint', {
+      text: 'Jede Zeile ist ein abgeschlossener Tag: links die Gesamtmasse am '
+          + 'Morgen danach, rechts, was die Nacht gebracht hat. Tage ohne Satz '
+          + 'stehen blass — ohne Reiz wächst nichts, und ab dem fünften Ruhetag '
+          + 'geht eine Partie zurück.'
+    }));
 
     return panel;
   }

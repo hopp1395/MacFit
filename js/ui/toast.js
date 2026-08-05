@@ -2,9 +2,9 @@
 
    Sie verschwinden nicht nach zwei Sekunden: nach einem Satz kommen schnell
    mehrere Nachrichten auf einmal (Praemie, Serie, Zettel), und die waren weg,
-   bevor man sie gelesen hatte. Jede Meldung bleibt stehen, bis sie angetippt
-   wird — deshalb traegt sie sichtbar ein Kreuz. Nach zwanzig Sekunden raeumt
-   sie sich aber selbst ab, damit kein Rest den Bildschirm belegt. */
+   bevor man sie gelesen hatte. Ein Tipp irgendwo auf die Meldung schliesst sie
+   sofort — deshalb traegt sie sichtbar ein Kreuz. Von selbst raeumt sie sich
+   nach fuenf Sekunden ab, damit nichts den Bildschirm belegt. */
 (function (MF) {
   'use strict';
 
@@ -12,7 +12,7 @@
   var el = util.el;
 
   var MAX_OPEN = 4;      /* darueber verdraengen neue Meldungen die aeltesten */
-  var MAX_MS = 20000;    /* spaetestens dann geht sie von selbst */
+  var MAX_MS = 5000;     /* spaetestens dann geht sie von selbst */
 
   function close(node) {
     node.classList.remove('is-in');
