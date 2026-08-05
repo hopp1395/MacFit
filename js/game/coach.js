@@ -18,7 +18,67 @@
   };
   var HEALTH_LABELS = { herz: 'Herz', leber: 'Leber', schlaf: 'Schlaf', laune: 'Laune' };
 
+  /* Ab hier schaut der Trainer genauer hin. Frueher lag die Schwelle bei 50 —
+     da war der Wert schon im Keller; jetzt warnt er, bevor es bremst. */
+  var HEALTH_WATCH = 65;    /* im Blick behalten */
+  var HEALTH_ALARM = 45;    /* dringend gegensteuern */
+
   function state() { return MF.game.state.get(); }
+
+  /* Der Gesundheitswert, der am weitesten unten liegt. */
+  function worstHealth() {
+    var s = state();
+    var key = null, val = 101;
+    Object.keys(HEALTH_LABELS).forEach(function (k) {
+      if (s.health[k] < val) { val = s.health[k]; key = k; }
+    });
+    return { key: key, value: val, label: HEALTH_LABELS[key] };
+  }
+
+  /* Welche Kondition-Einheit passt zu einem schwachen Wert? Herz will
+     Ausdauer, Schlaf und Laune wollen Ruhe — die Leber holt kein Training
+     zurueck, dafuer gibt es die Reha-Kuren. */
+  function conditionFor(key) {
+    var wanted = key === 'herz' ? 'herz' : (key === 'leber' ? null : key);
+    if (!wanted) wanted = 'laune';
+    var best = null;
+    MF.data.exercises.list.forEach(function (ex) {
+      if (ex.kind !== 'kondition' || !ex.health) return;
+      if (!MF.game.training.isUnlocked(ex)) return;
+      if (MF.game.training.isInjured(ex.muscle)) return;
+      var v = ex.health[wanted] || 0;
+      if (v <= 0) return;
+      if (!best || v > (best.health[wanted] || 0)) best = ex;
+    });
+    return best;
+  }
+
+  /* Der Gesundheits-Rat des Trainers: null, solange alles im gruenen
+     Bereich liegt. Sonst { key, label, value, urgent, exercise, text }. */
+  function healthTip() {
+    var worst = worstHealth();
+    if (!worst.key || worst.value >= HEALTH_WATCH) return null;
+
+    var urgent = worst.value < HEALTH_ALARM;
+    var ex = conditionFor(worst.key);
+    var text;
+    if (worst.key === 'leber') {
+      text = urgent
+        ? 'Deine Leber ist am Anschlag. Setz die Kuren ab und kauf dir Erholung.'
+        : 'Die Leber trägt schwer. Zeit für eine ruhige Woche.';
+    } else if (ex) {
+      text = (urgent ? 'Dringend: ' : '') + worst.label + ' liegt bei '
+           + Math.round(worst.value) + '. Häng ' + ex.icon + ' ' + ex.name
+           + ' an dein Training — sauber ausgeführt holt das jedes Mal etwas zurück.';
+    } else {
+      text = worst.label + ' liegt bei ' + Math.round(worst.value)
+           + '. Weniger Volumen, mehr Schlaf — und im Shop steht Regeneration.';
+    }
+    return {
+      key: worst.key, label: worst.label, value: worst.value,
+      urgent: urgent, exercise: ex, text: text
+    };
+  }
 
   function splitToday() {
     var s = state();
@@ -55,16 +115,25 @@
      den global schwächsten auf. */
   function trainerPlan() {
     var s = state();
+    /* Steht ein Gesundheitswert schlecht, ist die Kondition-Einheit das
+       erste Tagesziel — Masse bringt nichts, wenn der Motor stottert. */
+    var tip = healthTip();
+    var healthTarget = tip && tip.exercise
+      ? { muscle: tip.exercise.muscle, exercise: tip.exercise.id, health: true }
+      : null;
+
     var ranked = MF.game.stats.weakestMuscles().filter(function (m) {
+      if (healthTarget && m.id === healthTarget.muscle) return false;
       return s.muscles[m.id].fatigue < 0.7 && !!bestExercise(m.id);
     });
 
+    var room = healthTarget ? 2 : 3;
     var picks = [];
     function add(m) {
       for (var i = 0; i < picks.length; i++) {
         if (picks[i].id === m.id) return;
       }
-      if (picks.length < 3) picks.push(m);
+      if (picks.length < room) picks.push(m);
     }
 
     var title = 'Schwachstellen';
@@ -82,6 +151,10 @@
     var targets = picks.map(function (m) {
       return { muscle: m.id, exercise: bestExercise(m.id).id };
     });
+    if (healthTarget) {
+      targets.unshift(healthTarget);
+      title = title + ' + Kondition';
+    }
     return { day: s.day, source: 'trainer', title: title, targets: targets };
   }
 
@@ -169,8 +242,9 @@
   function recommendation(worstKey) {
     var s = state();
 
-    /* Ein Wert im Keller wiegt schwerer als jeder Wachstumsbonus. */
-    var lowKey = null, lowVal = 50;
+    /* Ein schwacher Wert wiegt schwerer als jeder Wachstumsbonus — und der
+       Trainer wartet nicht, bis er im Keller ist. */
+    var lowKey = null, lowVal = HEALTH_WATCH;
     Object.keys(HEALTH_LABELS).forEach(function (k) {
       if (s.health[k] < lowVal) { lowVal = s.health[k]; lowKey = k; }
     });
@@ -213,15 +287,18 @@
 
     var flags = [];
     Object.keys(HEALTH_LABELS).forEach(function (k) {
-      if (s.health[k] < 50) {
-        flags.push(HEALTH_LABELS[k] + ' angeschlagen (' + Math.round(s.health[k]) + ' von 100) — schone dich.');
-      }
+      var v = s.health[k];
+      if (v >= HEALTH_WATCH) return;
+      flags.push(HEALTH_LABELS[k] + (v < HEALTH_ALARM ? ' angeschlagen (' : ' im Sinkflug (')
+        + Math.round(v) + ' von 100)'
+        + (v < HEALTH_ALARM ? ' — schone dich.' : ' — jetzt gegensteuern, nicht später.'));
     });
 
     return {
       weakest3: ranked.slice(0, 3),
       componentAdvice: { name: worst.name, text: ADVICE[worst.key] || '' },
       healthFlags: flags,
+      healthTip: healthTip(),
       shopTip: recommendation(worst.key)
     };
   }
@@ -234,8 +311,11 @@
   });
 
   MF.game.coach = {
+    HEALTH_WATCH: HEALTH_WATCH,
+    HEALTH_ALARM: HEALTH_ALARM,
     splitToday: splitToday,
     bestExercise: bestExercise,
+    healthTip: healthTip,
     todayTargets: todayTargets,
     isTargetMuscle: isTargetMuscle,
     isTargetExercise: isTargetExercise,

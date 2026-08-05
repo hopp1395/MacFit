@@ -44,6 +44,13 @@
     var healed = [];        /* Partien, deren Zerrung heute Nacht ausheilt */
     var injured = [];       /* noch gesperrte Partien mit Resttagen */
 
+    /* Laufende Kuren mit heal-Wert (Physiotherapie) verkuerzen Zwangspausen. */
+    var healBonus = 0;
+    s.active.forEach(function (entry) {
+      var def = MF.data.supplements.get(entry.id);
+      if (def && def.heal) healBonus += def.heal;
+    });
+
     MF.data.muscles.list.forEach(function (def) {
       var m = s.muscles[def.id];
       var before = m.size;
@@ -65,9 +72,10 @@
       m.size = util.clamp(m.size, 5, 100);
       m.pending = 0;
       m.setsToday = 0;
-      /* Eine Zerrung heilt pro Nacht einen Tag ab. */
+      /* Eine Zerrung heilt pro Nacht einen Tag ab — mit Physiotherapie
+         entsprechend schneller. */
       if (m.injuryDays > 0) {
-        m.injuryDays -= 1;
+        m.injuryDays = Math.max(0, m.injuryDays - (1 + healBonus));
         if (m.injuryDays === 0) healed.push(def.name);
       }
       m.fatigue = util.clamp(m.fatigue * (1 - util.clamp(def.regen * regenMult, 0.1, 0.95)), 0, 1);

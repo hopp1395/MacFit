@@ -287,6 +287,7 @@
 }
 
 .tag--good { background: rgba(62, 207, 122, .14); color: var(--good); }
+.tag--health { background: rgba(255, 84, 112, .12); color: var(--warn); }
 .tag--bad { background: rgba(255, 84, 112, .14); color: var(--bad); }
 
 .card__action { margin-top: 2px; }

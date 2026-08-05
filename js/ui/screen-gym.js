@@ -110,6 +110,19 @@
 
   /* ---------- Geräte der gewählten Partie --------------------------------- */
 
+  /* Was eine Kondition-Einheit bringt, in einer Zeile: "+3 Herz, +1 Laune". */
+  var HEALTH_NAMES = { herz: 'Herz', leber: 'Leber', schlaf: 'Schlaf', laune: 'Laune' };
+
+  function healthSummary(ex) {
+    var parts = [];
+    Object.keys(HEALTH_NAMES).forEach(function (k) {
+      var v = ex.health && ex.health[k];
+      if (v > 0) parts.push('+' + util.formatNum(v, 1) + ' ' + HEALTH_NAMES[k]);
+    });
+    if (ex.recovery) parts.push('−Ermüdung');
+    return parts.join(', ');
+  }
+
   function exerciseRow(ex) {
     var s = state();
     var unlocked = MF.game.training.isUnlocked(ex);
@@ -128,9 +141,15 @@
         text: plan && plan.source === 'trainer' ? 'Trainer-Tipp' : 'Plan'
       }));
     }
+    /* Kondition sieht man der Zeile an — sie kostet Energie und bringt
+       kaum Reiz, dafuer Gesundheit. Ohne Hinweis waere sie nur schlecht. */
+    if (unlocked && ex.kind === 'kondition') {
+      bodyKids.push(el('span.tag.tag--health.exrow__tag', { text: '❤️ Kondition' }));
+    }
     bodyKids.push(el('span.exrow__meta', {
       text: unlocked
         ? '⚡ ' + cost + ' · ' + ex.reps + ' Reps'
+          + (ex.kind === 'kondition' ? ' · ' + healthSummary(ex) : '')
         : 'gesperrt'
     }));
     row.appendChild(el('span.exrow__body', null, bodyKids));
