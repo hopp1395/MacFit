@@ -261,6 +261,17 @@
     s.stats.perfectReps += perfect;
     if (formScore > s.stats.bestForm) s.stats.bestForm = formScore;
 
+    /* Tageskonto fuer die Zusammenfassung vor dem Feierabend. */
+    if (s.today.day !== s.day) {
+      s.today.day = s.day;
+      s.today.reps = 0;
+      s.today.perfect = 0;
+      s.today.xp = 0;
+    }
+    s.today.reps += reps;
+    s.today.perfect += perfect;
+    s.today.xp += xp;
+
     /* Ein völlig verrissener Satz drückt auf die Laune. */
     if (formScore < 0.35) {
       s.health.laune = util.clamp(s.health.laune - 1.5, 0, 100);
@@ -317,6 +328,15 @@
     return result;
   }
 
+  /* Was heute schon zusammengekommen ist. Zahlen aus einem frueheren Tag
+     zaehlen nicht mehr — dann faengt der Tag bei null an. */
+  function todayTally() {
+    var s = state();
+    var t = s.today;
+    if (t.day !== s.day) return { reps: 0, perfect: 0, xp: 0 };
+    return { reps: t.reps, perfect: t.perfect, xp: t.xp };
+  }
+
   function gradeFor(formScore) {
     if (formScore >= 0.92) return { text: 'Perfekte Ausführung', tone: 'good' };
     if (formScore >= 0.75) return { text: 'Sauberer Satz', tone: 'good' };
@@ -344,6 +364,7 @@
     driftAmp: driftAmp,
     wobbleChance: wobbleChance,
     spotterOffer: spotterOffer,
+    todayTally: todayTally,
     beginSet: beginSet,
     chargeRep: chargeRep,
     finishSet: finishSet
