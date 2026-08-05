@@ -50,7 +50,9 @@
         natural: true,       /* nie etwas aus 'grenz' oder 'anabol' genommen */
         peakMass: 0
       },
-      history: [],           /* [{ day, mass }] — letzte 40 Tage */
+      /* Ein Eintrag pro abgeschlossenem Tag, letzte 40:
+         [{ day, mass, gain, fit, sets, level }] — siehe game/day.js. */
+      history: [],
       /* created bleibt false, bis die Anlage durchlaufen ist. Alte Spielstände
          ohne diesen Block laufen dadurch einmalig durch die Anlage.
          photo ist ein verkleinertes JPEG als data-URL oder leer. */

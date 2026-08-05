@@ -98,12 +98,23 @@
     var massAfter = MF.game.stats.muscleMass();
     if (massAfter > s.stats.peakMass) s.stats.peakMass = massAfter;
 
-    s.history.push({ day: s.day, mass: util.round(massAfter, 2) });
-    if (s.history.length > 40) s.history.shift();
-
     gains.sort(function (a, b) { return b.delta - a.delta; });
 
     var fitAfter = MF.game.fitness.index();
+
+    /* Der Verlauf im Koerper-Bildschirm liest hier mit: ein Eintrag pro
+       abgeschlossenem Trainingstag (deshalb s.day - 1) mit dem, was die
+       Nacht daraus gemacht hat. Aeltere Staende haben nur day und mass —
+       die Anzeige kommt damit zurecht. */
+    s.history.push({
+      day: s.day - 1,
+      mass: util.round(massAfter, 2),
+      gain: util.round(massAfter - massBefore, 2),
+      fit: fitAfter,
+      sets: trained,
+      level: s.level
+    });
+    if (s.history.length > 40) s.history.shift();
 
     var report = {
       day: s.day,
