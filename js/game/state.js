@@ -34,9 +34,10 @@
       owned: {},             /* wie oft schon gekauft: { supplementId: n } */
       /* Coaching-Abos — bewusst getrennt von active: der Burnout leert active,
          ein bezahltes Abo darf er nicht mitreißen. todayPlan ist der Tagescache
-         der Zielpartien (nur IDs, muss durch JSON und Cloud passen). */
+         der Zielpartien (nur IDs, muss durch JSON und Cloud passen).
+         greetedDay: an welchem Tag der Trainer am Eingang schon gesprochen hat. */
       coach: { planDays: 0, planAuto: true, planStart: 0, trainer: false,
-               todayPlan: null },
+               todayPlan: null, greetedDay: 0 },
       /* Zettel vom Schwarzen Brett: gilt fuer genau einen Tag. */
       challenge: { day: 0, id: '', done: false, shownDay: 0 },
       /* Trainingsserie ueber echte Kalendertage (siehe game/streak.js). */

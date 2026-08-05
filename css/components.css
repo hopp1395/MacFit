@@ -1129,6 +1129,35 @@
   color: var(--text-faint);
 }
 
+/* ---------- Ansage des Trainers ------------------------------------------- */
+
+.brief {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brief__row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--bg-card-hi);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 9px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.brief__row.is-bad { border-color: var(--bad); }
+.brief__row.is-warn { border-color: var(--warn); }
+.brief__row.is-good { border-color: var(--good); }
+
+.brief__icon { flex: 0 0 auto; }
+.brief__text { color: var(--text-dim); }
+.brief__row.is-bad .brief__text,
+.brief__row.is-good .brief__text { color: var(--text); }
+
 /* ---------- Verlauf ------------------------------------------------------- */
 
 .hist {

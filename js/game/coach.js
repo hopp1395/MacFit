@@ -303,6 +303,100 @@
     };
   }
 
+  /* --- Die Ansprache am Eingang ------------------------------------------ */
+
+  /* Wie viele Saetze das heutige Ziel ungefaehr kostet — als Anhaltspunkt,
+     ob die Energie fuer den Plan reicht. */
+  function planCost() {
+    var plan = todayTargets();
+    if (!plan || !plan.targets.length) return 0;
+    var sum = 0;
+    plan.targets.forEach(function (t) {
+      var ex = MF.data.exercises.get(t.exercise);
+      if (ex) sum += MF.game.training.energyCost(ex, 1);
+    });
+    return sum;
+  }
+
+  /* Der Trainer sagt am Eingang, was heute ansteht — dieselben Hinweise
+     stehen im Koerper-Bildschirm. Ohne Trainer-Abo gibt es sie nicht:
+     dafuer zahlt man schliesslich den Tagessatz.
+     Gibt { hello, notes: [{ tone, text }], plan, analysis } oder null. */
+  function briefing() {
+    if (!MF.game.abos.trainerActive()) return null;
+    var s = state();
+    var a = analysis();
+    var plan = todayTargets();
+    var notes = [];
+
+    /* 1. Was heute ansteht. */
+    if (plan && plan.targets.length) {
+      var names = [];
+      plan.targets.forEach(function (t) {
+        var ex = MF.data.exercises.get(t.exercise);
+        var m = MF.data.muscles.get(t.muscle);
+        if (ex && m) {
+          names.push(m.name + ' (' + ex.name + ')'
+            + (s.muscles[t.muscle].setsToday > 0 ? ' ✔' : ''));
+        }
+      });
+      notes.push({ tone: 'good', text: 'Heute dran: ' + names.join(', ') + '.' });
+    }
+
+    /* 2. Gesundheit vor allem anderen. */
+    if (a.healthTip) {
+      notes.push({ tone: a.healthTip.urgent ? 'bad' : 'warn', text: a.healthTip.text });
+    }
+
+    /* 3. Zwangspausen — daran kommt heute niemand vorbei. */
+    var hurt = [];
+    MF.data.muscles.list.forEach(function (m) {
+      var d = s.muscles[m.id].injuryDays;
+      if (d > 0) hurt.push(m.name + ' (' + d + (d === 1 ? ' Tag' : ' Tage') + ')');
+    });
+    if (hurt.length) {
+      notes.push({ tone: 'bad', text: 'Gezerrt und gesperrt: ' + hurt.join(', ')
+        + '. Finger weg, das heilt nur mit Ruhe.' });
+    }
+
+    /* 4. Reicht die Energie fuer den Plan? */
+    var cost = planCost();
+    if (cost > 0) {
+      notes.push({
+        tone: s.energy >= cost ? 'flat' : 'warn',
+        text: s.energy >= cost
+          ? 'Für den Plan brauchst du ⚡ ' + cost + ', du hast ⚡ ' + Math.round(s.energy) + '.'
+          : 'Der Plan kostet ⚡ ' + cost + ', du hast nur ⚡ ' + Math.round(s.energy)
+            + '. Setz die erste Partie zuerst.'
+      });
+    }
+
+    /* 5. Der Zettel vom Brett — er zahlt sofort. */
+    var chal = MF.game.challenge.today();
+    if (chal && !MF.game.challenge.isDone()) {
+      notes.push({ tone: 'warn', text: 'Zettel am Brett: ' + chal.short + '.' });
+    }
+
+    /* 6. Die Serie haelt nur, wer heute etwas tut. */
+    var st = MF.game.streak.status();
+    if (st.days > 0 && !st.claimedToday) {
+      notes.push({ tone: 'warn', text: 'Deine Serie steht bei ' + st.days
+        + (st.days === 1 ? ' Tag' : ' Tagen') + ' — ein Satz heute, und sie bleibt.' });
+    }
+
+    /* 7. Zuletzt die groesste Baustelle am Index. */
+    notes.push({ tone: 'flat', text: a.componentAdvice.name + ': ' + a.componentAdvice.text });
+
+    var name = s.player.name || 'Sportsfreund';
+    var hello;
+    if (hurt.length) hello = 'Na, ' + name + '? Heute mit angezogener Handbremse.';
+    else if (a.healthTip && a.healthTip.urgent) hello = name + ', wir müssen kurz reden.';
+    else if (st.days >= 3) hello = name + ', ' + st.days + ' Tage in Folge — weiter so.';
+    else hello = 'Moin, ' + name + '. Machen wir was draus.';
+
+    return { hello: hello, notes: notes, plan: plan, analysis: a };
+  }
+
   /* Eine frische Zerrung macht die Tagesziele ungueltig — die gezerrte
      Partie darf nicht weiter als Auftrag dastehen. */
   MF.core.events.on('muscle:injured', function () {
@@ -321,6 +415,8 @@
     isTargetExercise: isTargetExercise,
     evaluateDay: evaluateDay,
     recommendation: recommendation,
-    analysis: analysis
+    analysis: analysis,
+    planCost: planCost,
+    briefing: briefing
   };
 })(window.MacFit);

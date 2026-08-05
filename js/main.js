@@ -299,12 +299,18 @@
     if (!s || !s.player.created || MF.ui.create.needed()) return;
 
     if (s.challenge.shownDay === s.day) {
-      askForEmail();
+      greetTrainer();
       return;
     }
     s.challenge.shownDay = s.day;
     MF.game.state.saveSoon();
-    MF.ui.shop.showBoard(askForEmail);
+    MF.ui.shop.showBoard(greetTrainer);
+  }
+
+  /* Nach dem Zettel spricht der Trainer — aber nur, wer ihn bezahlt, hat
+     einen. Danach geht es weiter zum Konto-Hinweis. */
+  function greetTrainer() {
+    MF.ui.trainer.greet(askForEmail);
   }
 
   /* Wer noch mit der Mitgliedsnummer angemeldet ist, wird am Eingang einmal
