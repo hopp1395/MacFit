@@ -419,24 +419,28 @@
     bike: {
       name: 'Spinning-Rad', face: 1,
       equip: [
-        { t: 'rect', x: 74, y: 112, w: 76, h: 6, rx: 3, c: '#2f3a4a' },
-        { t: 'circle', cx: 138, cy: 98, r: 13, c: '#3d4756' },
-        frameLine(86, 88, 126, 96, 4),
-        frameLine(84, 84, 100, 106, 4),
-        frameLine(126, 96, 122, 58, 4),
-        frameLine(115, 58, 130, 56, 3),
-        { t: 'circle', cx: 112, cy: 104, r: 5, c: '#69748a' },
-        pad(70, 79, 26, 5)
+        { t: 'rect', x: 72, y: 112, w: 74, h: 6, rx: 3, c: '#2f3a4a' },
+        { t: 'circle', cx: 140, cy: 96, r: 12, c: '#3d4756' },
+        frameLine(110, 102, 136, 98, 3),
+        frameLine(82, 80, 106, 104, 4),
+        frameLine(86, 82, 104, 79, 4),
+        frameLine(106, 104, 104, 80, 4),
+        frameLine(104, 80, 103, 60, 4),
+        frameLine(95, 60, 110, 58, 3),
+        { t: 'circle', cx: 110, cy: 102, r: 5, c: '#69748a' },
+        pad(69, 80, 24, 4),
+        frameLine(78, 80, 72, 58, 6)
       ],
       implement: 'none',
-      /* Sattel weit hinten, Bein fast gestreckt am tiefsten Punkt — sitzt der
-         Fahrer dicht an der Kurbel, hockt er zusammengefaltet auf dem Rad. */
-      hold: { hip: [82, 78], shoulder: [94, 56], head: [99, 45], elbow: [107, 62], hand: [120, 60] },
-      a: { knee: [103, 83], foot: [119, 104] },
-      b: { knee: [104, 78], foot: [105, 104] },
+      /* Sitzrad statt Rennhaltung: der Ruecken lehnt nach HINTEN an die
+         Lehne, die Arme greifen nach vorn an den Lenker. Sattel weit hinten,
+         damit sich das Bein am tiefsten Punkt fast durchstreckt. */
+      hold: { hip: [84, 78], shoulder: [78, 55], head: [74, 44], elbow: [90, 62], hand: [102, 62] },
+      a: { knee: [106, 78], foot: [117, 102] },
+      b: { knee: [106, 76], foot: [103, 102] },
       orbit: { knee: 'hip', foot: 'knee' },
       /* Der Tritt laeuft rund, nicht hin und her — siehe crankPose(). */
-      crank: { at: [112, 104], r: 7, rev: 1.1, thigh: 22, shin: 26 }
+      crank: { at: [110, 102], r: 7, rev: 1.1, thigh: 22, shin: 26 }
     },
 
     /* Yoga: stehend auf der Matte, die Arme wandern vom Brustbein nach oben.
