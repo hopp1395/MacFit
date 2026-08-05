@@ -69,10 +69,56 @@
   }
 
   /* Tippen: pointerdown statt click — spart die Klick-Verzoegerung am Handy. */
+  /* Ab so vielen Pixeln Fingerweg ist die Geste kein Tipp mehr, sondern
+     ein Wischen — dann darf nichts ausgeloest werden. */
+  var MOVE_LIMIT = 10;
+
+  function blocked(node) {
+    return node.disabled || node.classList.contains('is-locked');
+  }
+
+  /* Der normale Tipp: er zaehlt erst beim Loslassen und faellt aus, sobald
+     der Finger unterwegs ist.
+
+     Frueher lief der Handler direkt auf pointerdown, samt preventDefault.
+     Das kostete zwei Dinge auf einmal: preventDefault nimmt dem Browser
+     die Wischgeste, und die Aktion lief schon beim Aufsetzen los. In einer
+     scrollbaren Liste (Geraete bei Brust) landete man deshalb im Satz,
+     statt zu scrollen. Wo es auf jede Millisekunde ankommt — die Tippflaeche
+     im Satz — steht onPress. */
   function onTap(node, handler) {
+    var start = null;
+
+    node.addEventListener('pointerdown', function (ev) {
+      start = blocked(node) ? null : { x: ev.clientX, y: ev.clientY, id: ev.pointerId };
+    });
+
+    node.addEventListener('pointermove', function (ev) {
+      if (!start || (ev.pointerId !== undefined && ev.pointerId !== start.id)) return;
+      if (Math.abs(ev.clientX - start.x) > MOVE_LIMIT
+          || Math.abs(ev.clientY - start.y) > MOVE_LIMIT) {
+        start = null;
+      }
+    });
+
+    /* Beim Scrollen bricht der Browser den Zeiger ab — genau richtig. */
+    node.addEventListener('pointercancel', function () { start = null; });
+
+    node.addEventListener('pointerup', function (ev) {
+      var had = start;
+      start = null;
+      if (!had || (ev.pointerId !== undefined && ev.pointerId !== had.id)) return;
+      if (blocked(node)) return;
+      ev.preventDefault();
+      handler(ev);
+    });
+  }
+
+  /* Sofort beim Aufsetzen — nur fuer die Trefferleiste im Satz. */
+  function onPress(node, handler) {
     node.addEventListener('pointerdown', function (ev) {
       ev.preventDefault();
-      if (node.disabled || node.classList.contains('is-locked')) return;
+      if (blocked(node)) return;
       handler(ev);
     });
   }
@@ -92,6 +138,7 @@
     el: el,
     clear: clear,
     onTap: onTap,
+    onPress: onPress,
     deepCopy: deepCopy
   };
 })(window.MacFit);

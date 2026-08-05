@@ -95,7 +95,9 @@
     var hint = el('span.taparea__hint', { id: 'session-hint',
       text: 'Tippen, wenn der Marker in der grünen Zone ist' });
     var tap = el('button.taparea', { id: 'session-tap', type: 'button' }, [stage, hint]);
-    util.onTap(tap, onTap);
+    /* Hier zaehlt der Moment des Aufsetzens, nicht des Loslassens — sonst
+       laege jede Wiederholung um die Fingerzeit daneben. */
+    util.onPress(tap, onTap);
     container.appendChild(tap);
 
     scene = MF.ui.scene.mountSession(stage, ex.id);
