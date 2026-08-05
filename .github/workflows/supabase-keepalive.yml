@@ -1,0 +1,54 @@
+# Haelt das Supabase-Projekt wach.
+#
+# Ein Projekt im kostenlosen Tarif wird nach etwa sieben Tagen ohne jede
+# Anfrage pausiert. Da MacFit einen Pflicht-Login hat, startet das Spiel
+# dann gar nicht mehr — eine Urlaubswoche ohne Spieler wuerde also reichen.
+# Zweimal pro Woche eine harmlose Leseanfrage genuegt, damit das Projekt
+# als aktiv gilt.
+#
+# URL und Publishable Key stehen ohnehin oeffentlich in js/core/cloudconfig.js
+# (siehe Kommentar dort) — hier ist kein Geheimnis noetig, was ein Konto darf,
+# entscheidet die Row Level Security.
+name: Supabase wachhalten
+
+on:
+  schedule:
+    # Montag und Donnerstag um 05:17 UTC. Krumme Minute, damit der Auftrag
+    # nicht in der vollen Stunde mit aller Welt um Laeufer konkurriert.
+    - cron: '17 5 * * 1,4'
+  workflow_dispatch:        # von Hand ausloesbar, etwa nach einer Panne
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Projekt anpingen
+        env:
+          SUPABASE_URL: https://cwthjenqgpdrgplxfhkl.supabase.co
+          SUPABASE_KEY: sb_publishable_0wT3nHFz3Nru48-UlvXAhA_s26Gneez
+        run: |
+          set -u
+          fail=0
+
+          # 1. Auth-Dienst: antwortet ohne Anmeldung und zaehlt als Zugriff.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            -H "apikey: $SUPABASE_KEY" \
+            "$SUPABASE_URL/auth/v1/health")
+          echo "auth/v1/health -> $code"
+          [ "$code" = "200" ] || fail=1
+
+          # 2. Datenbank: eine Zeile aus saves lesen. Ohne Anmeldung liefert
+          #    die Row Level Security eine leere Liste — genau richtig, die
+          #    Anfrage hat die Datenbank trotzdem geweckt.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/saves?select=updated_at&limit=1")
+          echo "rest/v1/saves -> $code"
+          case "$code" in 200|206|401|403) ;; *) fail=1 ;; esac
+
+          if [ "$fail" = "1" ]; then
+            echo "Supabase antwortet nicht wie erwartet — bitte nachsehen."
+            exit 1
+          fi
+          echo "Projekt ist wach."
