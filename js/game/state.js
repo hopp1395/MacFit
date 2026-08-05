@@ -41,6 +41,10 @@
       challenge: { day: 0, id: '', done: false, shownDay: 0 },
       /* Trainingsserie ueber echte Kalendertage (siehe game/streak.js). */
       streak: { lastDay: '', days: 0, best: 0 },
+      /* Was heute zusammengekommen ist — fuer die Zusammenfassung vor dem
+         Feierabend. day haelt fest, fuer welchen Spieltag die Zahlen gelten;
+         beim Tageswechsel faengt die Zaehlung von selbst wieder bei null an. */
+      today: { day: 0, reps: 0, perfect: 0, xp: 0 },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -112,6 +116,9 @@
     });
     Object.keys(fresh.streak).forEach(function (k) {
       if (loaded.streak[k] === undefined) loaded.streak[k] = fresh.streak[k];
+    });
+    Object.keys(fresh.today).forEach(function (k) {
+      if (typeof loaded.today[k] !== 'number') loaded.today[k] = fresh.today[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];

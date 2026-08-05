@@ -188,6 +188,132 @@
     return wrap;
   }
 
+  /* ---------- Feierabend: erst der Tag, dann die Tuer -------------------- */
+
+  function sumRow(label, value, tone) {
+    return el('div.report__row', null, [
+      el('span.report__label', { text: label }),
+      el('strong.report__value.is-' + (tone || 'flat'), { text: value })
+    ]);
+  }
+
+  /* Was der Tag gebracht hat — steht vor dem Schlafen, damit man noch
+     umkehren kann, wenn etwas offen ist (Zettel, Tagesziel, Energie). */
+  function summaryBody() {
+    var s = state();
+    var sets = MF.game.day.setsToday();
+    var tally = MF.game.training.todayTally();
+    var body = el('div.report');
+
+    var block = el('div.report__block', null, [
+      sumRow('Sätze', String(sets), sets > 0 ? 'good' : 'warn'),
+      sumRow('Wiederholungen', tally.reps
+        ? tally.reps + ' (' + Math.round(tally.perfect / tally.reps * 100) + ' % perfekt)'
+        : '0'),
+      sumRow('Erfahrung', '+' + util.formatNum(tally.xp) + ' XP', tally.xp ? 'good' : 'flat'),
+      sumRow('Energie übrig', Math.round(s.energy) + ' von ' + MF.game.stats.energyMax(),
+             s.energy > MF.game.stats.energyMax() * 0.25 ? 'warn' : 'flat')
+    ]);
+    body.appendChild(block);
+
+    /* Welche Partien heute dran waren — mit dem, was nachts daraus wird. */
+    var trained = MF.data.muscles.list.filter(function (m) {
+      return s.muscles[m.id].setsToday > 0;
+    });
+    if (trained.length) {
+      body.appendChild(el('div.report__title', { text: 'Heute trainiert' }));
+      var tblock = el('div.report__block');
+      var ceiling = MF.game.stats.sizeCeiling();
+      var growth = MF.game.stats.growthMultiplier();
+      trained.forEach(function (def) {
+        var m = s.muscles[def.id];
+        var gain = MF.game.day.nightGain(def, m, ceiling, growth);
+        tblock.appendChild(sumRow(def.name,
+          m.setsToday + (m.setsToday === 1 ? ' Satz' : ' Sätze')
+            + ' · +' + util.formatNum(gain, 2) + ' kg über Nacht',
+          'good'));
+      });
+      body.appendChild(tblock);
+    } else {
+      body.appendChild(el('p.report__empty', {
+        text: 'Kein einziger Satz heute — ohne Reiz wächst über Nacht nichts.'
+      }));
+    }
+
+    /* Offene Posten: Tagesziel, Zettel, Serie. */
+    var open = el('div.report__block');
+    var plan = MF.game.coach.todayTargets();
+    if (plan && plan.targets.length) {
+      var done = 0;
+      plan.targets.forEach(function (t) {
+        if (s.muscles[t.muscle].setsToday > 0) done += 1;
+      });
+      open.appendChild(sumRow('Tagesziel (' + plan.title + ')',
+        done + ' von ' + plan.targets.length,
+        done >= plan.targets.length ? 'good' : (done ? 'warn' : 'bad')));
+    }
+
+    var chal = MF.game.challenge.today();
+    if (chal) {
+      var chalDone = MF.game.challenge.isDone();
+      open.appendChild(sumRow('📌 ' + chal.short,
+        chalDone ? 'erfüllt ✔' : 'noch offen',
+        chalDone ? 'good' : 'warn'));
+    }
+
+    var st = MF.game.streak.status();
+    open.appendChild(sumRow('🔥 Serie',
+      st.claimedToday
+        ? st.days + (st.days === 1 ? ' Tag' : ' Tage') + ' — heute gesichert'
+        : 'heute noch nicht gesichert',
+      st.claimedToday ? 'good' : 'warn'));
+    body.appendChild(open);
+
+    /* Energie verfaellt ueber Nacht — wer viel uebrig hat, verschenkt sie. */
+    if (s.energy > MF.game.stats.energyMax() * 0.25) {
+      body.appendChild(el('p.hint', {
+        text: 'Ein guter Teil deiner Energie ist noch übrig — sie verfällt heute Nacht. '
+            + 'Ein Satz mehr geht locker.'
+      }));
+    }
+
+    var hurt = MF.data.muscles.list.filter(function (m) {
+      return s.muscles[m.id].injuryDays > 0;
+    });
+    if (hurt.length) {
+      body.appendChild(el('div.report__warning', {
+        text: 'Gezerrt: ' + hurt.map(function (m) {
+          var d = s.muscles[m.id].injuryDays;
+          return m.name + ' (noch ' + d + (d === 1 ? ' Tag' : ' Tage') + ')';
+        }).join(', ') + '.'
+      }));
+    }
+
+    return body;
+  }
+
+  /* Der eigentliche Feierabend: Tag abschliessen, Film, Report. */
+  function goHome() {
+    MF.core.haptics.buzz('sleep');
+    MF.core.audio.sfx('sleep');
+    /* Erst den Tag abschließen, dann den Feierabend zeigen: der Report muss
+       die Werte der Nacht kennen, wenn der Film durch ist. */
+    var report = MF.game.day.sleep();
+    MF.ui.intro.playLeave(function () { MF.ui.report.show(report); });
+  }
+
+  function askLeave() {
+    MF.ui.modal.open({
+      title: 'Feierabend — Tag ' + state().day,
+      subtitle: 'Das ist heute zusammengekommen.',
+      body: summaryBody(),
+      actions: [
+        { label: '🛌 Schlafen gehen', tone: 'primary', onTap: goHome },
+        { label: 'Noch bleiben' }
+      ]
+    });
+  }
+
   function footer() {
     var s = state();
     var sets = MF.game.day.setsToday();
@@ -202,14 +328,7 @@
     ]));
 
     var btn = el('button.btn.btn--sleep.btn--slim', { type: 'button', text: '🛌 Schlafen' });
-    util.onTap(btn, function () {
-      MF.core.haptics.buzz('sleep');
-      MF.core.audio.sfx('sleep');
-      /* Erst den Tag abschließen, dann den Feierabend zeigen: der Report muss
-         die Werte der Nacht kennen, wenn der Film durch ist. */
-      var report = MF.game.day.sleep();
-      MF.ui.intro.playLeave(function () { MF.ui.report.show(report); });
-    });
+    util.onTap(btn, askLeave);
     bar.appendChild(btn);
     return bar;
   }
