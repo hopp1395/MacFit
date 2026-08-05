@@ -152,6 +152,9 @@
      "Durchtrainiert" gilt, bekommt ihn schon ab Normal. Die Form muss dabei
      makellos sein: ein einziges "okay" reicht, und er haelt sich raus. */
   function spotterOffer(exercise, weightIndex, hits) {
+    /* Kondition ist Ausdauer, kein Maximalversuch — hier steht niemand
+       hinter dir und ruft "eine geht noch". */
+    if (exercise.kind === 'kondition') return false;
     if (hits.length < exercise.reps) return false;
     var minWeight = MF.game.fitness.index() >= 600 ? 1 : 2;
     if (weightIndex < minWeight) return false;
@@ -166,6 +169,9 @@
   /* Lohnt sich direkt im Anschluss ein Dropset? Gibt die naechste Stufe
      zurueck oder null. result ist das Ergebnis des eben beendeten Satzes. */
   function dropOffer(result) {
+    /* Dropset heisst: Gewicht runter, sofort weiter. Beim Laufband oder auf
+       der Matte gibt es kein Gewicht, das man abwerfen koennte. */
+    if (result.exercise.kind === 'kondition') return null;
     var step = (result.dropStep || 0) + 1;
     if (step > DROP_MAX) return null;
     if (result.weightIndex < 1) return null;                 /* leichter geht nicht */
@@ -249,8 +255,12 @@
     /* Jede Wiederholung zahlt fuer sich: perfekt deutlich mehr als okay,
        dazu der Reiz des Satzes. So sieht man beim Tippen, wofuer man
        arbeitet — die Zahl steigt sichtbar mit jeder sauberen Rep. */
+    /* Kondition laeuft ueber deutlich mehr Wiederholungen in einer weiten
+       Zone. Zaehlte jede davon wie eine schwere Rep, waere Ausdauer der
+       schnellste Weg zum Level — die Wiederholung zahlt hier halb. */
+    var repXp = exercise.kind === 'kondition' ? 0.5 : 1;
     var xp = Math.round(stimulus * 1.5)
-           + perfect * XP_PERFECT + ok * XP_OK
+           + Math.round((perfect * XP_PERFECT + ok * XP_OK) * repXp)
            + Math.round(flow.bonus * 40)          /* Serie zahlt sich doppelt aus */
            + wobbles * 3                          /* jede gerettete Ausreisser-Rep */
            + (forced === 'hit' ? 10 : 0);

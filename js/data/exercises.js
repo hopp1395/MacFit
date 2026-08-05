@@ -10,7 +10,9 @@
    Reiz, dafür Gesundheit — health gibt an, was ein sauberer Satz an Herz,
    Leber, Schlaf und Laune zurückholt (mit der Form skaliert). recovery
    senkt zusätzlich die Ermüdung ALLER Partien; sie hängen an der Partie,
-   die tatsächlich arbeitet, und tauchen dort in der Geräteliste auf. */
+   die tatsächlich arbeitet, und tauchen dort in der Geräteliste auf.
+   Ihre Sätze laufen über deutlich mehr Wiederholungen, kennen dafür weder
+   Dropset noch Spotter — und jede Wiederholung zahlt nur halbe Erfahrung. */
 (function (MF) {
   'use strict';
 
@@ -96,17 +98,17 @@
 
     /* --- Kondition: wenig Reiz, viel Gesundheit --------------------------- */
     { id: 'laufband', name: 'Laufband-Cardio', icon: '🏃', muscle: 'waden',
-      unlockLevel: 1, energy: 12, reps: 12, stimulus: 5, speed: 0.45, zone: 0.34,
+      unlockLevel: 1, energy: 12, reps: 26, stimulus: 5, speed: 0.45, zone: 0.34,
       kind: 'kondition', health: { herz: 3, laune: 1 },
       desc: 'Zwanzig Minuten im Grundlagenbereich. Das Herz dankt es dir jede Nacht.' },
 
     { id: 'spinning', name: 'Spinning-Kurs', icon: '🚴', muscle: 'beine',
-      unlockLevel: 3, energy: 20, reps: 16, stimulus: 9, speed: 0.72, zone: 0.26,
+      unlockLevel: 3, energy: 20, reps: 32, stimulus: 9, speed: 0.72, zone: 0.26,
       kind: 'kondition', health: { herz: 4.5, laune: 1.5, schlaf: 1 },
       desc: 'Dunkler Raum, laute Musik, jemand brüllt Zahlen. Danach lebst du gesünder.' },
 
     { id: 'yoga', name: 'Yoga-Flow', icon: '🧘', muscle: 'bauch',
-      unlockLevel: 2, energy: 10, reps: 10, stimulus: 6, speed: 0.38, zone: 0.36,
+      unlockLevel: 2, energy: 10, reps: 22, stimulus: 6, speed: 0.38, zone: 0.36,
       kind: 'kondition', health: { laune: 3.5, schlaf: 3, herz: 1 }, recovery: 0.15,
       desc: 'Atmen, halten, nicht wackeln. Löst die Verspannungen aus allen Partien.' },
 

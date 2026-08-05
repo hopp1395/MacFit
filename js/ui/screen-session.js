@@ -310,6 +310,9 @@
        Aufschlag — deshalb lohnt sich die naechste saubere Rep doppelt. */
     var gain = kind === 'perfect' ? MF.game.training.XP_PERFECT
              : kind === 'ok' ? MF.game.training.XP_OK : 0;
+    /* Kondition zahlt die Wiederholung halb — die Anzeige muss dasselbe
+       sagen wie die Abrechnung am Satzende. */
+    if (run.ex.kind === 'kondition') gain = Math.round(gain / 2);
     if (kind === 'perfect' && run.streak >= 2) gain += 2;   /* ab der dritten in Folge */
     if (saved) gain += 3;                                  /* gerettete Ausreisser-Rep */
     if (gain > 0) {
