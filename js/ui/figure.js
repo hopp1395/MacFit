@@ -118,8 +118,19 @@
        sie — so hebt sich beim Wadenheben die Ferse, waehrend die Zehen am
        Boden bleiben. Ohne toe zeigt der Fuss starr in Blickrichtung. */
     var toe = f.toe || [f.foot[0] + face * 5.5, f.foot[1] + 1.5];
-    var farToe = f.toe ? [f.toe[0] - 4, f.toe[1]]
-                       : [o.foot[0] + face * 5.5 - 4, o.foot[1] + 1.5];
+    /* Der hintere Fuss braucht eine eigene Spitze (f.farToe), sobald sich die
+       Fuesse unabhaengig bewegen — beim Gehen etwa. Fehlt sie, wird die
+       vordere Spitze mit ihrem ABSTAND zum Fuss uebernommen: bei Szenen mit
+       gleichlaufenden Fuessen (Wadenheben) kommt dasselbe heraus wie frueher,
+       beim Gehen zog sie den hinteren Schuh sonst zum vorderen hinueber. */
+    var farToe;
+    if (f.farToe) {
+      farToe = [f.farToe[0] - 4, f.farToe[1]];
+    } else if (f.toe) {
+      farToe = [o.foot[0] + (f.toe[0] - f.foot[0]) - 4, o.foot[1] + (f.toe[1] - f.foot[1])];
+    } else {
+      farToe = [o.foot[0] + face * 5.5 - 4, o.foot[1] + 1.5];
+    }
     var footW = th.calf * 0.8;
 
     /* 1. Kontur: erst hinten, dann vorne — ergibt eine saubere Silhouette. */

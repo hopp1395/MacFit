@@ -588,6 +588,21 @@
   background: var(--bad);
 }
 
+/* Kondition ist keine Partie: eigene Kachel über die ganze Breite, damit
+   sie sich vom Raster der acht Muskelgruppen absetzt. Der Balken zeigt,
+   wie weit der schwächste Gesundheitswert von 100 entfernt ist. */
+.mtile--kond {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.mtile--kond .mtile__sub { margin-left: auto; }
+.mtile--kond .mtile__bar { width: 34%; }
+.mtile--kond .mtile__bar i { background: var(--warn); }
+.mtile--kond .mtile__bar i.is-bad { background: var(--bad); }
+
 .mtile.is-active {
   background: var(--accent);
   border-color: var(--accent);

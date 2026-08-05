@@ -400,17 +400,35 @@
       b: { head: [96, 36], elbow: [93, 58], hand: [91, 49] }
     },
 
+    /* Laufband. Die Bandoberkante liegt bei 110, die Hüfte 44 darüber: das
+       Bein (22 + 26) behält damit auch im längsten Schritt einen Rest Beugung,
+       statt durchgestreckt zu überziehen. Früher stand die Hüfte auf 70 über
+       einem Band auf 103 — daher die Hockstellung. */
     treadmill: {
       name: 'Laufband', face: 1,
       equip: [
-        { t: 'rect', x: 70, y: 104, w: 64, h: 8, rx: 3, c: '#2f3a4a' },
-        frameLine(132, 60, 134, 104, 4),
-        frameLine(112, 62, 136, 62, 3)
+        { t: 'rect', x: 68, y: 110, w: 68, h: 8, rx: 3, c: '#2f3a4a' },
+        frameLine(134, 60, 136, 110, 4),
+        frameLine(112, 62, 138, 62, 3),
+        { t: 'rect', x: 128, y: 48, w: 16, h: 12, rx: 2, c: '#3d4756' }
       ],
       implement: 'none',
-      hold: { hip: [100, 70], shoulder: [100, 44], head: [99, 31] },
-      a: { knee: [110, 88], foot: [116, 103], elbow: [108, 58], hand: [112, 70] },
-      b: { knee: [92, 90], foot: [86, 103], elbow: [92, 58], hand: [88, 70] }
+      hold: { hip: [100, 66], shoulder: [100, 40], head: [99, 27] },
+      a: { knee: [108, 86], foot: [112, 110], elbow: [104, 54], hand: [108, 66] },
+      b: { knee: [94, 88], foot: [88, 110], elbow: [96, 54], hand: [92, 66] },
+      /* Gehen laeuft rund und ohne Umkehrpunkt — siehe gaitPose(). */
+      gait: {
+        /* swing 0.5: immer genau ein Fuss am Band — mit laengerer Standphase
+           standen beide gleichzeitig unten und klebten aneinander. Der weite
+           Schritt und die hohe Schwungphase halten sie auch beim Kreuzen
+           auseinander, farLift setzt das hintere Bein perspektivisch hoeher. */
+        ground: 110, front: 115, back: 85, lift: 11, rev: 0.95, swing: 0.5,
+        farLift: 2,
+        thigh: 22, shin: 26, arm: 15, fore: 13, bob: 1.2,
+        /* Vorlage des Rumpfs, sein Mitarbeiten je Schritt, das Nicken des
+           Kopfes — alles in Radiant. */
+        lean: 0.16, sway: 0.045, nod: 0.05
+      }
     },
 
     /* Spinning: sitzend auf dem Rad, Oberkoerper am Lenker fest, die Beine
@@ -520,21 +538,124 @@
   /* Fuß auf der Kreisbahn, Knie per Zwei-Knochen-Umkehr dazu. */
   function legAt(c, hip, ang) {
     var foot = [c.at[0] + Math.cos(ang) * c.r, c.at[1] + Math.sin(ang) * c.r];
+    return { foot: foot, knee: kneeFor(hip, foot, c.thigh, c.shin) };
+  }
+
+  /* Zwei-Knochen-Umkehr: wo liegt das Knie, wenn Hüfte und Fuß feststehen?
+     Abstand des Kniefußpunkts auf der Verbindung Hüfte–Fuß, dazu die Höhe
+     senkrecht darauf. Das Knie zeigt nach vorn, also auf die Seite, die
+     (uy, -ux) trifft — bei Blick nach rechts nach oben-vorn. */
+  function kneeFor(hip, foot, thigh, shin) {
     var dx = foot[0] - hip[0], dy = foot[1] - hip[1];
     var d = Math.sqrt(dx * dx + dy * dy);
-    if (d < 0.01) return { foot: foot, knee: hip };
-    var reach = Math.min(Math.max(d, Math.abs(c.thigh - c.shin) + 0.01), c.thigh + c.shin - 0.01);
+    if (d < 0.01) return [hip[0], hip[1]];
+    var reach = Math.min(Math.max(d, Math.abs(thigh - shin) + 0.01), thigh + shin - 0.01);
     var ux = dx / d, uy = dy / d;
+    var along = (reach * reach + thigh * thigh - shin * shin) / (2 * reach);
+    var high = Math.sqrt(Math.max(0, thigh * thigh - along * along));
+    return [hip[0] + ux * along + uy * high, hip[1] + uy * along - ux * high];
+  }
 
-    /* Abstand des Kniefußpunkts auf der Verbindung Hüfte–Fuß, dazu die Höhe
-       senkrecht darauf. Das Knie zeigt nach vorn, also auf die Seite, die
-       (uy, -ux) trifft — bei Blick nach rechts nach oben-vorn. */
-    var along = (reach * reach + c.thigh * c.thigh - c.shin * c.shin) / (2 * reach);
-    var high = Math.sqrt(Math.max(0, c.thigh * c.thigh - along * along));
+  /* --- Gehen ------------------------------------------------------------
+     Zwei Keyframes reichen fürs Gehen nicht: dazwischen liegt eine Gerade,
+     an beiden Enden steht die Bewegung, und beide Beine machen dasselbe —
+     das sah aus wie Hüpfen auf der Stelle. Hier läuft stattdessen ein
+     echter Schrittzyklus nach der Uhr:
+
+       Standphase  Fuß liegt auf dem Band und wandert mit ihm nach hinten
+       Schwungphase Fuß hebt ab, schwingt im Bogen nach vorn und setzt auf
+
+     Das zweite Bein läuft einen halben Zyklus versetzt, die Arme schwingen
+     gegengleich zum jeweiligen Bein, und der Körper wippt zweimal je
+     Zyklus — einmal pro Schritt. */
+  function footAt(g, phase) {
+    var u = phase - Math.floor(phase);
+    var stance = 1 - g.swing;
+    if (u < stance) {
+      var k = u / stance;                       /* mit dem Band nach hinten */
+      return [g.front + (g.back - g.front) * k, g.ground];
+    }
+    var v = (u - stance) / g.swing;
+    var e = v * v * (3 - 2 * v);                /* weich anlaufen und aufsetzen */
+    return [g.back + (g.front - g.back) * e, g.ground - Math.sin(Math.PI * v) * g.lift];
+  }
+
+  /* Arm als zwei Glieder, die um die Schulter pendeln. ang > 0 = nach vorn. */
+  function armAt(g, shoulder, ang) {
+    var bend = 0.35 + Math.max(0, ang) * 0.6;   /* vorn stärker angewinkelt */
+    var elbow = [shoulder[0] + Math.sin(ang) * g.arm, shoulder[1] + Math.cos(ang) * g.arm];
     return {
-      foot: foot,
-      knee: [hip[0] + ux * along + uy * high, hip[1] + uy * along - ux * high]
+      elbow: elbow,
+      hand: [elbow[0] + Math.sin(ang + bend) * g.fore, elbow[1] + Math.cos(ang + bend) * g.fore]
     };
+  }
+
+  /* Vektor um einen Winkel drehen (Bildkoordinaten, y zeigt nach unten):
+     ein positiver Winkel kippt die Spitze nach vorn, also nach +x. */
+  function turn(vec, ang) {
+    var c = Math.cos(ang), s = Math.sin(ang);
+    return [vec[0] * c - vec[1] * s, vec[0] * s + vec[1] * c];
+  }
+
+  function gaitPose(scene, out, t, time) {
+    var g = scene.gait;
+    var phase = (time === undefined || time === null ? t : time * g.rev);
+    var u = phase - Math.floor(phase);
+
+    /* Wippen: bei jedem Aufsetzen sackt der Körper leicht ein. */
+    var drop = Math.abs(Math.sin(u * Math.PI * 2)) * g.bob;
+    ['hip', 'shoulder', 'head'].forEach(function (j) {
+      if (out[j]) out[j] = [out[j][0], out[j][1] + drop];
+    });
+
+    var hip = out.hip;
+
+    /* Der Oberkörper steht nicht senkrecht wie ein Brett: er neigt sich
+       nach vorn und arbeitet bei jedem Schritt ein wenig mit. Rumpf und
+       Kopf werden dafür als starre Glieder um die Hüfte gedreht — die
+       Längen bleiben, nur die Richtung ändert sich. Der Kopf nickt eine
+       Spur versetzt hinterher, sonst wirkt alles wie aus einem Stück. */
+    if (out.shoulder && (g.lean || g.sway)) {
+      var lean = (g.lean || 0) + (g.sway || 0) * Math.sin(u * Math.PI * 4);
+      var neck = out.head
+        ? [out.head[0] - out.shoulder[0], out.head[1] - out.shoulder[1]]
+        : null;
+      var trunk = turn([out.shoulder[0] - hip[0], out.shoulder[1] - hip[1]], lean);
+      out.shoulder = [hip[0] + trunk[0], hip[1] + trunk[1]];
+      if (neck) {
+        var nod = lean + (g.nod || 0) * Math.sin((u - 0.12) * Math.PI * 4);
+        var turned = turn(neck, nod);
+        out.head = [out.shoulder[0] + turned[0], out.shoulder[1] + turned[1]];
+      }
+    }
+    var near = footAt(g, phase);
+    var far = footAt(g, phase + 0.5);
+    /* Das hintere Bein steht weiter weg: ein paar Pixel hoeher, sonst
+       verschmelzen beide Fuesse beim Kreuzen zu einem Klumpen. */
+    if (g.farLift) far = [far[0], far[1] - g.farLift];
+    out.foot = near;
+    out.knee = kneeFor(hip, near, g.thigh, g.shin);
+    out.farFoot = far;
+    out.farKnee = kneeFor(hip, far, g.thigh, g.shin);
+
+    /* Fußspitzen: sie zeigen beim Abheben nach unten und richten sich zum
+       Aufsetzen wieder auf — ein starrer Klotz am Bein sieht steif aus.
+       Beide Füße brauchen ihre eigene Spitze, sonst hängt der hintere Schuh
+       am vorderen (siehe figure.js). */
+    function toeFor(pt) {
+      return [pt[0] + 5, pt[1] + Math.min(3, (g.ground - pt[1]) * 0.35)];
+    }
+    out.toe = toeFor(near);
+    out.farToe = toeFor(far);
+
+    /* Arme gegengleich: das vordere Bein gehört zum hinteren Arm. */
+    var swing = Math.sin(phase * Math.PI * 2) * 0.55;
+    var nearArm = armAt(g, out.shoulder, -swing);
+    var farArm = armAt(g, out.shoulder, swing);
+    out.elbow = nearArm.elbow;
+    out.hand = nearArm.hand;
+    out.farElbow = farArm.elbow;
+    out.farHand = farArm.hand;
   }
 
   /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt).
@@ -593,6 +714,7 @@
       }
     }
     if (scene.crank) crankPose(scene, out, t, time);
+    if (scene.gait) gaitPose(scene, out, t, time);
     return out;
   }
 
