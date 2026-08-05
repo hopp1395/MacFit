@@ -94,7 +94,7 @@
 
     drawEquip(ctx, scene.equip);
 
-    var pose = SC.poseAt(scene, t);
+    var pose = SC.poseAt(scene, t, opts.time);
 
     /* Anstrengungszittern nahe der schweren Endlage: ein halber Pixel,
        deterministisch aus der Zeit (kein Zufall — Aufzeichnungen bleiben
