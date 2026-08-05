@@ -418,7 +418,12 @@
       b: { knee: [94, 88], foot: [88, 110], elbow: [96, 54], hand: [92, 66] },
       /* Gehen laeuft rund und ohne Umkehrpunkt — siehe gaitPose(). */
       gait: {
-        ground: 110, front: 112, back: 88, lift: 8, rev: 0.95, swing: 0.42,
+        /* swing 0.5: immer genau ein Fuss am Band — mit laengerer Standphase
+           standen beide gleichzeitig unten und klebten aneinander. Der weite
+           Schritt und die hohe Schwungphase halten sie auch beim Kreuzen
+           auseinander, farLift setzt das hintere Bein perspektivisch hoeher. */
+        ground: 110, front: 115, back: 85, lift: 11, rev: 0.95, swing: 0.5,
+        farLift: 2,
         thigh: 22, shin: 26, arm: 15, fore: 13, bob: 1.2,
         /* Vorlage des Rumpfs, sein Mitarbeiten je Schritt, das Nicken des
            Kopfes — alles in Radiant. */
@@ -625,6 +630,9 @@
     }
     var near = footAt(g, phase);
     var far = footAt(g, phase + 0.5);
+    /* Das hintere Bein steht weiter weg: ein paar Pixel hoeher, sonst
+       verschmelzen beide Fuesse beim Kreuzen zu einem Klumpen. */
+    if (g.farLift) far = [far[0], far[1] - g.farLift];
     out.foot = near;
     out.knee = kneeFor(hip, near, g.thigh, g.shin);
     out.farFoot = far;
