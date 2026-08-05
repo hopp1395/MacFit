@@ -26,7 +26,7 @@
 
   /* Die Einkaufsliste des Trainers: mehrere Vorschläge mit Begründung,
      jeder mit dem Weg in die passende Shop-Kategorie. */
-  function shopList(tips, max) {
+  function shopList(tips, max, onGo) {
     var box = el('div.grid.shoptips');
     tips.slice(0, max || tips.length).forEach(function (tip) {
       var def = tip.def;
@@ -46,6 +46,9 @@
       util.onTap(go, function () {
         MF.game.state.get().settings.shopTab = def.tier;
         MF.game.state.saveSoon();
+        /* Aus dem Fenster heraus: erst zumachen, sonst liegt das Modal
+           ueber dem Shop, in den es gerade geschickt hat. */
+        if (onGo) onGo();
         MF.ui.router.go('shop');
       });
       row.appendChild(go);
@@ -86,13 +89,17 @@
 
     /* Die Einkaufsliste steht am Ende — sie kostet Geld, also nicht oben.
        Im Fenster zwei Vorschläge, der Rest steht im Körper-Bildschirm. */
+    var closeWindow = null;
     var tips = brief.analysis.shopTips || [];
     if (tips.length) {
       body.appendChild(el('div.section-title', { text: 'Der Trainer würde kaufen' }));
-      body.appendChild(shopList(tips, 2));
+      body.appendChild(shopList(tips, 2, function () {
+        if (closeWindow) closeWindow();
+        go();
+      }));
     }
 
-    MF.ui.modal.open({
+    closeWindow = MF.ui.modal.open({
       title: '🎯 Dein Trainer wartet schon',
       subtitle: brief.hello,
       body: body,
