@@ -419,7 +419,10 @@
       /* Gehen laeuft rund und ohne Umkehrpunkt — siehe gaitPose(). */
       gait: {
         ground: 110, front: 112, back: 88, lift: 8, rev: 0.95, swing: 0.42,
-        thigh: 22, shin: 26, arm: 15, fore: 13, bob: 1.2
+        thigh: 22, shin: 26, arm: 15, fore: 13, bob: 1.2,
+        /* Vorlage des Rumpfs, sein Mitarbeiten je Schritt, das Nicken des
+           Kopfes — alles in Radiant. */
+        lean: 0.16, sway: 0.045, nod: 0.05
       }
     },
 
@@ -582,6 +585,13 @@
     };
   }
 
+  /* Vektor um einen Winkel drehen (Bildkoordinaten, y zeigt nach unten):
+     ein positiver Winkel kippt die Spitze nach vorn, also nach +x. */
+  function turn(vec, ang) {
+    var c = Math.cos(ang), s = Math.sin(ang);
+    return [vec[0] * c - vec[1] * s, vec[0] * s + vec[1] * c];
+  }
+
   function gaitPose(scene, out, t, time) {
     var g = scene.gait;
     var phase = (time === undefined || time === null ? t : time * g.rev);
@@ -594,12 +604,35 @@
     });
 
     var hip = out.hip;
+
+    /* Der Oberkörper steht nicht senkrecht wie ein Brett: er neigt sich
+       nach vorn und arbeitet bei jedem Schritt ein wenig mit. Rumpf und
+       Kopf werden dafür als starre Glieder um die Hüfte gedreht — die
+       Längen bleiben, nur die Richtung ändert sich. Der Kopf nickt eine
+       Spur versetzt hinterher, sonst wirkt alles wie aus einem Stück. */
+    if (out.shoulder && (g.lean || g.sway)) {
+      var lean = (g.lean || 0) + (g.sway || 0) * Math.sin(u * Math.PI * 4);
+      var neck = out.head
+        ? [out.head[0] - out.shoulder[0], out.head[1] - out.shoulder[1]]
+        : null;
+      var trunk = turn([out.shoulder[0] - hip[0], out.shoulder[1] - hip[1]], lean);
+      out.shoulder = [hip[0] + trunk[0], hip[1] + trunk[1]];
+      if (neck) {
+        var nod = lean + (g.nod || 0) * Math.sin((u - 0.12) * Math.PI * 4);
+        var turned = turn(neck, nod);
+        out.head = [out.shoulder[0] + turned[0], out.shoulder[1] + turned[1]];
+      }
+    }
     var near = footAt(g, phase);
     var far = footAt(g, phase + 0.5);
     out.foot = near;
     out.knee = kneeFor(hip, near, g.thigh, g.shin);
     out.farFoot = far;
     out.farKnee = kneeFor(hip, far, g.thigh, g.shin);
+
+    /* Fußspitze: sie zeigt beim Abheben nach unten und richtet sich zum
+       Aufsetzen wieder auf — ein starrer Klotz am Bein sieht steif aus. */
+    out.toe = [near[0] + 5, near[1] + Math.min(3, (g.ground - near[1]) * 0.35)];
 
     /* Arme gegengleich: das vordere Bein gehört zum hinteren Arm. */
     var swing = Math.sin(phase * Math.PI * 2) * 0.55;
