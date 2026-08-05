@@ -35,38 +35,12 @@
     return wrap;
   }
 
-  /* ---------- Tagesziel aus Trainingsplan oder Trainer -------------------- */
-
-  function planBanner() {
-    var plan = MF.game.coach.todayTargets();
-    if (!plan || !plan.targets.length) return null;
-
-    var s = state();
-    var head = plan.source === 'trainer'
-      ? '🎯 Trainer: ' + plan.title
-      : '📋 ' + plan.title;
-
-    var bar = el('div.planbar');
-    bar.appendChild(el('span.planbar__title', { text: head }));
-
-    plan.targets.forEach(function (t) {
-      var ex = MF.data.exercises.get(t.exercise);
-      var m = MF.data.muscles.get(t.muscle);
-      if (!ex || !m) return;
-      var done = s.muscles[t.muscle].setsToday > 0;
-      var chip = el('button.planbar__chip' + (done ? '.is-done' : ''), {
-        type: 'button',
-        text: (done ? '✔ ' : '') + ex.icon + ' ' + m.name
-      });
-      util.onTap(chip, function () {
-        remember('muscle', t.muscle);
-        MF.ui.router.refresh('gym');
-      });
-      bar.appendChild(chip);
-    });
-
-    return bar;
-  }
+  /* Das Tagesziel stand hier fruher als eigenes Banner ueber dem Raster —
+     zusammen mit Halle, Kacheln, Geraeteliste und Fussleiste war der
+     Bildschirm damit voll. Die Ziele stehen jetzt in der Ansage des Trainers
+     am Eingang und im Koerper-Bildschirm; im Gym bleiben nur die stillen
+     Markierungen: die Ziel-Kachel traegt is-planned, die Ziel-Uebung ein
+     kleines Schild in der Zeile. */
 
   /* ---------- Muskelgruppen als Kachelraster ------------------------------ */
 
@@ -367,9 +341,6 @@
       container.appendChild(hall);
       MF.ui.scene.mountAmbient(hall);
     }
-
-    var banner = planBanner();
-    if (banner) container.appendChild(banner);
 
     container.appendChild(muscleGrid());
 
