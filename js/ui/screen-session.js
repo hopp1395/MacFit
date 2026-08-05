@@ -424,7 +424,7 @@
 
     MF.ui.modal.open({
       title: '💪 Der Spotter taucht auf',
-      subtitle: '„Eine geht noch. ALLES DU!“',
+      subtitle: '„Jede Rep sauber. Eine geht noch — ALLES DU!“',
       body: body,
       dismissible: false,
       actions: actions
