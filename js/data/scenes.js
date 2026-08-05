@@ -503,13 +503,26 @@
   function crankPose(scene, out, t, time) {
     var c = scene.crank;
     var ang = (time === undefined || time === null ? t : time * c.rev) * Math.PI * 2;
-    var foot = [c.at[0] + Math.cos(ang) * c.r, c.at[1] + Math.sin(ang) * c.r];
     var hip = out.hip;
     if (!hip) return;
 
+    /* Beide Pedale sitzen sich gegenüber: das zweite Bein läuft eine halbe
+       Umdrehung versetzt. figure.js zeichnet farKnee/farFoot als hinteres,
+       abgedunkeltes Bein. */
+    var near = legAt(c, hip, ang);
+    var far = legAt(c, hip, ang + Math.PI);
+    out.foot = near.foot;
+    out.knee = near.knee;
+    out.farFoot = far.foot;
+    out.farKnee = far.knee;
+  }
+
+  /* Fuß auf der Kreisbahn, Knie per Zwei-Knochen-Umkehr dazu. */
+  function legAt(c, hip, ang) {
+    var foot = [c.at[0] + Math.cos(ang) * c.r, c.at[1] + Math.sin(ang) * c.r];
     var dx = foot[0] - hip[0], dy = foot[1] - hip[1];
     var d = Math.sqrt(dx * dx + dy * dy);
-    if (d < 0.01) return;
+    if (d < 0.01) return { foot: foot, knee: hip };
     var reach = Math.min(Math.max(d, Math.abs(c.thigh - c.shin) + 0.01), c.thigh + c.shin - 0.01);
     var ux = dx / d, uy = dy / d;
 
@@ -518,8 +531,10 @@
        (uy, -ux) trifft — bei Blick nach rechts nach oben-vorn. */
     var along = (reach * reach + c.thigh * c.thigh - c.shin * c.shin) / (2 * reach);
     var high = Math.sqrt(Math.max(0, c.thigh * c.thigh - along * along));
-    out.foot = foot;
-    out.knee = [hip[0] + ux * along + uy * high, hip[1] + uy * along - ux * high];
+    return {
+      foot: foot,
+      knee: [hip[0] + ux * along + uy * high, hip[1] + uy * along - ux * high]
+    };
   }
 
   /* Vollständige Pose für einen Zeitpunkt t (0 = gestreckt, 1 = tiefster Punkt).
