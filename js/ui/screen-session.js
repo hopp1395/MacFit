@@ -205,10 +205,12 @@
 
   /* Die Bewertung der Wiederholung: steigt am Ort des Tippens auf, schaukelt
      dabei leicht hin und her und verblasst — der laengere Weg macht sie zum
-     Hauptdarsteller, die Zahlen daneben bleiben klein. */
+     Hauptdarsteller, die Zahlen daneben bleiben klein. Zwei Elemente, weil
+     Aufstieg und Schaukeln getrennte Animationen sind: beide zusammen auf
+     einem Element muessten sich denselben transform teilen. */
   function popRate(label, kind, x) {
-    var long = label.length > 12;
-    var node = el('span.ratepop.is-' + kind + (long ? '.is-long' : ''), { text: label });
+    var word = el('span.ratepop__word' + (label.length > 12 ? '.is-long' : ''), { text: label });
+    var node = el('span.ratepop.is-' + kind, null, [word]);
     popNode(nodes.xplayer, node, x, 1250);
   }
 
