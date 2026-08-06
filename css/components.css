@@ -2311,3 +2311,15 @@
   line-height: 1.5;
   color: var(--text-dim);
 }
+
+/* Antippbare Rivalen-Kachel: dieselbe Optik wie vorher, nur mit Pfeil und
+   einer Spur mehr Kontrast beim Druecken. */
+.rival__head.is-tap { cursor: pointer; }
+.rival__head.is-tap:active { background: var(--bg-card-hi); }
+
+.rival__go {
+  flex: 0 0 auto;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-faint);
+}

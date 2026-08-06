@@ -122,12 +122,45 @@
       + ' vor dir. Aufholen geht nur über Sätze.';
   }
 
+  /* Was er gerade sagt — beim Freund steht dort stattdessen, wie frisch
+     seine Zahlen sind. */
+  function saysNow() {
+    var says = MF.game.rival.line();
+    if (says) return '„' + says + '“';
+    var v = MF.game.rival.view();
+    return v.synced === state().day ? 'Zahlen von heute.' : 'Stand von Tag ' + v.synced + '.';
+  }
+
+  /* Ihn ansehen: dasselbe Fenster wie bei der Vorstellung, nur ohne Anlass.
+     Aufgerufen aus dem Körper-Bildschirm, wenn man seine Kachel antippt —
+     jedes Mal in einer anderen Pose. */
+  function show() {
+    if (!MF.game.rival.active()) return false;
+    var v = MF.game.rival.ensure();
+    if (!v) return false;
+
+    var body = el('div');
+    var pic = portrait();
+    if (pic) body.appendChild(pic);
+    body.appendChild(el('p.rival__quote', { text: saysNow() }));
+    body.appendChild(el('p.card__desc', { text: v.trait }));
+    body.appendChild(compare());
+    body.appendChild(el('p.hint', { text: standingText() }));
+
+    MF.ui.modal.open({
+      title: v.icon + ' ' + v.name,
+      subtitle: 'Seit Tag ' + v.since + ' im selben Studio',
+      body: body,
+      actions: [{ label: 'Alles klar', tone: 'primary' }]
+    });
+    return true;
+  }
+
   /* Der Block im Körper-Bildschirm — oder null, solange es keinen Rivalen gibt. */
   function panel() {
     if (!MF.game.rival.active()) return null;
     var v = MF.game.rival.ensure();
     if (!v) return null;
-    var s = state();
 
     var box = el('section.rival', { id: 'rival-panel' });
     box.appendChild(el('div.section-title', null, [
@@ -135,7 +168,9 @@
       el('span.section-title__note', { text: 'seit Tag ' + v.since })
     ]));
 
-    box.appendChild(el('div.rival__head', null, [
+    /* Die Kachel führt zu ihm: antippen zeigt ihn in einer Pose. Der Pfeil
+       rechts ist der einzige Hinweis darauf — mehr braucht es nicht. */
+    var head = el('div.rival__head.is-tap', null, [
       el('div.rival__icon', { text: v.icon }),
       el('div.rival__who', null, [
         el('div.rival__name', { text: v.name }),
@@ -144,19 +179,13 @@
       el('div.rival__sets', null, [
         el('strong', { text: String(v.sets) }),
         el('span', { text: 'Sätze' })
-      ])
-    ]));
+      ]),
+      el('span.rival__go', { text: '›' })
+    ]);
+    util.onTap(head, function () { show(); });
+    box.appendChild(head);
 
-    /* Ein NPC sagt etwas, ein Freund nicht — bei ihm steht dort, wie frisch
-       die Zahlen sind. */
-    var says = MF.game.rival.line();
-    box.appendChild(says
-      ? el('p.rival__quote', { text: '„' + says + '“' })
-      : el('p.rival__quote', {
-          text: v.synced === s.day ? 'Zahlen von heute.'
-            : 'Stand von Tag ' + v.synced + '.'
-        }));
-
+    box.appendChild(el('p.rival__quote', { text: saysNow() }));
     box.appendChild(compare());
     box.appendChild(el('p.hint', { text: standingText() }));
     return box;
@@ -212,7 +241,7 @@
   }
 
   MF.ui.rival = {
-    greet: greet, panel: panel, compare: compare,
+    greet: greet, show: show, panel: panel, compare: compare,
     portrait: portrait, randomPose: randomPose
   };
 })(window.MacFit);
