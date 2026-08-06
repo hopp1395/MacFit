@@ -98,6 +98,10 @@
     MF.game.economy.earn(income);
     var abo = MF.game.abos.tickNight();
 
+    /* Der Rivale trainiert weiter, auch wenn hier nichts passiert ist. Noch
+       vor dem Tageswechsel: sein Ruhetag haengt am gerade beendeten Tag. */
+    var rival = MF.game.rival.tickNight(massBefore, MF.game.stats.muscleMass());
+
     /* Neuer Tag */
     if (trained > 0) s.stats.daysTrained += 1;
     s.day += 1;
@@ -143,6 +147,7 @@
       coach: coachEval,
       challenge: chalEval,
       abo: abo,
+      rival: rival,
       healed: healed,
       injured: injured
     };

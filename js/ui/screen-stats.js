@@ -760,6 +760,8 @@
     container.appendChild(sharePanel());
     container.appendChild(avatarPanel());
     container.appendChild(fitnessPanel());
+    var rival = MF.ui.rival.panel();
+    if (rival) container.appendChild(rival);
     var trainer = trainerPanel();
     if (trainer) container.appendChild(trainer);
     container.appendChild(healthPanel());

@@ -299,12 +299,18 @@
     if (!s || !s.player.created || MF.ui.create.needed()) return;
 
     if (s.challenge.shownDay === s.day) {
-      greetTrainer();
+      greetRival();
       return;
     }
     s.challenge.shownDay = s.day;
     MF.game.state.saveSoon();
-    MF.ui.shop.showBoard(greetTrainer);
+    MF.ui.shop.showBoard(greetRival);
+  }
+
+  /* Danach der Rivale — meist nur ein Toast, ein Fenster gibt es bloss beim
+     ersten Treffen und beim Fuehrungswechsel. */
+  function greetRival() {
+    MF.ui.rival.greet(greetTrainer);
   }
 
   /* Nach dem Zettel spricht der Trainer — aber nur, wer ihn bezahlt, hat

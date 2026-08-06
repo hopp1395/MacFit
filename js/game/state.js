@@ -49,6 +49,10 @@
       /* Shakes von der Theke: gelten nur fuer den Tag in day (siehe
          game/shakes.js). bonus ist die heute dazugekaufte Energie. */
       shakes: { day: 0, count: 0, bonus: 0 },
+      /* Der Rivale (game/rival.js): id faellt aus der Mitgliedsnummer,
+         mass ist der einzige Wert, der wirklich mitwaechst. flip haelt einen
+         Fuehrungswechsel fest, bis er am Eingang erzaehlt wurde. */
+      rival: { id: '', mass: 0, sets: 0, since: 0, greetedDay: 0, flip: '' },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -126,6 +130,9 @@
     });
     Object.keys(fresh.shakes).forEach(function (k) {
       if (typeof loaded.shakes[k] !== 'number') loaded.shakes[k] = fresh.shakes[k];
+    });
+    Object.keys(fresh.rival).forEach(function (k) {
+      if (loaded.rival[k] === undefined) loaded.rival[k] = fresh.rival[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];
