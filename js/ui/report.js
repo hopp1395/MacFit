@@ -73,6 +73,13 @@
         block.appendChild(line('Personal Trainer', '−' + util.formatMoney(report.abo.trainerCost), 'flat'));
       }
     }
+    /* Koerperfett direkt unter der Masse: die beiden gehoeren zusammen
+       gelesen, sonst freut man sich ueber Zuwachs, der keiner ist. */
+    if (report.fat) {
+      block.appendChild(line('Körperfett',
+        util.formatNum(report.fat.after, 1) + ' % (' + deltaText(report.fat.delta, 2) + ')',
+        report.fat.delta < -0.005 ? 'good' : (report.fat.delta > 0.005 ? 'warn' : 'flat')));
+    }
     /* Der Termin auf der Buehne gehoert in den Bericht: er ist das
        einzige, worauf man ueber mehrere Tage hinarbeitet. */
     if (MF.game.contest.unlocked()) {

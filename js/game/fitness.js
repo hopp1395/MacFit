@@ -54,15 +54,19 @@
     return scoreForMass(MF.game.stats.muscleMass());
   }
 
-  /* 0.6 bis 1.0 — bestraft Einseitigkeit, schlechte Werte und schlampige Form. */
+  /* 0.6 bis 1.0 — bestraft Einseitigkeit, schlechte Werte, schlampige Form
+     und eine verwaschene Figur. Die Definition kam mit dem Koerperfett dazu
+     und nimmt sich ihr Gewicht von Symmetrie und Gesundheit: Masse allein
+     ist eben nicht Form. */
   function quality() {
     var sym = MF.game.stats.symmetry() / 100;
     var health = MF.game.stats.healthAvg() / 100;
     return 0.6 + 0.4 * (
-      sym * 0.30 +
-      health * 0.35 +
-      technique() * 0.20 +
-      consistency() * 0.15
+      sym * 0.24 +
+      health * 0.28 +
+      MF.game.fat.definition() * 0.20 +
+      technique() * 0.17 +
+      consistency() * 0.11
     );
   }
 
@@ -96,10 +100,11 @@
       quality: quality(),
       components: [
         { key: 'masse', name: 'Muskelmasse', value: massScore() / MAX, weight: 'Basis' },
-        { key: 'symmetrie', name: 'Symmetrie', value: MF.game.stats.symmetry() / 100, weight: '30 %' },
-        { key: 'gesundheit', name: 'Gesundheit', value: MF.game.stats.healthAvg() / 100, weight: '35 %' },
-        { key: 'technik', name: 'Technik', value: technique(), weight: '20 %' },
-        { key: 'konstanz', name: 'Regelmäßigkeit', value: consistency(), weight: '15 %' }
+        { key: 'symmetrie', name: 'Symmetrie', value: MF.game.stats.symmetry() / 100, weight: '24 %' },
+        { key: 'gesundheit', name: 'Gesundheit', value: MF.game.stats.healthAvg() / 100, weight: '28 %' },
+        { key: 'definition', name: 'Definition', value: MF.game.fat.definition(), weight: '20 %' },
+        { key: 'technik', name: 'Technik', value: technique(), weight: '17 %' },
+        { key: 'konstanz', name: 'Regelmäßigkeit', value: consistency(), weight: '11 %' }
       ]
     };
   }

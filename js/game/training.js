@@ -277,10 +277,14 @@
       s.today.reps = 0;
       s.today.perfect = 0;
       s.today.xp = 0;
+      s.today.kondition = 0;
+      s.today.fatIn = 0;
     }
     s.today.reps += reps;
     s.today.perfect += perfect;
     s.today.xp += xp;
+    /* Konditionssaetze zaehlen extra: sie verbrennen nachts am meisten. */
+    if (exercise.kind === 'kondition') s.today.kondition += 1;
 
     /* Kondition (Cardio, Spinning, Yoga): der Satz zahlt auf die Gesundheit
        ein statt auf die Masse — sauber ausgeführt bringt er den vollen Wert,

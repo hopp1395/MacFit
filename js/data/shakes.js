@@ -4,7 +4,11 @@
    zugleich eine hoehere Obergrenze, in der Nacht ist der Effekt wieder weg.
 
    Zwei Stueck pro Tag sind das Limit (MAX_PER_DAY). Ohne Deckel waere Energie
-   schlicht kaeuflich und der Tag haette kein Ende mehr. */
+   schlicht kaeuflich und der Tag haette kein Ende mehr.
+
+   fat: was der Becher nachts auf das Koerperfett legt (game/fat.js). Der
+   klare Iso-Shake schlaegt kaum zu Buche, der Mass-Gainer deutlich — er
+   heisst nicht umsonst so. */
 (function (MF) {
   'use strict';
 
@@ -12,19 +16,19 @@
 
   var LIST = [
     { id: 'hausmarke', name: 'Hausmarke Vanille', icon: '🥤',
-      price: 18, unlockLevel: 1, energy: 16,
+      price: 18, unlockLevel: 1, energy: 16, fat: 0.10,
       desc: 'Wasser, Pulver, Shaker. Schmeckt nach Studio und trägt durch den Nachmittag.' },
 
     { id: 'schoko-xl', name: 'Schoko-Protein XL', icon: '🍫',
-      price: 32, unlockLevel: 3, energy: 26,
+      price: 32, unlockLevel: 3, energy: 26, fat: 0.20,
       desc: 'Doppelte Portion, halbe Löslichkeit. Unten im Becher bleibt immer ein Rest.' },
 
     { id: 'beeren-iso', name: 'Beeren-Iso klar', icon: '🫐',
-      price: 55, unlockLevel: 5, energy: 38,
+      price: 55, unlockLevel: 5, energy: 38, fat: 0.12,
       desc: 'Klar wie Saft, liegt nicht schwer im Magen. Der Mann am Tresen ist sichtlich stolz darauf.' },
 
     { id: 'doppeldecker', name: 'Mass-Gainer "Doppeldecker"', icon: '🥛',
-      price: 95, unlockLevel: 7, energy: 55,
+      price: 95, unlockLevel: 7, energy: 55, fat: 0.55,
       desc: 'Neunhundert Kalorien im Becher. Danach geht viel — nur kein Bauchtraining.' }
   ];
 

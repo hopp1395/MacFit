@@ -157,6 +157,21 @@
     info.appendChild(el('div.body-info__label', { text: 'Muskelmasse' }));
     info.appendChild(el('div.body-info__title', { text: MF.game.progression.currentTitle() }));
 
+    /* Der zweite Wert neben der Masse: er entscheidet, wie viel davon man
+       sieht — und ob gerade Massephase oder Definitionsphase ist. */
+    var fat = MF.game.fat;
+    var mark = fat.label();
+    info.appendChild(el('div.body-info__row', null, [
+      el('span', { text: 'Körperfett' }),
+      el('strong.is-' + mark.tone, { text: util.formatNum(fat.percent(), 1) + ' %' })
+    ]));
+    info.appendChild(el('div.bar.bar--fat', null, [
+      el('div.bar__fill.is-' + mark.tone, {
+        style: 'width:' + (fat.definition() * 100).toFixed(0) + '%'
+      })
+    ]));
+    info.appendChild(el('div.body-info__label', { text: mark.text }));
+
     var sym = MF.game.stats.symmetry();
     info.appendChild(el('div.body-info__row', null, [
       el('span', { text: 'Symmetrie' }),

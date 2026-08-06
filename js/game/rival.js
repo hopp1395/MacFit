@@ -83,7 +83,7 @@
              + 'dem Konto.',
         mass: r.mass, fit: r.fit, sets: r.sets, since: r.since,
         synced: r.synced,
-        outfit: r.outfit || 'schwarz', health: 80, shape: null
+        outfit: r.outfit || 'schwarz', health: 80, shape: null, definition: 0.6
       };
     }
 
@@ -97,7 +97,8 @@
          Spieler, nur mit dem festen Qualitaetsfaktor der Figur. */
       fit: Math.round(MF.game.fitness.scoreForMass(r.mass) * d.quality),
       sets: r.sets, since: r.since, synced: 0,
-      outfit: d.outfit, health: d.health, shape: d.shape
+      outfit: d.outfit, health: d.health, shape: d.shape,
+      definition: d.definition
     };
   }
 
@@ -110,7 +111,10 @@
     if (!v) return null;
     return {
       muscles: MF.game.stats.sizesForMass(v.mass, v.shape),
-      health: v.health
+      health: v.health,
+      /* Sein Fettstand steckt in der Figur (data/rivals.js) — Kevin ist
+         weicher als Sonja, und das sieht man in der Pose. */
+      definition: v.definition
     };
   }
 

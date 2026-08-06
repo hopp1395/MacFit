@@ -13,6 +13,8 @@
     masse: 'Mehr schwere Sätze — Masse ist die Basis des Index.',
     symmetrie: 'Zu einseitig trainiert. Kümmere dich um die Partien unten.',
     gesundheit: 'Deine Werte bremsen das Wachstum. Gönn dir Ruhe oder eine Reha-Kur.',
+    definition: 'Die Masse ist da, man sieht sie nur nicht. Kondition rein, '
+              + 'Mass-Gainer raus — auf der Bühne zählt genau das.',
     technik: 'Zu viele unsaubere Wiederholungen. Weniger Gewicht, die grüne Zone treffen.',
     konstanz: 'Zu viele trainingsfreie Tage. Regelmäßigkeit schlägt Heldentaten.'
   };

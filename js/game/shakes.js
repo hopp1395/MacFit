@@ -66,6 +66,8 @@
     t.count += 1;
     t.bonus += def.energy;
     s.energy += def.energy;
+    /* Was drin ist, landet nachts auf dem Koerperfett. */
+    if (def.fat) MF.game.fat.addIntake(def.fat);
     s.owned[def.id] = (s.owned[def.id] || 0) + 1;
 
     MF.core.events.emit('energy:changed');

@@ -2402,3 +2402,17 @@
 
 /* Der Rivale im gemeldeten Feld. */
 .savebox.is-rival { border-color: var(--accent); }
+
+/* ---------- Koerperfett (v1.18.0) ----------------------------------------- */
+
+/* Die Leiste zeigt die Definition, nicht den Fettwert: voll heisst
+   durchgezeichnet. So laeuft sie in dieselbe Richtung wie alle anderen
+   Balken im Spiel — mehr ist besser. */
+.bar--fat {
+  height: 8px;
+  margin: 2px 0 0;
+}
+
+.bar--fat .bar__fill.is-good { background: var(--good); }
+.bar--fat .bar__fill.is-warn { background: var(--warn); }
+.bar--fat .bar__fill.is-bad { background: var(--bad); }
