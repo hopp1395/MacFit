@@ -9,7 +9,8 @@
      focus   breitere Trefferzone beim Training
    health (pro Nacht, negativ = Schaden, positiv = Erholung):
      herz / leber / schlaf / laune
-   crash: Tage mit Einbruch nach Kurende (Massenverlust + Wachstumsmalus) */
+   crash: Tage mit Einbruch nach Kurende (Massenverlust + Wachstumsmalus)
+   burn:  verbrennt zusaetzlich Koerperfett pro Nacht (game/fat.js) */
 (function (MF) {
   'use strict';
 
@@ -53,7 +54,7 @@
       desc: 'Kribbeln im Gesicht, Adern wie Landstraßen. Das Herz merkt es sich.' },
 
     { id: 'shredder', name: 'Shredder-X Thermo', icon: '🌡️', tier: 'grenz',
-      price: 210, unlockLevel: 6, days: 7,
+      price: 210, unlockLevel: 6, days: 7, burn: 0.30,
       effects: { focus: 0.25, energy: 24 },
       health: { herz: -2, schlaf: -3, laune: -1.5 },
       desc: 'Du schwitzt im Stehen und bist ständig leicht gereizt.' },
@@ -99,7 +100,7 @@
       desc: 'Aufguss, kaltes Becken, Ruheraum. Danach schläfst du wie ein Stein.' },
 
     { id: 'ernaehrung', name: 'Ernährungsberatung', icon: '🥗', tier: 'reha',
-      price: 150, unlockLevel: 3, days: 9,
+      price: 150, unlockLevel: 3, days: 9, burn: 0.18,
       effects: { growth: 0.10 },
       health: { leber: 4, laune: 1 },
       desc: 'Weniger Dosen, mehr Gemüse. Unspektakulär, wirkt auf jedem Blutbild.' },
@@ -129,7 +130,7 @@
       desc: 'Reden hilft. Auch beim Kreuzheben.' },
 
     { id: 'kardio-vorsorge', name: 'Kardio-Vorsorge', icon: '🫀', tier: 'reha',
-      price: 340, unlockLevel: 7, days: 6,
+      price: 340, unlockLevel: 7, days: 6, burn: 0.12,
       effects: { energy: 6 },
       health: { herz: 12, schlaf: 2 },
       desc: 'Belastungs-EKG, ehrliches Gespräch, Plan für den Puls. Das Herz kommt zurück.' },

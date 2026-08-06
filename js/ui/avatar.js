@@ -52,7 +52,11 @@
        Spieler im Körper-Bildschirm eine andere Figur als auf dem Teilen-Bild. */
     var shoulderW = 9.0 + f('schultern') * 4.4;
     var chestW = 4.0 + f('brust') * 2.7;
-    var waistW = 11.4 + f('bauch') * 4.9;
+    /* Das Koerperfett sitzt in der Taille: definiert wird sie schmaler,
+       weich baucht sie aus. Der Rest der Figur bleibt, wie er ist — Fett
+       macht nicht den Arm dick, sondern die Mitte. */
+    var definition = MF.game.fat.definition();
+    var waistW = (11.4 + f('bauch') * 4.9) * (1 - definition * 0.18);
     var armW = 4.7 + f('bizeps') * 3.9;
     var foreW = 3.7 + f('trizeps') * 2.7;      /* 0,75 x armW  */
     var thighW = 8.9 + f('beine') * 4.0;       /* 1,4  x armW  */
@@ -160,9 +164,11 @@
     px.disc(ctx, CX - shoulderW - 1, shoulderY - 1, shoulderW * 0.18, skinLit);
     px.disc(ctx, CX + shoulderW - 1, shoulderY - 1, shoulderW * 0.18, skinLit);
 
-    /* Bauchmuskeln zeichnen sich erst ab einer gewissen Größe ab. */
-    if (m.bauch.size > 26) {
-      var rows = m.bauch.size > 55 ? 3 : 2;
+    /* Bauchmuskeln zeichnen sich erst ab einer gewissen Größe ab — und nur,
+       wenn nicht zu viel darüber liegt. Genau das ist der Sinn des zweiten
+       Werts: die Masse kann da sein, ohne dass man sie sieht. */
+    if (m.bauch.size > 26 && definition > 0.35) {
+      var rows = m.bauch.size > 55 && definition > 0.6 ? 3 : 2;
       for (var row = 0; row < rows; row++) {
         px.rect(ctx, CX - 4, hipY - 13 + row * 4, 3, 2, r(-3));
         px.rect(ctx, CX + 1, hipY - 13 + row * 4, 3, 2, r(-3));

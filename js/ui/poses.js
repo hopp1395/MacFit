@@ -173,9 +173,12 @@
      Dämpfer 0,72 abbekommen, die Armmaße nicht — dadurch war der Oberarm
      dicker als der Oberschenkel. */
   /* muscles ist optional: ohne Angabe ist der eigene Körper gemeint, mit
-     Angabe ein fremder — so posiert auch der Rivale mit seinen Maßen. */
-  function widths(pose, muscles) {
+     Angabe ein fremder — so posiert auch der Rivale mit seinen Maßen.
+     definition (0..1) entscheidet über Taille und Bauchkerben; ohne Angabe
+     zählt der eigene Fettstand. */
+  function widths(pose, muscles, definition) {
     var m = muscles || MF.game.state.get().muscles;
+    var lean = definition === undefined ? MF.game.fat.definition() : definition;
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
     var k = 1.35;
 
@@ -188,7 +191,10 @@
          Schulterbreite auf 129,5 Punkte Höhe; vorher waren es bis zu 62. */
       shoulderSpan: (8.7 + f('schultern') * 4.2) * k,
       latHalf: latHalf,
-      waistHalf: (11 + f('bauch') * 4.7) * k * 0.5,
+      /* Definition zieht die Taille zusammen; Fett ist der Normalfall.
+         Bewusst nur nach unten: eine Taille, die breiter waere als der
+         Latissimus, kippt die Silhouette. */
+      waistHalf: (11 + f('bauch') * 4.7) * k * 0.5 * (1 - lean * 0.18),
       /* Die Schenkel sitzen unter dem Rumpf, nicht daneben. */
       hipHalf: thighW * 0.37,
       chestR: chestR,
@@ -202,7 +208,8 @@
       /* Angespannt wölbt sich der Muskelbauch, nicht der ganze Arm: flex geht
          nicht mehr auf armW, sondern nur auf den Bizepsberg in der Mitte. */
       flex: util.clamp(pose.flex || 1, 1, 1.15),
-      abs: f('bauch'),
+      /* Die Kerben zeichnen sich nur ab, wenn nichts darueber liegt. */
+      abs: lean > 0.35 ? f('bauch') * (0.55 + lean * 0.45) : 0,
       back: f('ruecken')
     };
   }
@@ -831,7 +838,8 @@
       ramp: sk
     };
 
-    var w = widths(pose, body ? body.muscles : null);
+    var w = widths(pose, body ? body.muscles : null,
+      body && body.definition !== undefined ? body.definition : undefined);
 
     /* Das aufgelegte Raster in Stahlgrau ist weg: die fahle Rampe färbt jetzt
        den ganzen Körper, statt ihm ein graues Netz überzuwerfen. */

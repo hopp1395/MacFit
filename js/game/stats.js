@@ -156,6 +156,9 @@
     var avg = healthAvg();
     if (avg < 80) mult *= 0.55 + 0.45 * (avg / 80);  /* schlechte Werte bremsen */
     if (s.crash) mult *= 0.45;                       /* Einbruch nach der Kur */
+    /* Ein leichter Ueberschuss baut besser auf als ein Defizit — das ist der
+       Grund, warum es die Massephase ueberhaupt gibt. */
+    mult *= MF.game.fat.growthFactor();
 
     return Math.max(0.1, mult);
   }

@@ -419,9 +419,17 @@
     }
 
     card.appendChild(el('p.card__desc', { text: def.desc }));
-    card.appendChild(el('div.card__meta', null, [
+    var tags = el('div.card__meta', null, [
       el('span.tag.tag--good', { text: 'Energie +' + def.energy })
-    ]));
+    ]);
+    /* Was drin ist, geht nachts aufs Koerperfett — beim Mass-Gainer
+       deutlich. Das gehoert auf die Karte, nicht ins Kleingedruckte. */
+    if (def.fat) {
+      tags.appendChild(el('span.tag' + (def.fat >= 0.3 ? '.tag--bad' : ''), {
+        text: 'Fett +' + util.formatNum(def.fat, 2) + ' %'
+      }));
+    }
+    card.appendChild(tags);
 
     var btn = el('button.btn.btn--primary.card__action', {
       type: 'button',

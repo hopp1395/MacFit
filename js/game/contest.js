@@ -3,10 +3,12 @@
    Die Bühnenwertung hat vier Teile, damit auf dem Ergebniszettel steht,
    woran es lag:
 
-     Masse        400 Punkte — was der Körper hergibt (fitness.massScore)
-     Posen        300 Punkte — wie gut die drei gewählten Posen zu den
+     Masse        320 Punkte — was der Körper hergibt (fitness.massScore)
+     Definition   150 Punkte — auf der Bühne zählt nicht nur, wie viel da
+                  ist, sondern ob man es sieht (game/fat.js)
+     Posen        250 Punkte — wie gut die drei gewählten Posen zu den
                   tatsächlich trainierten Partien passen
-     Symmetrie    150 Punkte — Einseitigkeit fällt auf der Bühne auf
+     Symmetrie    130 Punkte — Einseitigkeit fällt auf der Bühne auf
      Ausführung   150 Punkte — das Halten der Pose im Minispiel
 
    Darauf liegt die Gesundheit als Faktor (0,85 bis 1,0): wer kaputt ist,
@@ -127,21 +129,23 @@
 
   /* Die Aufschlüsselung — die Oberfläche zeigt genau diese Zeilen. */
   function score(poseIds, hits) {
-    var masse = MF.game.fitness.massScore() / MF.game.fitness.MAX * 400;
+    var masse = MF.game.fitness.massScore() / MF.game.fitness.MAX * 320;
+    var definition = MF.game.fat.definition() * 150;
     var posen = 0;
     (poseIds || []).forEach(function (id) { posen += poseScore(id); });
-    posen = poseIds && poseIds.length ? (posen / poseIds.length) * 300 : 0;
-    var symmetrie = MF.game.stats.symmetry() / 100 * 150;
+    posen = poseIds && poseIds.length ? (posen / poseIds.length) * 250 : 0;
+    var symmetrie = MF.game.stats.symmetry() / 100 * 130;
     var ausfuehrung = execution(hits) * 150;
     var health = 0.85 + 0.15 * (MF.game.stats.healthAvg() / 100);
 
     var parts = [
-      { key: 'masse', name: 'Masse', value: masse, max: 400 },
-      { key: 'posen', name: 'Posen', value: posen, max: 300 },
-      { key: 'symmetrie', name: 'Symmetrie', value: symmetrie, max: 150 },
+      { key: 'masse', name: 'Masse', value: masse, max: 320 },
+      { key: 'definition', name: 'Definition', value: definition, max: 150 },
+      { key: 'posen', name: 'Posen', value: posen, max: 250 },
+      { key: 'symmetrie', name: 'Symmetrie', value: symmetrie, max: 130 },
       { key: 'ausfuehrung', name: 'Ausführung', value: ausfuehrung, max: 150 }
     ];
-    var sum = masse + posen + symmetrie + ausfuehrung;
+    var sum = masse + definition + posen + symmetrie + ausfuehrung;
 
     return {
       parts: parts,
@@ -153,10 +157,11 @@
   /* Die eigene Wertung ohne Kür — Grundlage für die Stärke des Feldes.
      Ohne sie hinge die Konkurrenz an der Tagesform im Minispiel. */
   function baseScore() {
-    var masse = MF.game.fitness.massScore() / MF.game.fitness.MAX * 400;
-    var symmetrie = MF.game.stats.symmetry() / 100 * 150;
-    /* Mittelmaß bei Posen und Ausführung als Bezugspunkt. */
-    return Math.round((masse + 150 + symmetrie + 90));
+    var masse = MF.game.fitness.massScore() / MF.game.fitness.MAX * 320;
+    var symmetrie = MF.game.stats.symmetry() / 100 * 130;
+    /* Mittelmaß bei Definition, Posen und Ausführung als Bezugspunkt —
+       so misst sich das Feld an der Substanz, nicht an der Tagesform. */
+    return Math.round(masse + 75 + 125 + symmetrie + 90);
   }
 
   /* Immer dieselben Gegner am selben Tag in derselben Klasse — ohne

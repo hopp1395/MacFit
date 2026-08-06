@@ -35,6 +35,9 @@
     var regenMult = MF.game.stats.regenMultiplier();
     var ceiling = MF.game.stats.sizeCeiling();
     var trained = setsToday();
+    /* Die Konditionssaetze des Tages stehen im Tageskonto — sie verbrennen
+       nachts am meisten, gezaehlt wird vor dem Ruecksetzen. */
+    var konditionSets = s.today.day === s.day ? (s.today.kondition || 0) : 0;
     /* Plan und Zettel VOR dem Muskel-Loop auswerten — der setzt setsToday
        zurueck, und der naechste Tag haengt einen neuen Zettel aus. */
     var coachEval = MF.game.coach.evaluateDay();
@@ -87,6 +90,10 @@
         gains.push({ id: def.id, name: def.name, delta: delta });
       }
     });
+
+    /* Koerperfett noch vor den Kuren: die laufenden Kuren zaehlen mit ihrem
+       burn-Wert dazu, und danach koennen sie ablaufen. */
+    var fat = MF.game.fat.tickNight(trained, konditionSets);
 
     /* Kuren, Nebenwirkungen, Erholung */
     var supp = MF.game.supplements.tickNight();
@@ -148,6 +155,7 @@
       challenge: chalEval,
       abo: abo,
       rival: rival,
+      fat: fat,
       healed: healed,
       injured: injured
     };
