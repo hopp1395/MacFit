@@ -2500,7 +2500,10 @@
 }
 
 /* Zahlen in der Score-Reihe poppen kurz auf, wenn sie sich aendern. */
-.score__value.is-bump { animation: scoreBump .3s ease-out; }
+/* Zwei gleichwertige Klassen, damit der Satz-Bildschirm die Animation im
+   Wechsel neu anstossen kann, ohne ein Neuvermessen zu erzwingen. */
+.score__value.is-bump,
+.score__value.is-bump2 { animation: scoreBump .3s ease-out; }
 
 @keyframes scoreBump {
   0% { transform: scale(1); }
@@ -2514,7 +2517,8 @@
 .score__value.is-bad { color: var(--bad); }
 
 /* Ab "Schwer" setzt der Treffer sichtbar auf. */
-.stage.is-hit { animation: stageHit .22s ease-out; }
+.stage.is-hit,
+.stage.is-hit2 { animation: stageHit .22s ease-out; }
 
 @keyframes stageHit {
   0% { transform: translateY(0); }
@@ -2535,7 +2539,12 @@
   letter-spacing: .05em;
   white-space: nowrap;
   pointer-events: none;
-  text-shadow: 0 2px 7px rgba(0, 0, 0, .7);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .75);
+  /* Eigene Ebene, sonst ruckelt es: gedrehte, grosse Schrift mit weichem
+     Schatten muss der Browser in jedem einzelnen Bild neu rastern, und das
+     faellt mit der laufenden Szene daneben auf. Die XP-Krume war davon nie
+     betroffen — halb so gross, ohne Drehung, halb so lange unterwegs. */
+  will-change: transform, opacity;
   animation: ratefloat 1.25s cubic-bezier(.18, .7, .32, 1) forwards;
 }
 
@@ -2546,11 +2555,14 @@
 .ratepop.is-ok { color: var(--warn); }
 .ratepop.is-miss { color: var(--bad); }
 
+/* Das Schaukeln kommt jetzt allein aus der Seitwaertsbewegung, und der
+   Groessensprung bleibt klein: eine Ebene wird einmal gerastert, starke
+   Vergroesserung darin sieht weich aus. */
 @keyframes ratefloat {
-  0%   { opacity: 0; transform: translate(-50%, 12px) scale(.55) rotate(-3deg); }
-  14%  { opacity: 1; transform: translate(-50%, -4px) scale(1.18) rotate(2deg); }
-  30%  { opacity: 1; transform: translate(-50%, -26px) scale(1) rotate(-2deg); }
-  55%  { opacity: .85; transform: translate(-46%, -52px) scale(.99) rotate(2deg); }
-  78%  { opacity: .55; transform: translate(-54%, -76px) scale(.96) rotate(-1deg); }
-  100% { opacity: 0; transform: translate(-50%, -104px) scale(.92) rotate(0deg); }
+  0%   { opacity: 0; transform: translate(-50%, 12px) scale(.88); }
+  12%  { opacity: 1; transform: translate(-50%, -3px) scale(1.06); }
+  30%  { opacity: 1; transform: translate(-53%, -26px) scale(1); }
+  55%  { opacity: .85; transform: translate(-47%, -52px) scale(1); }
+  78%  { opacity: .5; transform: translate(-53%, -78px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -104px) scale(1); }
 }

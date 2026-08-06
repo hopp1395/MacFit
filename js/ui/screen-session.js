@@ -212,13 +212,26 @@
     popNode(nodes.xplayer, node, x, 1250);
   }
 
+  /* Eine Animation neu anstossen, ohne den Browser zu einer Zwischenrechnung
+     zu zwingen: zwei gleichwertige Klassen im Wechsel. Der uebliche Weg —
+     Klasse weg, Neuvermessung erzwingen, Klasse dran — kostet genau in dem
+     Bild ein Neuvermessen, in dem der Ballon startet; mehrmals pro Tipp
+     hintereinander sieht man das als Ruckler. */
+  function restart(node, a, b) {
+    if (!node) return;
+    if (node.classList.contains(a)) {
+      node.classList.remove(a);
+      node.classList.add(b);
+    } else {
+      node.classList.remove(b);
+      node.classList.add(a);
+    }
+  }
+
   /* Eine Zahl in der Score-Reihe hat sich geaendert — kurz aufpoppen, sonst
      uebersieht man den Zuwachs mitten im Tippen. */
   function bump(node) {
-    if (!node) return;
-    node.classList.remove('is-bump');
-    void node.getBoundingClientRect();
-    node.classList.add('is-bump');
+    restart(node, 'is-bump', 'is-bump2');
   }
 
   /* --- Ablauf ------------------------------------------------------------ */
@@ -477,11 +490,7 @@
 
     if (scene) scene.flash(kind);
     /* Ab "Schwer" bekommt der Treffer Wucht: die Szene setzt kurz auf. */
-    if (kind !== 'miss' && run.weightIndex >= 2) {
-      nodes.stage.classList.remove('is-hit');
-      void nodes.stage.getBoundingClientRect();
-      nodes.stage.classList.add('is-hit');
-    }
+    if (kind !== 'miss' && run.weightIndex >= 2) restart(nodes.stage, 'is-hit', 'is-hit2');
 
     updateScores();
 
