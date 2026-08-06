@@ -805,29 +805,162 @@
     return panel;
   }
 
+  /* ---------- Bereiche als Kacheln ---------------------------------------- */
+
+  /* Der Koerper-Bildschirm war eine einzige lange Kolonne: Karte, Figur,
+     Index, Gesundheit, Partien, Verlauf, Statistik und Einstellungen alle
+     untereinander. Am Handy scrollt man daran vorbei, statt etwas zu finden.
+
+     Jetzt sitzt oben dasselbe Kachelraster wie im Gym und im Shop, darunter
+     steht nur der gewaehlte Bereich. Sechs Kacheln gehen glatt in die drei
+     Spalten des Rasters auf. Die Wahl haengt am Spielstand, damit man nach
+     einem Blick ins Gym wieder dort landet, wo man war. */
+  var TABS = [
+    {
+      key: 'figur', name: 'Figur',
+      sub: function () { return util.formatKg(MF.game.stats.muscleMass()); }
+    },
+    {
+      key: 'werte', name: 'Werte',
+      sub: function () { return 'FIT ' + MF.game.fitness.index(); }
+    },
+    {
+      key: 'partien', name: 'Partien',
+      sub: function () {
+        var s = state();
+        var hurt = MF.data.muscles.ids.filter(function (id) {
+          return s.muscles[id].injuryDays > 0;
+        }).length;
+        if (hurt) return hurt === 1 ? '1 gezerrt' : hurt + ' gezerrt';
+        return 'schwach: ' + MF.game.stats.weakestMuscle().name;
+      }
+    },
+    {
+      key: 'trainer', name: 'Trainer',
+      sub: function () {
+        if (MF.game.abos.trainerActive()) return 'im Dienst';
+        var def = MF.data.abos.get('trainer');
+        return state().level < def.unlockLevel ? 'ab Level ' + def.unlockLevel : 'nicht gebucht';
+      }
+    },
+    {
+      key: 'verlauf', name: 'Verlauf',
+      sub: function () {
+        var n = state().history.length;
+        return n ? n + (n === 1 ? ' Tag' : ' Tage') : 'noch leer';
+      }
+    },
+    {
+      key: 'system', name: 'Einstellungen',
+      sub: function () { return 'v' + MF.version; }
+    }
+  ];
+
+  function activeTab() {
+    var want = state().settings.bodyTab;
+    for (var i = 0; i < TABS.length; i++) {
+      if (TABS[i].key === want) return want;
+    }
+    return 'figur';
+  }
+
+  function tabGrid() {
+    var current = activeTab();
+    var grid = el('div.mgrid');
+
+    TABS.forEach(function (t) {
+      var tile = el('button.mtile' + (current === t.key ? '.is-active' : ''),
+        { type: 'button' }, [
+          el('span.mtile__name', { text: t.name }),
+          el('span.mtile__sub', { text: t.sub() })
+        ]);
+      util.onTap(tile, function () {
+        state().settings.bodyTab = t.key;
+        MF.game.state.saveSoon();
+        MF.ui.router.refresh('stats');
+      });
+      grid.appendChild(tile);
+    });
+
+    return grid;
+  }
+
   function render(container) {
     util.clear(container);
-    container.appendChild(cardPanel());
+
+    /* Der Hinweis auf das halbe Konto steht ueber den Kacheln: er ist eine
+       einmalige Aufforderung und verschwindet, sobald eine echte Adresse am
+       Konto haengt — hinter einer Kachel wuerde er nie gelesen. Der Sprung
+       aus dem Dialog am Eingang (js/main.js) landet ebenfalls direkt darauf. */
     var hint = accountHintPanel();
     if (hint) container.appendChild(hint);
-    container.appendChild(sharePanel());
-    container.appendChild(avatarPanel());
-    container.appendChild(fitnessPanel());
-    var rival = MF.ui.rival.panel();
-    if (rival) container.appendChild(rival);
-    var trainer = trainerPanel();
-    if (trainer) container.appendChild(trainer);
-    container.appendChild(healthPanel());
-    container.appendChild(musclePanel());
-    var hist = historyPanel();
-    if (hist) container.appendChild(hist);
-    container.appendChild(recordsPanel());
+
+    container.appendChild(tabGrid());
+
+    var tab = activeTab();
+
+    if (tab === 'figur') {
+      container.appendChild(cardPanel());
+      container.appendChild(sharePanel());
+      container.appendChild(avatarPanel());
+      return;
+    }
+
+    if (tab === 'werte') {
+      container.appendChild(fitnessPanel());
+      container.appendChild(healthPanel());
+      return;
+    }
+
+    if (tab === 'partien') {
+      container.appendChild(musclePanel());
+      return;
+    }
+
+    if (tab === 'trainer') {
+      var rival = MF.ui.rival.panel();
+      if (rival) container.appendChild(rival);
+      var trainer = trainerPanel();
+      if (trainer) container.appendChild(trainer);
+      if (!rival && !trainer) {
+        container.appendChild(el('p.hint', {
+          text: 'Noch ist hier niemand. Ein Rivale findet sich von selbst, '
+              + 'sobald du ein paar Tage trainiert hast — einen Personal Trainer '
+              + 'engagierst du im Shop.'
+        }));
+      }
+      return;
+    }
+
+    if (tab === 'verlauf') {
+      var histPanel = historyPanel();
+      if (histPanel) container.appendChild(histPanel);
+      else {
+        container.appendChild(el('p.hint', {
+          text: 'Der Verlauf beginnt nach der ersten Nacht — schlaf einmal, '
+              + 'dann steht hier, was daraus geworden ist.'
+        }));
+      }
+      container.appendChild(recordsPanel());
+      return;
+    }
+
     container.appendChild(settingsPanel());
   }
 
   MF.ui.router.register('stats', { elementId: 'screen-stats', render: render });
 
+  /* Von aussen gezielt in einen Bereich springen. Seit der Bildschirm in
+     Kacheln geteilt ist, reicht router.go('stats') nicht mehr: der Knopf in
+     der Kopfleiste, der Vergleich beim Rivalen und die Analyse des Trainers
+     landeten sonst auf der zuletzt gewaehlten Kachel statt auf der gemeinten. */
+  function go(tab) {
+    state().settings.bodyTab = tab;
+    MF.game.state.saveSoon();
+    MF.ui.router.go('stats');
+  }
+
   /* Die Aufschluesselung wird auch woanders gebraucht: der FIT-Wert in der
      Kopfleiste zeigt sie beim Antippen im Fenster. */
-  MF.ui.stats = { fitnessPanel: fitnessPanel };
+  MF.ui.stats = { fitnessPanel: fitnessPanel, go: go };
 })(window.MacFit);

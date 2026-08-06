@@ -93,7 +93,7 @@
       /* autoResume: nach der Nacht ohne Tippen weiterspielen (Wahl am
          Schlaf-Countdown, bleibt über Sitzungen erhalten). */
       settings: { haptics: true, music: true, sound: true, muscle: 'brust', weight: 1,
-                  autoResume: false, shopTab: 'alle' },
+                  autoResume: false, shopTab: 'alle', bodyTab: 'figur' },
       seenIntro: false,
       lastReport: null
     };
