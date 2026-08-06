@@ -37,16 +37,20 @@
      im Gym, damit sich beide Auswahlflaechen gleich anfuehlen. */
   function shopTabs() {
     var wrap = el('div.mgrid.shopgrid', { id: 'shop-tabs' });
-    var total = MF.data.supplements.list.length + MF.data.abos.list.length;
+    var total = MF.data.supplements.list.length + MF.data.abos.list.length
+      + MF.data.shakes.list.length;
 
     var board = MF.game.challenge.today();
+    var left = MF.game.shakes.left();
     var tabs = [
       { key: 'alle', name: 'Alle', sub: total + ' Artikel' },
       { key: 'laufend', name: 'Laufend', sub: runningCount() + ' aktiv' },
       { key: 'brett', name: 'Brett',
         sub: MF.game.challenge.isDone()
           ? 'erledigt'
-          : '+' + util.formatMoney(MF.game.challenge.reward(board).money) }
+          : '+' + util.formatMoney(MF.game.challenge.reward(board).money) },
+      { key: 'theke', name: 'Theke',
+        sub: left ? left + ' frei' : 'ausgetrunken' }
     ];
     Object.keys(MF.data.supplements.tiers)
       .sort(function (a, b) {
@@ -390,6 +394,81 @@
     MF.ui.router.refresh('shop');
   }
 
+  /* ---------- Theke: Shakes ------------------------------------------------ */
+
+  function shakeCard(def) {
+    var check = MF.game.shakes.canBuy(def);
+    var unlocked = MF.game.shakes.isUnlocked(def);
+
+    var card = el('article.card.card--shop' + (unlocked ? '' : '.card--locked'));
+
+    card.appendChild(el('div.card__head', null, [
+      el('div.card__icon', { text: def.icon }),
+      el('div.card__titles', null, [
+        el('h3.card__title', { text: def.name }),
+        el('div.card__muscle', { text: 'Sofort · wirkt nur heute' })
+      ]),
+      el('div.card__price' + (MF.game.economy.canAfford(def.price) ? '' : '.is-bad'), {
+        text: util.formatMoney(def.price)
+      })
+    ]));
+
+    if (!unlocked) {
+      card.appendChild(el('p.card__desc', { text: 'Wird ab Level ' + def.unlockLevel + ' freigeschaltet.' }));
+      return card;
+    }
+
+    card.appendChild(el('p.card__desc', { text: def.desc }));
+    card.appendChild(el('div.card__meta', null, [
+      el('span.tag.tag--good', { text: 'Energie +' + def.energy })
+    ]));
+
+    var btn = el('button.btn.btn--primary.card__action', {
+      type: 'button',
+      text: check.ok ? 'Trinken' : check.reason
+    });
+    if (!check.ok) btn.classList.add('is-disabled');
+    util.onTap(btn, function () {
+      if (!check.ok) {
+        MF.ui.toast.show(check.reason === 'Heute schon zwei'
+          ? 'Zwei Shakes am Tag sind genug — morgen wieder.'
+          : check.reason, 'warn');
+        return;
+      }
+      var res = MF.game.shakes.drink(def);
+      if (!res.ok) {
+        MF.ui.toast.show(res.reason, 'warn');
+        return;
+      }
+      MF.core.audio.sfx('coin');
+      MF.ui.toast.show('Ausgetrunken: +' + res.energy + ' Energie'
+        + (res.left ? ' — noch ' + res.left + ' Shake heute.' : ' — für heute reicht es.'), 'good');
+      MF.ui.hud.render();
+      MF.ui.router.refresh('shop');
+    });
+    card.appendChild(btn);
+
+    return card;
+  }
+
+  /* Die Theke steht oben: sie ist der Griff im Vorbeigehen, und was sie
+     bringt, gilt nur fuer den laufenden Tag. */
+  function shakeSection(container) {
+    var left = MF.game.shakes.left();
+
+    container.appendChild(el('div.section-title', { text: 'Theke' }));
+    container.appendChild(el('p.hint', {
+      text: left
+        ? 'Wirkt sofort und hebt die Energie für heute. Höchstens zwei am Tag — '
+          + 'noch ' + left + ' frei.'
+        : 'Zwei Shakes sind heute schon durch. Morgen früh steht der Becher wieder bereit.'
+    }));
+
+    var grid = el('div.grid');
+    MF.data.shakes.list.forEach(function (def) { grid.appendChild(shakeCard(def)); });
+    container.appendChild(grid);
+  }
+
   /* ---------- Coaching-Abos ------------------------------------------------ */
 
   function aboCard(def) {
@@ -501,6 +580,12 @@
       container.appendChild(boardPanel());
       return;
     }
+    if (tab === 'theke') {
+      shakeSection(container);
+      return;
+    }
+
+    if (tab === 'alle') shakeSection(container);
 
     Object.keys(MF.data.supplements.tiers)
       .sort(function (a, b) {

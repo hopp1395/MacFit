@@ -542,15 +542,14 @@
 
 /* Drei Spalten: acht Partien plus Kondition ergeben genau drei volle
    Reihen — bei vier Spalten stand die neunte Kachel allein am Ende.
-   Die Kategorien im Shop sind acht Stueck und bleiben vierspaltig. */
+   Seit die Theke dazugekommen ist, sind es im Shop ebenfalls neun
+   Kacheln — auch dort passen drei Spalten genau auf. */
 .mgrid {
   flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 5px;
 }
-
-.shopgrid { grid-template-columns: repeat(4, 1fr); }
 
 .mtile {
   position: relative;
