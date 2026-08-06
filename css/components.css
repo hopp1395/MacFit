@@ -2416,3 +2416,168 @@
 .bar--fat .bar__fill.is-good { background: var(--good); }
 .bar--fat .bar__fill.is-warn { background: var(--warn); }
 .bar--fat .bar__fill.is-bad { background: var(--bad); }
+
+/* ---------- Rueckmeldung im Satz (v1.19.0) -------------------------------- */
+
+/* Die Kette unter der Leiste: ein Punkt je Wiederholung. Sie ersetzt den
+   Zaehler "verrissen" — ein roter Punkt in der Reihe sagt mehr als eine Zahl,
+   weil man auch sieht, WO im Satz es passiert ist. */
+.repchain {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 10px;
+}
+
+.repdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bg-card-hi);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
+  transition: background .15s ease, transform .15s ease;
+}
+
+.repdot.is-perfect { background: var(--good); }
+.repdot.is-ok { background: var(--warn); }
+.repdot.is-miss { background: var(--bad); }
+
+/* Die Extra-Rep des Spotters haengt sichtbar hinten dran. */
+.repdot.is-extra { box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* Die Wiederholung, die gerade laeuft, pulsiert. */
+.repdot.is-now {
+  transform: scale(1.5);
+  background: var(--accent);
+  animation: repPulse 1s ease-in-out infinite;
+}
+
+@keyframes repPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
+/* Krumen-Ebenen: null Pixel hoch, damit sie nichts verschieben. */
+.poplayer {
+  position: absolute;
+  height: 0;
+  width: 0;
+  bottom: 100%;
+  pointer-events: none;
+}
+
+.poplayer--right { right: 8px; }
+
+/* Der Preis der Wiederholung an der Energieleiste — sie zieht nach unten weg,
+   damit sie mit den Gewinnen ueber der Leiste nicht verwechselt wird. */
+.session__energy { position: relative; }
+
+.xppop.is-cost {
+  color: var(--bad);
+  font-size: 12px;
+  animation: costfly .7s ease-out forwards;
+}
+
+@keyframes costfly {
+  0%   { opacity: 0; transform: translate(-50%, -8px) scale(.9); }
+  20%  { opacity: .95; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 20px) scale(.95); }
+}
+
+/* Der erarbeitete Reiz — dieselbe Farbe wie die Kachel, in der er steht. */
+.xppop.is-stim {
+  color: var(--accent);
+  font-size: 12px;
+  animation-delay: .08s;
+}
+
+.xppop.is-flow {
+  color: var(--accent);
+  font-size: 15px;
+  letter-spacing: .04em;
+}
+
+/* Zahlen in der Score-Reihe poppen kurz auf, wenn sie sich aendern. */
+/* Zwei gleichwertige Klassen, damit der Satz-Bildschirm die Animation im
+   Wechsel neu anstossen kann, ohne ein Neuvermessen zu erzwingen. */
+.score__value.is-bump,
+.score__value.is-bump2 { animation: scoreBump .3s ease-out; }
+
+@keyframes scoreBump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+.score--stim .score__value { color: var(--accent); }
+.score__value.is-good { color: var(--good); }
+.score__value.is-warn { color: var(--warn); }
+.score__value.is-bad { color: var(--bad); }
+
+/* Ab "Schwer" setzt der Treffer sichtbar auf. */
+.stage.is-hit,
+.stage.is-hit2 { animation: stageHit .22s ease-out; }
+
+@keyframes stageHit {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(3px); }
+  100% { transform: translateY(0); }
+}
+
+/* Die Bewertung der Wiederholung steigt am Ort des Tippens auf wie ein
+   Luftballon: erst ein kurzer Satz nach oben, dann schaukelt sie seitlich
+   aus und verblasst. Sie stand frueher als feste Zeile unter der Leiste —
+   dort gehoerte sie zum Bildschirm, hier gehoert sie zur Wiederholung. */
+.ratepop {
+  position: absolute;
+  bottom: 100%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* Der Aufstieg ist EINE Kurve von unten nach oben, ohne Zwischenstationen.
+     CSS wendet die Easing-Funktion je Keyframe-Segment an — die alte Bahn
+     hatte fuenf Segmente mit stark abbremsender Kurve und hielt deshalb
+     fuenfmal fast an. Das war das Haken, auf jedem Geraet gleich. */
+  animation: raterise 1.25s cubic-bezier(.2, .6, .35, 1) forwards;
+}
+
+/* Die Deckkraft hat eigene Zwischenschritte — das ist unschaedlich, denn
+   jede Eigenschaft interpoliert nur zwischen den Keyframes, in denen sie
+   selbst vorkommt. Die Flugbahn bleibt eine einzige Kurve. */
+@keyframes raterise {
+  0%   { opacity: 0; transform: translate(-50%, 14px); }
+  8%   { opacity: 1; }
+  55%  { opacity: .9; }
+  100% { opacity: 0; transform: translate(-50%, -104px); }
+}
+
+/* Das Schaukeln haengt am inneren Element: ein Pendel, dessen Tempo an jeder
+   Umkehr null ist (ease-in-out je Segment) — dadurch gibt es keinen einzigen
+   Geschwindigkeitssprung, das Auge liest die Bewegung als weich. */
+.ratepop__word {
+  display: inline-block;
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .75);
+  will-change: transform;
+  animation: ratesway 1.25s ease-in-out forwards;
+}
+
+@keyframes ratesway {
+  0%   { transform: translateX(0) rotate(0deg); }
+  30%  { transform: translateX(-6px) rotate(-2deg); }
+  70%  { transform: translateX(6px) rotate(2deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+/* "AUSREISSER GERETTET" passt in voller Groesse auf kein Handy. */
+.ratepop__word.is-long { font-size: 14px; letter-spacing: .03em; }
+
+/* Die Farbe sitzt am Ballon und erbt sich auf das Wort. */
+.ratepop.is-perfect { color: var(--good); }
+.ratepop.is-ok { color: var(--warn); }
+.ratepop.is-miss { color: var(--bad); }

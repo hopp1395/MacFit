@@ -190,7 +190,26 @@
 
     var time = 0;
     var since = 0;
+    var pump = 0;        /* 0..1 — wie voll der Muskel im laufenden Satz ist */
     var STEP = 1 / 30;   /* 30 Bilder/s reichen — der Marker läuft weiter mit 60. */
+
+    /* Der Pump: waehrend des Satzes laeuft das Blut in die Partie, die Figur
+       wird sichtbar praller. Kopf und Beine bleiben fast unberuehrt; gepumpt
+       wird der Oberkoerper. Die Werte sind an gerenderten Bildern abgenommen:
+       bei zehn Prozent auf dem Arm blieb der Unterschied unter einem Pixel und
+       war schlicht nicht zu sehen — 18 Prozent sind eine sichtbare Stufe, ohne
+       dass die Figur aufgeht wie ein Ballon. */
+    function pumped() {
+      var th = fig.thicknessFromState();
+      if (pump <= 0) return th;
+      var a = 1 + pump * 0.18;
+      var b = 1 + pump * 0.10;
+      return {
+        arm: th.arm * a, fore: th.fore * b, torso: th.torso * b,
+        shoulder: th.shoulder * a, thigh: th.thigh * (1 + pump * 0.03),
+        calf: th.calf * (1 + pump * 0.03), head: th.head
+      };
+    }
 
     function render(phase) {
       if (!ctx) return;
@@ -199,6 +218,7 @@
       drawExtras(ctx, extras, time);
       drawScene(ctx, scene, phase, {
         cx: 110, floorY: 122, scale: 0.94, time: time,
+        thickness: pumped(),
         colors: MF.data.outfits.look(MF.game.state.get().player.outfit)
       });
       surface.present();
@@ -220,6 +240,11 @@
         window.setTimeout(function () {
           surface.canvas.className = 'pix pix--scene';
         }, 240);
+      },
+      /* Der Satz-Bildschirm meldet den Fuellstand; gezeichnet wird er beim
+         naechsten Bild ohnehin neu. */
+      setPump: function (value) {
+        pump = value < 0 ? 0 : (value > 1 ? 1 : value);
       }
     };
   }

@@ -215,6 +215,34 @@
     return share;
   }
 
+  /* Was eine einzelne Wiederholung zum Reiz des Satzes beitraegt. Dieselbe
+     Rechnung wie in finishSet, nur auf eine Rep heruntergebrochen: dort steht
+     formScore als Mittelwert im Produkt, hier der Anteil dieser einen Rep.
+     Bei einem vollen Satz ergibt die Summe genau den Satzreiz vor den Boni —
+     die Anzeige waehrend des Satzes luegt also nicht. */
+  function repQuality(kind) {
+    return kind === 'perfect' ? 1 : (kind === 'ok' ? 0.5 : 0);
+  }
+
+  function repStimulus(exercise, weightIndex, kind, totalReps) {
+    var q = repQuality(kind);
+    if (q <= 0) return 0;
+    var m = state().muscles[exercise.muscle];
+    var base = exercise.stimulus * weightAt(weightIndex).stim * (1 - m.fatigue * 0.60);
+    return Math.max(0, base) * q / Math.max(1, totalReps);
+  }
+
+  /* Dasselbe fuer die Konditionsgeraete: die zahlen nicht auf Masse, sondern
+     auf Herz, Leber, Schlaf und Laune. Summe aller vier Werte, damit im Satz
+     eine einzige Zahl mitlaufen kann. */
+  function repHealth(exercise, kind, totalReps) {
+    var q = repQuality(kind);
+    if (q <= 0 || !exercise.health) return 0;
+    var sum = 0;
+    Object.keys(exercise.health).forEach(function (k) { sum += exercise.health[k]; });
+    return sum * q / Math.max(1, totalReps);
+  }
+
   /* hits: Array aus 'perfect' | 'ok' | 'miss'.
      forced: Ausgang der Spotter-Extra-Rep — 'hit' | 'fail' | undefined.
      Die Extra-Rep steht NICHT in hits, sie veraendert die Form nicht. */
@@ -404,6 +432,8 @@
     wobbleChance: wobbleChance,
     spotterOffer: spotterOffer,
     todayTally: todayTally,
+    repStimulus: repStimulus,
+    repHealth: repHealth,
     beginSet: beginSet,
     chargeRep: chargeRep,
     finishSet: finishSet
