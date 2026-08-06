@@ -166,10 +166,11 @@
     ]));
 
     var status;
+    var prog = MF.game.challenge.progress(def);
     if (done) {
       status = 'Erledigt und kassiert. Morgen früh hängt der nächste Zettel aus.';
-    } else if (def.kind === 'sets') {
-      status = 'Bisher heute: ' + MF.game.day.setsToday() + ' von ' + def.n + ' Sätzen.';
+    } else if (prog) {
+      status = 'Bisher heute: ' + prog.have + ' von ' + prog.need + ' ' + prog.unit + '.';
     } else {
       status = 'Noch offen — es zählt jeder Satz an jedem Gerät. '
              + 'Entscheidend ist die Ausführung, nicht die Muskelgruppe.';
@@ -177,8 +178,9 @@
 
     body.appendChild(el('div.runinfo', null, [
       el('p.runinfo__text', {
-        text: status + ' Jeden Tag hängt genau ein Zettel aus; schwerere kommen '
-            + 'mit steigendem Fitness-Index dazu.'
+        text: status + ' Jeden Tag hängt genau ein Zettel aus. Mit steigendem '
+            + 'Fitness-Index kommen schwerere dazu — und die leichten hängen '
+            + 'nicht mehr aus.'
       })
     ]));
 

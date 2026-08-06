@@ -12,7 +12,10 @@
   function state() { return MF.game.state.get(); }
 
   /* Die Belohnung waechst mit dem Rang: derselbe Zettel ist spaeter mehr
-     wert, sonst lohnt er sich ab der Mitte des Spiels nicht mehr. */
+     wert. Der Aufschlag faellt bewusst klein aus, seit die Zettel selbst
+     mitwachsen (maxIndex in data/challenges.js) — sonst zahlte man zweimal
+     fuer dieselbe Sache, einmal ueber den schwereren Zettel und noch einmal
+     ueber den Rang. */
   function rankStep() {
     var idx = MF.game.fitness.RANKS.indexOf(MF.game.fitness.rank());
     return Math.max(0, idx);
@@ -20,9 +23,35 @@
 
   function reward(def) {
     return {
-      money: Math.round(def.money * (1 + rankStep() * 0.25)),
-      xp: Math.round(def.xp * (1 + rankStep() * 0.20))
+      money: Math.round(def.money * (1 + rankStep() * 0.12)),
+      xp: Math.round(def.xp * (1 + rankStep() * 0.10))
     };
+  }
+
+  /* Die Auslosung: gemischt, aber gerecht.
+
+     Ein glattes day % pool.length liefe die Liste stur der Reihe nach ab —
+     man wuesste schon abends, was morgen haengt. Reines Wuerfeln aus der
+     Tageszahl ist dafuer ungerecht: bei einem kleinen Topf kommen einzelne
+     Zettel wochenlang nicht dran.
+
+     Deshalb wird der Topf rundenweise durchgespielt. Jede Runde ist so lang
+     wie der Topf gross ist und wird vorher gemischt — innerhalb einer Runde
+     kommt jeder Zettel genau einmal, die Reihenfolge ist aber jedes Mal eine
+     andere. Gemischt wird mit einem winzigen Generator, der allein an der
+     Rundennummer haengt: ein Neustart haengt denselben Zettel wieder aus. */
+  function shuffled(pool, round) {
+    var order = pool.slice();
+    /* Lehmer-Generator, klein genug, dass jede Zwischenzahl exakt bleibt. */
+    var seed = (round * 7919 + 13) % 65537;
+    for (var i = order.length - 1; i > 0; i--) {
+      seed = (seed * 75 + 74) % 65537;
+      var j = seed % (i + 1);
+      var tmp = order[i];
+      order[i] = order[j];
+      order[j] = tmp;
+    }
+    return order;
   }
 
   /* Der Zettel des Tages. Haengt der alte noch, wird er weitergereicht. */
@@ -35,7 +64,16 @@
 
     var pool = MF.data.challenges.forIndex(MF.game.fitness.index());
     if (!pool.length) pool = MF.data.challenges.list;
-    var def = pool[((s.day % pool.length) + pool.length) % pool.length];
+
+    var n = pool.length;
+    var day = Math.max(0, s.day);
+    var order = shuffled(pool, Math.floor(day / n));
+    var slot = day % n;
+    var def = order[slot];
+    /* Nie zweimal hintereinander derselbe Zettel — das kann nur am Wechsel
+       von einer Runde zur naechsten passieren. c.id haelt an dieser Stelle
+       noch den von gestern. */
+    if (n > 1 && def.id === c.id) def = order[(slot + 1) % n];
 
     c.day = s.day;
     c.id = def.id;
@@ -49,14 +87,51 @@
     return s.challenge.day === s.day && !!s.challenge.done;
   }
 
-  /* Erfuellt dieser Satz den Zettel? Reine Pruefung, veraendert nichts. */
+  /* Wie viele verschiedene Partien heute schon dran waren. */
+  function musclesToday() {
+    var s = state();
+    return MF.data.muscles.ids.filter(function (id) {
+      return s.muscles[id].setsToday > 0;
+    }).length;
+  }
+
+  /* Perfekte Wiederholungen des laufenden Tages. Das Tageskonto wird beim
+     Tageswechsel zurueckgesetzt — bis dahin gilt der Stand aus s.today. */
+  function perfectToday() {
+    var s = state();
+    return s.today.day === s.day ? s.today.perfect : 0;
+  }
+
+  /* Erfuellt dieser Satz den Zettel? Reine Pruefung, veraendert nichts.
+     Geprueft wird nach jedem Satz — Zettel, die den ganzen Tag zaehlen
+     (sets, muscles, dayperfect), lesen dabei das Tageskonto mit. */
   function satisfies(def, result) {
+    /* Mindest-Gewichtsstufe, wo eine gefordert ist. Ohne sie liesse sich
+       fast jede Aufgabe auf "Leicht" abfruehstuecken: die perfekte Zone ist
+       dort zwanzig Prozent breiter. */
+    if (def.weight !== undefined && result.weightIndex < def.weight) return false;
+
     if (def.kind === 'streak') return result.bestStreak >= def.n;
-    if (def.kind === 'clean') return result.miss === 0 && result.reps >= result.exercise.reps;
-    if (def.kind === 'form') {
-      return result.formScore >= def.form && result.weightIndex >= def.weight;
+
+    if (def.kind === 'clean') {
+      if (result.miss > 0) return false;
+      /* Ein Dropset ist ein halber Satz — der zaehlt hier nicht. */
+      if (result.reps < result.exercise.reps) return false;
+      if (def.maxOk !== undefined && result.ok > def.maxOk) return false;
+      return true;
     }
+
+    if (def.kind === 'form') return result.formScore >= def.form;
     if (def.kind === 'sets') return MF.game.day.setsToday() >= def.n;
+    if (def.kind === 'muscles') return musclesToday() >= def.n;
+    if (def.kind === 'dayperfect') return perfectToday() >= def.n;
+    if (def.kind === 'drop') return (result.dropStep || 0) >= def.n;
+    if (def.kind === 'spotter') return result.forced === 'hit';
+    if (def.kind === 'wobble') return (result.wobbleHits || 0) >= def.n;
+    if (def.kind === 'flow') return (result.flowBonus || 0) >= def.flow;
+    if (def.kind === 'kondition') {
+      return result.exercise.kind === 'kondition' && result.formScore >= def.form;
+    }
     return false;
   }
 
@@ -107,10 +182,27 @@
     check(result);
   });
 
+  /* Zwischenstand fuer die Zettel, die ueber den ganzen Tag laufen. Alle
+     anderen entscheiden sich in einem einzigen Satz — da gibt es nichts
+     anzuzeigen, deshalb null. */
+  function progress(def) {
+    if (def.kind === 'sets') {
+      return { have: MF.game.day.setsToday(), need: def.n, unit: 'Sätzen' };
+    }
+    if (def.kind === 'muscles') {
+      return { have: musclesToday(), need: def.n, unit: 'Partien' };
+    }
+    if (def.kind === 'dayperfect') {
+      return { have: perfectToday(), need: def.n, unit: 'perfekten Wiederholungen' };
+    }
+    return null;
+  }
+
   MF.game.challenge = {
     today: today,
     isDone: isDone,
     reward: reward,
+    progress: progress,
     satisfies: satisfies,
     check: check,
     takeLevelUp: takeLevelUp,
