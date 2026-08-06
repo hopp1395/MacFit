@@ -62,6 +62,11 @@
         out.push({ kind: 'Shop', icon: s.icon, name: s.name });
       });
     }
+    if (MF.data.shakes) {
+      MF.data.shakes.unlockedAt(level).forEach(function (s) {
+        out.push({ kind: 'Theke', icon: s.icon, name: s.name });
+      });
+    }
     if (MF.data.abos) {
       MF.data.abos.unlockedAt(level).forEach(function (a) {
         out.push({ kind: 'Coaching', icon: a.icon, name: a.name });

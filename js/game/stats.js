@@ -137,12 +137,15 @@
     return util.clamp(mult, 0.45, 2.0);
   }
 
+  /* Shakes kommen erst nach der Gesundheitsrechnung dazu: was im Becher ist,
+     ist im Becher — schlechter Schlaf soll den gekauften Schub nicht wieder
+     wegkuerzen. Der Bonus gilt nur fuer den laufenden Tag. */
   function energyMax() {
     var s = state();
     var base = MF.data.levels.forLevel(s.level).energy + sumEffects().energy;
     base *= 0.62 + 0.38 * (s.health.schlaf / 100);
     if (s.crash) base *= 0.8;
-    return Math.max(30, Math.round(base));
+    return Math.max(30, Math.round(base) + MF.game.shakes.bonusToday());
   }
 
   function dailyIncome() {

@@ -46,6 +46,9 @@
          Feierabend. day haelt fest, fuer welchen Spieltag die Zahlen gelten;
          beim Tageswechsel faengt die Zaehlung von selbst wieder bei null an. */
       today: { day: 0, reps: 0, perfect: 0, xp: 0 },
+      /* Shakes von der Theke: gelten nur fuer den Tag in day (siehe
+         game/shakes.js). bonus ist die heute dazugekaufte Energie. */
+      shakes: { day: 0, count: 0, bonus: 0 },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -120,6 +123,9 @@
     });
     Object.keys(fresh.today).forEach(function (k) {
       if (typeof loaded.today[k] !== 'number') loaded.today[k] = fresh.today[k];
+    });
+    Object.keys(fresh.shakes).forEach(function (k) {
+      if (typeof loaded.shakes[k] !== 'number') loaded.shakes[k] = fresh.shakes[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];
