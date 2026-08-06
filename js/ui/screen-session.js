@@ -44,14 +44,20 @@
     container.appendChild(top);
 
     /* Energie bleibt im Blick: die Kopfleiste ist im Satz ausgeblendet, und
-       jede Wiederholung kostet sichtbar etwas. */
+       jede Wiederholung kostet sichtbar etwas. Was sie kostet, fliegt am
+       rechten Ende der Leiste als eigene Krume weg. */
     container.appendChild(el('div.session__energy', null, [
       el('span.session__energy-icon', { text: '⚡' }),
       el('div.bar.bar--energy', null, [
         el('div.bar__fill', { id: 'session-energy-fill' }),
         el('span.bar__label', { id: 'session-energy-label', text: '' })
-      ])
+      ]),
+      el('div.poplayer.poplayer--right', { id: 'session-eplayer' })
     ]));
+
+    /* Kondition zahlt nicht auf die Masse — dort steht statt des Reizes,
+       was der Satz an Gesundheit zurueckholt. */
+    var yieldLabel = ex.kind === 'kondition' ? 'Gesundheit' : 'Reiz';
 
     container.appendChild(el('div.session__scores', null, [
       el('div.score', null, [
@@ -68,9 +74,12 @@
         el('span.score__value', { id: 'session-xp', text: '0' }),
         el('span.score__label', { text: 'XP' })
       ]),
-      el('div.score', null, [
-        el('span.score__value', { id: 'session-miss', text: '0' }),
-        el('span.score__label', { text: 'verrissen' })
+      /* Der Ertrag des Satzes stand frueher erst im Ergebnis. Verrissene Reps
+         zeigt jetzt die Kette unter der Leiste — der Platz ist besser
+         angelegt fuer das, was man sich gerade erarbeitet. */
+      el('div.score.score--stim', null, [
+        el('span.score__value', { id: 'session-stim', text: '0,0' }),
+        el('span.score__label', { text: yieldLabel })
       ])
     ]));
 
@@ -81,14 +90,20 @@
     ]);
     container.appendChild(track);
 
+    /* Die Kette: ein Punkt je Wiederholung, der sich im Moment des Tippens
+       einfaerbt. So sieht man den ganzen Satz auf einen Blick, statt zwei
+       Zaehler im Kopf gegeneinander zu halten. */
+    container.appendChild(el('div.repchain', { id: 'session-chain' }));
+
     container.appendChild(el('div.timer', null, [
       el('div.timer__fill', { id: 'session-timer' })
     ]));
 
-    /* Eigene, null Pixel hohe Ebene fuer die XP-Krumen: die Leiste schneidet
-       ab, und die Feedback-Zeile wird bei jeder Rep neu beschriftet. */
+    /* Eigene, null Pixel hohe Ebene fuer alles, was am Treffer aufsteigt:
+       die Bewertung der Wiederholung, die Erfahrung, der Reiz. Frueher stand
+       die Bewertung in einer festen Zeile darunter — als Ballon am Ort des
+       Tippens gehoert sie sichtbar zu der Rep, die man gerade gezogen hat. */
     container.appendChild(el('div.xplayer', { id: 'session-xplayer' }));
-    container.appendChild(el('div.session__feedback', { id: 'session-feedback', text: '' }));
 
     /* Die Szene ist zugleich die Tippfläche — Blick und Daumen bleiben zusammen. */
     var stage = el('div.stage', { id: 'session-stage' });
@@ -107,22 +122,103 @@
       perfect: util.byId('session-perfect'),
       form: util.byId('session-form'),
       xp: util.byId('session-xp'),
-      miss: util.byId('session-miss'),
+      stim: util.byId('session-stim'),
       track: track,
       ok: util.byId('session-ok'),
       zone: util.byId('session-zone'),
       marker: util.byId('session-marker'),
+      chain: util.byId('session-chain'),
       timer: util.byId('session-timer'),
       energyFill: util.byId('session-energy-fill'),
       energyLabel: util.byId('session-energy-label'),
       xplayer: util.byId('session-xplayer'),
-      feedback: util.byId('session-feedback'),
+      eplayer: util.byId('session-eplayer'),
+      stage: stage,
       tap: tap,
       hint: hint,
       container: container
     };
 
+    buildChain(run ? run.totalReps : ex.reps);
     measure();
+  }
+
+  /* --- Rueckmeldung: Kette, Krumen, Pump --------------------------------- */
+
+  function buildChain(count) {
+    util.clear(nodes.chain);
+    for (var i = 0; i < count; i++) {
+      nodes.chain.appendChild(el('span.repdot'));
+    }
+    markChainCurrent(0);
+  }
+
+  function chainDots() {
+    return nodes.chain ? nodes.chain.childNodes : [];
+  }
+
+  function markChainCurrent(index) {
+    var dots = chainDots();
+    for (var i = 0; i < dots.length; i++) {
+      if (i === index) dots[i].classList.add('is-now');
+      else dots[i].classList.remove('is-now');
+    }
+  }
+
+  function fillChain(index, kind) {
+    var dots = chainDots();
+    if (!dots[index]) return;
+    dots[index].classList.remove('is-now');
+    dots[index].classList.add('is-' + kind);
+  }
+
+  /* Die Extra-Rep des Spotters haengt hinten an der Kette — sie gehoert
+     sichtbar dazu, zaehlt aber nicht in die Form. */
+  function addExtraDot() {
+    var dot = el('span.repdot.is-extra');
+    nodes.chain.appendChild(dot);
+    markChainCurrent(chainDots().length - 1);
+  }
+
+  /* Eine Krume steigen lassen. layer ist die nullhohe Ebene, x der Ort in
+     Pixeln (nur wo die Ebene ueber die ganze Breite geht). Aufgeraeumt wird
+     nach der Animation — die Ebene bleibt sonst voll mit toten Knoten. */
+  function popNode(layer, node, x, ms) {
+    if (!layer) return;
+    if (x) node.style.left = x.toFixed(0) + 'px';
+    layer.appendChild(node);
+    window.setTimeout(function () {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    }, ms);
+  }
+
+  function pop(layer, text, cls, x) {
+    popNode(layer, el('span.xppop' + (cls ? '.' + cls : ''), { text: text }), x, 700);
+  }
+
+  /* Zahlen und Bewertung starten am selben Punkt — die Zahlen weichen deshalb
+     nach links und rechts aus, damit der Ballon dazwischen frei steht. */
+  function sideX(offset) {
+    if (!trackWidth) return 0;
+    return util.clamp(run.pos * trackWidth + offset, 24, trackWidth - 24);
+  }
+
+  /* Die Bewertung der Wiederholung: steigt am Ort des Tippens auf, schaukelt
+     dabei leicht hin und her und verblasst — der laengere Weg macht sie zum
+     Hauptdarsteller, die Zahlen daneben bleiben klein. */
+  function popRate(label, kind, x) {
+    var long = label.length > 12;
+    var node = el('span.ratepop.is-' + kind + (long ? '.is-long' : ''), { text: label });
+    popNode(nodes.xplayer, node, x, 1250);
+  }
+
+  /* Eine Zahl in der Score-Reihe hat sich geaendert — kurz aufpoppen, sonst
+     uebersieht man den Zuwachs mitten im Tippen. */
+  function bump(node) {
+    if (!node) return;
+    node.classList.remove('is-bump');
+    void node.getBoundingClientRect();
+    node.classList.add('is-bump');
   }
 
   /* --- Ablauf ------------------------------------------------------------ */
@@ -161,6 +257,8 @@
       zone: 0.3,
       streak: 0,         /* perfekte Reps in Folge (Pump-Flow) */
       xp: 0,             /* bis hierher verdiente Erfahrung, live sichtbar */
+      stim: 0,           /* bis hierher erarbeiteter Reiz (bzw. Gesundheit) */
+      pump: 0,           /* 0..1 — wie voll die Partie im Satz schon ist */
       wobble: false,     /* kippt die Hantel in dieser Wiederholung? */
       warned: false,     /* Vorwarnung schon gezeigt */
       flipped: false,    /* Richtung schon gedreht */
@@ -302,10 +400,36 @@
     run.wobble = false;
     nodes.track.classList.remove('is-wobble');
 
-    /* Jede Wiederholung kostet ihren Anteil — sichtbar, waehrend man tippt. */
-    MF.game.training.chargeRep(run.ex, run.weightIndex, run.drop,
+    /* Die Kette faerbt sich im selben Moment — gerettete Ausreisser bleiben
+       das, was sie im Ergebnis auch sind: ein Treffer. */
+    fillChain(run.repIndex, kind);
+
+    /* Jede Wiederholung kostet ihren Anteil — sichtbar, waehrend man tippt.
+       Der Abzug fliegt an der Energieleiste weg, damit man den Preis der
+       Wiederholung sieht und nicht nur den Ertrag. */
+    var cost = MF.game.training.chargeRep(run.ex, run.weightIndex, run.drop,
       run.repIndex, run.totalReps);
     updateEnergy();
+    if (cost > 0) pop(nodes.eplayer, '−' + util.formatNum(cost, 1), 'is-cost');
+
+    /* Der Ertrag des Satzes waechst mit: Reiz am Geraet, Gesundheit auf der
+       Matte. Dieselbe Rechnung wie in der Auswertung — bei einem vollen Satz
+       steht am Ende genau das da, was auch der Ergebnisschirm zeigt. */
+    var yield_ = run.ex.kind === 'kondition'
+      ? MF.game.training.repHealth(run.ex, kind, run.totalReps)
+      : MF.game.training.repStimulus(run.ex, run.weightIndex, kind, run.totalReps);
+    if (yield_ > 0) {
+      run.stim += yield_;
+      pop(nodes.xplayer, '+' + util.formatNum(yield_, 1)
+        + (run.ex.kind === 'kondition' ? ' ❤' : ' Reiz'), 'is-stim', sideX(-34));
+      bump(nodes.stim);
+    }
+
+    /* Pump: saubere Reps fuellen die Partie, verrissene lassen Luft raus.
+       Die Figur in der Szene wird dadurch sichtbar praller. */
+    run.pump = util.clamp(run.pump + (kind === 'miss' ? -0.12 : (kind === 'ok' ? 0.05 : 0.11)), 0, 1);
+    if (scene && scene.setPump) scene.setPump(run.pump);
+    updatePumpGlow();
 
     /* Erfahrung sofort sichtbar machen: die Zahl oben zaehlt hoch, und am
        Treffer selbst fliegt der Gewinn weg. Ab der Flow-Serie gibt es einen
@@ -329,6 +453,9 @@
       if (run.streak >= 3) {
         label = 'PERFEKT ×' + run.streak;
         nodes.track.classList.add('is-flow');
+        /* Der Beginn der Serie bekommt eine eigene Krume — danach steht die
+           Serie ohnehin gross in der Rueckmeldezeile. */
+        if (run.streak === 3) pop(nodes.xplayer, 'FLOW!', 'is-flow', sideX(0));
         MF.core.haptics.buzz('flow');
         MF.core.audio.sfx('combo', run.streak);
       } else {
@@ -342,21 +469,24 @@
       MF.core.audio.sfx(kind);
     }
 
-    nodes.feedback.textContent = label;
-    nodes.feedback.className = 'session__feedback is-shown is-' + kind;
-    window.setTimeout(function () {
-      if (nodes.feedback) nodes.feedback.classList.remove('is-shown');
-    }, 380);
+    popRate(label, kind, trackWidth ? run.pos * trackWidth : 0);
 
     nodes.track.classList.remove('is-perfect', 'is-ok', 'is-miss');
     void nodes.track.getBoundingClientRect();
     nodes.track.classList.add('is-' + kind);
 
     if (scene) scene.flash(kind);
+    /* Ab "Schwer" bekommt der Treffer Wucht: die Szene setzt kurz auf. */
+    if (kind !== 'miss' && run.weightIndex >= 2) {
+      nodes.stage.classList.remove('is-hit');
+      void nodes.stage.getBoundingClientRect();
+      nodes.stage.classList.add('is-hit');
+    }
 
     updateScores();
 
     run.repIndex += 1;
+    markChainCurrent(run.repIndex);
     if (run.repIndex >= run.totalReps) {
       if (!run.drop && MF.game.training.spotterOffer(run.ex, run.weightIndex, run.hits)) {
         offerSpotter();
@@ -475,6 +605,7 @@
     run.lock = LOCK_AFTER_TAP;
 
     placeZone();
+    addExtraDot();
     nodes.rep.textContent = 'Extra-Rep!';
     MF.core.audio.sfx('rack');
   }
@@ -483,8 +614,8 @@
     run.done = true;
     if (ticker) ticker.stop();
 
-    nodes.feedback.textContent = label;
-    nodes.feedback.className = 'session__feedback is-shown is-' + (forced === 'hit' ? 'perfect' : 'miss');
+    fillChain(chainDots().length - 1, forced === 'hit' ? 'perfect' : 'miss');
+    popRate(label, forced === 'hit' ? 'perfect' : 'miss', trackWidth ? run.pos * trackWidth : 0);
 
     var result = MF.game.training.finishSet(run.ex, run.weightIndex, run.hits, forced, run.drop, run.wobbleHits);
     if (forced === 'hit') {
@@ -499,17 +630,27 @@
   }
 
   function updateScores() {
-    var perfect = 0, miss = 0, ok = 0;
+    var perfect = 0, ok = 0;
     run.hits.forEach(function (h) {
       if (h === 'perfect') perfect++;
       else if (h === 'ok') ok++;
-      else miss++;
     });
+    if (nodes.perfect.textContent !== String(perfect)) bump(nodes.perfect);
     nodes.perfect.textContent = perfect;
-    nodes.miss.textContent = miss;
     var form = (perfect + ok * 0.5) / Math.max(1, run.hits.length);
     nodes.form.textContent = Math.round(form * 100) + '%';
+    nodes.form.className = 'score__value is-' + (form >= 0.75 ? 'good' : (form >= 0.5 ? 'warn' : 'bad'));
     nodes.xp.textContent = run.xp;
+    nodes.stim.textContent = util.formatNum(run.stim, 1);
+  }
+
+  /* Der Pump schlaegt sich auch ausserhalb der Figur nieder: die Tippflaeche
+     glueht mit. Inline gesetzt, weil der Wert stufenlos ist. */
+  function updatePumpGlow() {
+    if (!nodes.tap) return;
+    var p = run.pump;
+    nodes.tap.style.boxShadow = p <= 0.02 ? ''
+      : '0 0 ' + (16 * p).toFixed(0) + 'px rgba(255, 179, 92, ' + (0.45 * p).toFixed(2) + ')';
   }
 
   /* Energieleiste im Satz — dieselbe Optik wie in der Kopfleiste. */
@@ -526,12 +667,8 @@
   /* Die verdiente Erfahrung fliegt am Ort des Treffers nach oben weg —
      ein kurzer, klarer Moment pro Wiederholung. */
   function popXp(amount, kind) {
-    var pop = el('span.xppop.is-' + kind, { text: '+' + amount + ' XP' });
-    if (trackWidth) pop.style.left = (run.pos * trackWidth).toFixed(0) + 'px';
-    nodes.xplayer.appendChild(pop);
-    window.setTimeout(function () {
-      if (pop.parentNode) pop.parentNode.removeChild(pop);
-    }, 700);
+    pop(nodes.xplayer, '+' + amount + ' XP', 'is-' + kind, sideX(34));
+    bump(nodes.xp);
   }
 
   function finish() {
@@ -551,11 +688,20 @@
   function showEndBar(result) {
     pending = result;
 
+    /* Jetzt erst stehen die Boni fest — die Zahl springt sichtbar auf den
+       Wert, der gleich auch im Ergebnis steht. */
+    var total = result.exercise.kind === 'kondition' ? healthSum(result) : result.stimulus;
+    nodes.stim.textContent = util.formatNum(total, 1);
+    bump(nodes.stim);
+    if (result.flowBonus > 0) {
+      pop(nodes.xplayer, '+' + Math.round(result.flowBonus * 100) + ' % FLOW', 'is-flow',
+        trackWidth ? trackWidth * 0.5 : undefined);
+    }
+
     nodes.rep.textContent = 'Satz beendet';
     nodes.hint.textContent = 'Satz beendet — sieh dir in Ruhe an, was du gedrückt hast.';
     nodes.tap.classList.add('is-done');
     nodes.timer.style.width = '0%';
-    nodes.feedback.classList.add('is-shown');   /* letzte Meldung stehen lassen */
 
     var bar = el('div.session__end', { id: 'session-end' });
     var resultBtn = el('button.btn.btn--primary', { type: 'button', text: '📊 Ergebnis ansehen' });
@@ -572,6 +718,16 @@
 
     nodes.container.appendChild(bar);
     MF.ui.hud.render();
+  }
+
+  /* Was ein Konditionssatz an Gesundheit gebracht hat — alle vier Werte
+     zusammen, dieselbe Zahl, die waehrend des Satzes hochlief. */
+  function healthSum(result) {
+    var sum = 0;
+    if (result.healthGain) {
+      Object.keys(result.healthGain).forEach(function (k) { sum += result.healthGain[k]; });
+    }
+    return sum;
   }
 
   /* Abbruch: gezaehlte Reps werden gewertet — bezahlt hat man ohnehin nur

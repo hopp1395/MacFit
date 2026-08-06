@@ -2416,3 +2416,141 @@
 .bar--fat .bar__fill.is-good { background: var(--good); }
 .bar--fat .bar__fill.is-warn { background: var(--warn); }
 .bar--fat .bar__fill.is-bad { background: var(--bad); }
+
+/* ---------- Rueckmeldung im Satz (v1.19.0) -------------------------------- */
+
+/* Die Kette unter der Leiste: ein Punkt je Wiederholung. Sie ersetzt den
+   Zaehler "verrissen" — ein roter Punkt in der Reihe sagt mehr als eine Zahl,
+   weil man auch sieht, WO im Satz es passiert ist. */
+.repchain {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 10px;
+}
+
+.repdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bg-card-hi);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
+  transition: background .15s ease, transform .15s ease;
+}
+
+.repdot.is-perfect { background: var(--good); }
+.repdot.is-ok { background: var(--warn); }
+.repdot.is-miss { background: var(--bad); }
+
+/* Die Extra-Rep des Spotters haengt sichtbar hinten dran. */
+.repdot.is-extra { box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* Die Wiederholung, die gerade laeuft, pulsiert. */
+.repdot.is-now {
+  transform: scale(1.5);
+  background: var(--accent);
+  animation: repPulse 1s ease-in-out infinite;
+}
+
+@keyframes repPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
+/* Krumen-Ebenen: null Pixel hoch, damit sie nichts verschieben. */
+.poplayer {
+  position: absolute;
+  height: 0;
+  width: 0;
+  bottom: 100%;
+  pointer-events: none;
+}
+
+.poplayer--right { right: 8px; }
+
+/* Der Preis der Wiederholung an der Energieleiste — sie zieht nach unten weg,
+   damit sie mit den Gewinnen ueber der Leiste nicht verwechselt wird. */
+.session__energy { position: relative; }
+
+.xppop.is-cost {
+  color: var(--bad);
+  font-size: 12px;
+  animation: costfly .7s ease-out forwards;
+}
+
+@keyframes costfly {
+  0%   { opacity: 0; transform: translate(-50%, -8px) scale(.9); }
+  20%  { opacity: .95; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 20px) scale(.95); }
+}
+
+/* Der erarbeitete Reiz — dieselbe Farbe wie die Kachel, in der er steht. */
+.xppop.is-stim {
+  color: var(--accent);
+  font-size: 12px;
+  animation-delay: .08s;
+}
+
+.xppop.is-flow {
+  color: var(--accent);
+  font-size: 15px;
+  letter-spacing: .04em;
+}
+
+/* Zahlen in der Score-Reihe poppen kurz auf, wenn sie sich aendern. */
+.score__value.is-bump { animation: scoreBump .3s ease-out; }
+
+@keyframes scoreBump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+.score--stim .score__value { color: var(--accent); }
+.score__value.is-good { color: var(--good); }
+.score__value.is-warn { color: var(--warn); }
+.score__value.is-bad { color: var(--bad); }
+
+/* Ab "Schwer" setzt der Treffer sichtbar auf. */
+.stage.is-hit { animation: stageHit .22s ease-out; }
+
+@keyframes stageHit {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(3px); }
+  100% { transform: translateY(0); }
+}
+
+/* Die Bewertung der Wiederholung steigt am Ort des Tippens auf wie ein
+   Luftballon: erst ein kurzer Satz nach oben, dann schaukelt sie seitlich
+   aus und verblasst. Sie stand frueher als feste Zeile unter der Leiste —
+   dort gehoerte sie zum Bildschirm, hier gehoert sie zur Wiederholung. */
+.ratepop {
+  position: absolute;
+  bottom: 100%;
+  transform: translateX(-50%);
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 2px 7px rgba(0, 0, 0, .7);
+  animation: ratefloat 1.25s cubic-bezier(.18, .7, .32, 1) forwards;
+}
+
+/* "AUSREISSER GERETTET" passt in voller Groesse auf kein Handy. */
+.ratepop.is-long { font-size: 14px; letter-spacing: .03em; }
+
+.ratepop.is-perfect { color: var(--good); }
+.ratepop.is-ok { color: var(--warn); }
+.ratepop.is-miss { color: var(--bad); }
+
+@keyframes ratefloat {
+  0%   { opacity: 0; transform: translate(-50%, 12px) scale(.55) rotate(-3deg); }
+  14%  { opacity: 1; transform: translate(-50%, -4px) scale(1.18) rotate(2deg); }
+  30%  { opacity: 1; transform: translate(-50%, -26px) scale(1) rotate(-2deg); }
+  55%  { opacity: .85; transform: translate(-46%, -52px) scale(.99) rotate(2deg); }
+  78%  { opacity: .55; transform: translate(-54%, -76px) scale(.96) rotate(-1deg); }
+  100% { opacity: 0; transform: translate(-50%, -104px) scale(.92) rotate(0deg); }
+}
