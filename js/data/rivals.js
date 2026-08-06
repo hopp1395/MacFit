@@ -6,6 +6,10 @@
    catchUp  wie stark er reagiert, wenn er zurueckfaellt oder davonzieht
    quality  sein Qualitaetsfaktor im Fitness-Index (Technik, Symmetrie, Werte)
    restDay  an diesem Wochentag seines Zyklus laesst er es aus
+   outfit   Hosenfarbe fuers Posenbild (data/outfits.js)
+   health   sein Gesundheitsstand — faerbt die Haut im Posenbild
+   shape    Verhaeltnis der Partien zueinander: die Gesamtmasse bleibt, nur
+            verteilt sie sich anders. Kevin hat Brust und Arme, keine Beine.
    lines    was er am Eingang sagt, nach Lage sortiert */
 (function (MF) {
   'use strict';
@@ -15,6 +19,10 @@
       id: 'kevin', name: 'Kevin Brandt', icon: '💪', short: 'Kevin',
       trait: 'Redet laut, trainiert Brust und Bizeps und sonst wenig.',
       pace: 1.00, catchUp: 1.00, quality: 0.86, restDay: 6,
+      outfit: 'rot', health: 78,
+      /* Brust und Arme jeden Montag, Beine irgendwann mal. */
+      shape: { brust: 1.35, ruecken: 0.85, schultern: 1.15, bizeps: 1.35,
+               trizeps: 1.10, bauch: 0.85, beine: 0.60, waden: 0.55 },
       lines: {
         first: ['Ah, neu hier? Ich bin Kevin. Die Bank da vorne ist übrigens meine.',
                 'Kevin. Trainier hier seit Jahren. Ruf einfach, wenn du abdrücken musst.'],
@@ -36,6 +44,10 @@
       id: 'sonja', name: 'Sonja Reuter', icon: '🎽', short: 'Sonja',
       trait: 'Kommt jeden Tag, sagt wenig, macht jede Wiederholung sauber.',
       pace: 0.92, catchUp: 1.15, quality: 0.95, restDay: 0,
+      outfit: 'gruen', health: 92,
+      /* Nichts ausgelassen — das sieht man an den Beinen. */
+      shape: { brust: 0.95, ruecken: 1.05, schultern: 1.00, bizeps: 0.90,
+               trizeps: 0.95, bauch: 1.10, beine: 1.15, waden: 1.05 },
       lines: {
         first: ['Morgen. Sonja. Wenn du Hilfe beim Einstellen brauchst, sag Bescheid.',
                 'Neu? Dann merk dir: langsam runter ist wichtiger als schwer.'],
@@ -57,6 +69,10 @@
       id: 'torsten', name: 'Torsten Klee', icon: '🧢', short: 'Torsten',
       trait: 'Kennt jede Studie, nimmt jedes Pulver und schläft zu wenig.',
       pace: 1.06, catchUp: 0.90, quality: 0.80, restDay: 3,
+      outfit: 'schwarz', health: 58,
+      /* Alles, was man von vorne sieht. */
+      shape: { brust: 1.15, ruecken: 1.00, schultern: 1.20, bizeps: 1.20,
+               trizeps: 1.05, bauch: 0.90, beine: 0.80, waden: 0.70 },
       lines: {
         first: ['Torsten. Falls du Fragen zu Supplementierung hast — ich hab da was gelesen.',
                 'Neu hier? Ich optimier gerade mein Fenster nach dem Training. Spannend.'],
@@ -78,6 +94,10 @@
       id: 'mehmet', name: 'Mehmet Aydın', icon: '🥇', short: 'Mehmet',
       trait: 'Trainiert ruhig, schwer und ohne ein Wort zu viel.',
       pace: 0.96, catchUp: 1.05, quality: 0.91, restDay: 4,
+      outfit: 'blau', health: 88,
+      /* Kreuzheben und Kniebeuge, seit Jahren. */
+      shape: { brust: 1.00, ruecken: 1.25, schultern: 1.05, bizeps: 0.95,
+               trizeps: 1.00, bauch: 1.00, beine: 1.20, waden: 1.10 },
       lines: {
         first: ['Mehmet. Wenn du sicherst, sicher ich auch. So läuft das hier.',
                 'Willkommen. Nimm dir Zeit für die Grundübungen, der Rest kommt.'],

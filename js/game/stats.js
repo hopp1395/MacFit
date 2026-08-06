@@ -20,6 +20,47 @@
     return MASS_BASE + sum * MASS_PER_POINT;
   }
 
+  /* Die Umkehrung von muscleMass(): welche Partiegroessen ergeben genau
+     diese Masse? Gebraucht fuer Koerper, die keinen Spielstand haben — der
+     Rivale hat nur eine Zahl, posieren soll er trotzdem.
+
+     shape verschiebt die Verhaeltnisse untereinander (Kevin hat Brust und
+     Arme, keine Beine), ohne die Gesamtmasse zu veraendern.
+
+     Gesucht wird der Grundwert, aus dem sich mit den Faktoren die Zielmasse
+     ergibt. Direkt teilen reicht dafuer nicht: eine Partie kann an die 100
+     stossen, und dann fehlt der Rest der Masse (ein Kevin mit 50 kg hat
+     rechnerisch 105 Brust). Deshalb wird der Grundwert eingeschachtelt —
+     die Masse waechst monoton mit ihm, also findet die Halbierung in
+     wenigen Schritten den Wert, der die Deckelung schon einrechnet. */
+  function sizesForMass(mass, shape) {
+    function factor(id) {
+      return shape && shape[id] ? shape[id] : 1;
+    }
+    function sizeAt(base, id) {
+      return util.clamp(base * factor(id), 5, 100);
+    }
+    function massAt(base) {
+      var sum = 0;
+      MF.data.muscles.list.forEach(function (m) {
+        sum += sizeAt(base, m.id) * m.share;
+      });
+      return MASS_BASE + sum * MASS_PER_POINT;
+    }
+
+    var lo = 0, hi = 200;
+    for (var i = 0; i < 40; i++) {
+      var mid = (lo + hi) / 2;
+      if (massAt(mid) < mass) lo = mid; else hi = mid;
+    }
+
+    var out = {};
+    MF.data.muscles.list.forEach(function (m) {
+      out[m.id] = { size: sizeAt((lo + hi) / 2, m.id) };
+    });
+    return out;
+  }
+
   /* 0..100 — wie gleichmaessig der Koerper entwickelt ist. */
   function symmetry() {
     var sizes = MF.data.muscles.ids.map(function (id) { return state().muscles[id].size; });
@@ -159,6 +200,7 @@
   MF.game.stats = {
     NATURAL_CEILING: NATURAL_CEILING,
     muscleMass: muscleMass,
+    sizesForMass: sizesForMass,
     sizeCeiling: sizeCeiling,
     symmetry: symmetry,
     weakestMuscle: weakestMuscle,
