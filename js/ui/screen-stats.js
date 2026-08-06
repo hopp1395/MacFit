@@ -31,7 +31,8 @@
       MF.ui.membercard.mount(host, {
         id: 'stats-card',
         data: function () { return state().player; },
-        title: MF.game.progression.currentTitle(),
+        /* Ein Meistertitel schlaegt den Levelnamen — er ist erkaempft. */
+        title: state().contest.title || MF.game.progression.currentTitle(),
         editable: true,
         onPhoto: function (url) {
           var p = state().player;
@@ -540,6 +541,43 @@
       statRow('Trainingstage', util.formatNum(s.stats.daysTrained) + ' von ' + s.day),
       statRow('Beste Masse', util.formatKg(Math.max(s.stats.peakMass, MF.game.stats.muscleMass())))
     ]));
+
+    /* Die Bühne bekommt einen eigenen Block — sie ist das einzige, wofür
+       man antritt statt zu trainieren. */
+    if (MF.game.contest.unlocked() || s.contest.entries) {
+      panel.appendChild(el('div.section-title', null, [
+        el('span', { text: '🏆 Meisterschaften' }),
+        el('span.section-title__note', {
+          text: MF.game.contest.doneToday() ? 'heute erledigt'
+            : 'nächste an Tag ' + MF.game.contest.nextDay()
+        })
+      ]));
+
+      var rows = [
+        statRow('Angetreten', s.contest.entries + (s.contest.entries === 1 ? ' mal' : ' mal')),
+        statRow('Siege', String(s.contest.wins)),
+        statRow('Beste Platzierung', s.contest.best ? 'Platz ' + s.contest.best : '–'),
+        statRow('Titel', s.contest.title || 'noch keiner')
+      ];
+      panel.appendChild(el('div.report__block', null, rows));
+
+      if (s.contest.history.length) {
+        var list = el('div.report__block');
+        s.contest.history.slice(-5).reverse().forEach(function (h) {
+          var def = MF.data.contest.get(h.klasse);
+          list.appendChild(el('div.report__row', null, [
+            el('span.report__label', {
+              text: 'Tag ' + h.day + ' · ' + (def ? def.name : h.klasse)
+            }),
+            el('strong.report__value.is-' + (h.rank === 1 ? 'good' : 'flat'), {
+              text: 'Platz ' + h.rank + ' von ' + h.starters
+            })
+          ]));
+        });
+        panel.appendChild(list);
+      }
+    }
+
     return panel;
   }
 

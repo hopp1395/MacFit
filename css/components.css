@@ -2323,3 +2323,82 @@
   line-height: 1;
   color: var(--text-faint);
 }
+
+/* ---------- Meisterschaft (v1.17.0) --------------------------------------- */
+
+/* Das Plakat im Gym: am Wettkampftag antippbar, davor nur ein Hinweis. */
+.stagebar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--line);
+  background: var(--bg-card);
+}
+
+.stagebar.is-today {
+  border-style: solid;
+  border-color: var(--accent);
+  cursor: pointer;
+}
+
+.stagebar__icon { flex: 0 0 auto; font-size: 15px; line-height: 1; }
+.stagebar__text { flex: 1 1 auto; font-size: 12.5px; font-weight: 800; }
+
+.stagebar__note {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.stagebar.is-today .stagebar__note { color: var(--accent); }
+
+/* Posenwahl: dieselbe Zeile wie im Shop, nur mit Rahmen bei Auswahl. */
+.posepick { cursor: pointer; }
+.posepick.is-picked { border-color: var(--accent); }
+
+/* Kopfzeile auf der Buehne — vier Werte nebeneinander, wie im Satz. */
+.contest__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.contest__pose { flex: 1 1 auto; font-size: 13.5px; font-weight: 800; }
+
+.contest__count,
+.contest__hold,
+.contest__quality {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.contest__quality { color: var(--good); }
+
+/* Die Buehne im Wettkampf ist breiter als das Bild im Rivalen-Fenster. */
+.rival__stage--wide { max-width: 260px; }
+
+/* Tippflaeche ohne Szene: sie traegt hier nur den Hinweis. */
+.taparea--flat {
+  flex: 0 0 auto;
+  min-height: 64px;
+  justify-content: center;
+}
+
+/* Die eigene Zeile in der Rangliste hebt sich ab. */
+.report__row.is-me {
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-hi);
+}
+
+.report__row.is-me .report__label { font-weight: 800; }
+
+/* Der Rivale im gemeldeten Feld. */
+.savebox.is-rival { border-color: var(--accent); }

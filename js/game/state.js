@@ -65,6 +65,11 @@
          muessen, wer da neben einem trainiert. */
       rival: { source: 'npc', id: '', name: '', icon: '', mass: 0, fit: 0,
                sets: 0, since: 0, greetedDay: 0, flip: '', synced: 0 },
+      /* Meisterschaften (game/contest.js): lastDay verhindert den zweiten
+         Antritt am selben Tag, announcedDay die zweite Ankuendigung.
+         history: [{ day, klasse, rank, total, starters, money }] */
+      contest: { lastDay: 0, announcedDay: 0, entries: 0, wins: 0, best: 0,
+                 title: '', poses: [], history: [] },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -145,6 +150,9 @@
     });
     Object.keys(fresh.rival).forEach(function (k) {
       if (loaded.rival[k] === undefined) loaded.rival[k] = fresh.rival[k];
+    });
+    Object.keys(fresh.contest).forEach(function (k) {
+      if (loaded.contest[k] === undefined) loaded.contest[k] = fresh.contest[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];

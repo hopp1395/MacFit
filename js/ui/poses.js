@@ -57,20 +57,25 @@
      frontLeg  diese Seite steht vorgestellt und durchgestreckt (Quadrizeps)
      shrug     negative Werte ziehen die Schultern hoch
      look      Blickrichtung; ohne Angabe schaut die Figur geradeaus
-     level     ab diesem Level wählbar, ohne Angabe von Anfang an */
+     level     ab diesem Level wählbar, ohne Angabe von Anfang an
+     focus     welche Partien diese Pose zeigt — daran wird sie auf der
+               Wettkampfbühne gemessen (game/contest.js) */
   var POSES = [
     {
       id: 'front-biceps', name: 'Doppelbizeps vorne', hint: 'Arme auf, Bizeps hoch',
+      focus: ['bizeps', 'schultern', 'brust'],
       view: 'front',
       upper: 12, fore: 100, flex: 1.15, stance: 15, shrug: -2
     },
     {
       id: 'front-lat', name: 'Latissimus vorne', hint: 'Hände an die Rippen, V-Form',
+      focus: ['ruecken', 'brust', 'bauch'],
       view: 'front',
       upper: -48, fore: -168, flex: 1.05, stance: 13, shrug: 0, lat: 1.34
     },
     {
       id: 'side-chest', name: 'Seitliche Brust', hint: 'Profil, Brust raus',
+      focus: ['brust', 'schultern', 'beine'],
       view: 'side',
       /* Nahes Bein auf den Zehen mit gebeugtem Knie, beide Hände vorn
          geschlossen — das sind die beiden Merkmale, an denen man die Pose
@@ -92,16 +97,19 @@
     },
     {
       id: 'rear-biceps', name: 'Doppelbizeps hinten', hint: 'Rücken, Arme auf',
+      focus: ['ruecken', 'bizeps', 'waden'],
       view: 'back',
       upper: 12, fore: 100, flex: 1.15, stance: 15, shrug: -2, backLeg: -1
     },
     {
       id: 'rear-lat', name: 'Latissimus hinten', hint: 'Rücken auf volle Breite',
+      focus: ['ruecken', 'schultern', 'waden'],
       view: 'back',
       upper: -42, fore: -170, flex: 1.05, stance: 12, shrug: 0, lat: 1.42
     },
     {
       id: 'side-triceps', name: 'Seitlicher Trizeps', hint: 'Profil, Arm nach hinten',
+      focus: ['trizeps', 'brust', 'beine'],
       view: 'side',
       /* Beide Arme hinter dem Rücken, Hände im Kreuz geschlossen, naher Arm
          fast durchgestreckt — nur so steht der Trizeps im Profil heraus. */
@@ -124,11 +132,13 @@
     },
     {
       id: 'abs-thigh', name: 'Bauch und Oberschenkel', hint: 'Hände hinter den Kopf',
+      focus: ['bauch', 'beine', 'waden'],
       view: 'front',
       upper: 58, fore: 185, flex: 1.0, stance: 11, shrug: -1, frontLeg: 1
     },
     {
       id: 'most-muscular', name: 'Most Muscular', hint: 'Alles nach vorn',
+      focus: ['brust', 'schultern', 'trizeps', 'ruecken'],
       view: 'front',
       upper: -68, fore: -160, flex: 1.12, stance: 12, shrug: -5
     },
@@ -137,6 +147,7 @@
          Kopf, der andere lang nach oben außen gestreckt, Blick dem gestreckten
          Arm hinterher. Als einzige Pose unsymmetrisch — deshalb arms[]. */
       id: 'victory', name: 'Victory-Pose', hint: 'Golden Era — ein Arm auf, einer weit hinaus',
+      focus: ['bizeps', 'schultern', 'bauch'],
       view: 'front', level: 10,
       arms: [
         { upper: 10, fore: 105, flex: 1.15, dy: 1 },     /* gebeugt, Bizeps */
