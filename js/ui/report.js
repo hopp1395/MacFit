@@ -73,6 +73,17 @@
         block.appendChild(line('Personal Trainer', '−' + util.formatMoney(report.abo.trainerCost), 'flat'));
       }
     }
+    /* Der Rivale hat auch trainiert — die Zeile steht bewusst neben den
+       eigenen Zahlen, nicht in einem eigenen Block. */
+    if (report.rival) {
+      var rv = report.rival;
+      block.appendChild(line(rv.icon + ' ' + rv.name,
+        rv.rest ? 'Ruhetag' : rv.sets + ' Sätze, ' + deltaText(rv.gain, 2) + ' kg',
+        rv.rest ? 'flat' : 'warn'));
+      block.appendChild(line('Abstand',
+        (rv.diff >= 0 ? 'du führst mit ' : 'Rückstand ') + util.formatKg(Math.abs(rv.diff)),
+        rv.diff >= 0 ? 'good' : 'bad'));
+    }
     body.appendChild(block);
 
     if (report.gains.length) {

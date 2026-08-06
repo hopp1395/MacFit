@@ -43,10 +43,15 @@
     return util.clamp(s.stats.daysTrained / elapsed, 0, 1);
   }
 
-  /* Die Masse allein, auf 0..1000 gestreckt. */
-  function massScore() {
-    var mass = MF.game.stats.muscleMass();
+  /* Die Masse allein, auf 0..1000 gestreckt. Als eigene Funktion, weil auch
+     der Rivale danach bewertet wird — nur mit fester Qualitaet statt der
+     gerechneten Aufschluesselung. */
+  function scoreForMass(mass) {
     return util.clamp((mass - MASS_BASE) / MASS_SPAN, 0, 1) * MAX;
+  }
+
+  function massScore() {
+    return scoreForMass(MF.game.stats.muscleMass());
   }
 
   /* 0.6 bis 1.0 — bestraft Einseitigkeit, schlechte Werte und schlampige Form. */
@@ -104,6 +109,7 @@
     RANKS: RANKS,
     index: index,
     massScore: massScore,
+    scoreForMass: scoreForMass,
     quality: quality,
     technique: technique,
     consistency: consistency,

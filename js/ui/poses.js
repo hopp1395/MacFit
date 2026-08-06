@@ -161,8 +161,10 @@
      Durchlauftest nachgerechnet. Vorher hatten nur thighW und calfW einen
      Dämpfer 0,72 abbekommen, die Armmaße nicht — dadurch war der Oberarm
      dicker als der Oberschenkel. */
-  function widths(pose) {
-    var m = MF.game.state.get().muscles;
+  /* muscles ist optional: ohne Angabe ist der eigene Körper gemeint, mit
+     Angabe ein fremder — so posiert auch der Rivale mit seinen Maßen. */
+  function widths(pose, muscles) {
+    var m = muscles || MF.game.state.get().muscles;
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
     var k = 1.35;
 
@@ -785,11 +787,15 @@
 
   /* ---------- Einstieg ----------------------------------------------------- */
 
-  /* opts: { shorts } */
+  /* opts: { shorts, body }
+     body: { muscles, health } — ein fremder Körper (Rivale). Ohne Angabe
+     posiert der eigene. */
   function draw(ctx, poseId, opts) {
     var pose = get(poseId);
-    var health = MF.game.stats.healthAvg();
     var o = opts || {};
+    var body = o.body || null;
+    var health = body && body.health !== undefined
+      ? body.health : MF.game.stats.healthAvg();
 
     /* Schattiert wird über Rampenstufen. Gemischte Zwischentöne hatte vorher
        quantize() auf die Bodenfarben geschoben — die Latissimuskanten lagen auf
@@ -814,7 +820,7 @@
       ramp: sk
     };
 
-    var w = widths(pose);
+    var w = widths(pose, body ? body.muscles : null);
 
     /* Das aufgelegte Raster in Stahlgrau ist weg: die fahle Rampe färbt jetzt
        den ganzen Körper, statt ihm ein graues Netz überzuwerfen. */

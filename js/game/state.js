@@ -49,6 +49,22 @@
       /* Shakes von der Theke: gelten nur fuer den Tag in day (siehe
          game/shakes.js). bonus ist die heute dazugekaufte Energie. */
       shakes: { day: 0, count: 0, bonus: 0 },
+      /* Der Rivale (game/rival.js). Heute ist es immer ein NPC, spaeter soll
+         an derselben Stelle ein Freund stehen koennen — deshalb steht hier
+         nicht die Figur, sondern ein Platz mit Quelle:
+
+           source  'npc' = Figur aus data/rivals.js, 'freund' = echtes Konto
+           id      NPC-Kennung oder Konto-Kennung des Freundes
+           name    nur bei Freunden gefuellt (beim NPC steht sie in der Figur)
+           mass    seine Muskelmasse — beim NPC gerechnet, beim Freund kopiert
+           fit     nur bei Freunden (beim NPC faellt er aus der Masse ab)
+           synced  Spieltag des letzten Abgleichs (nur bei Freunden)
+
+         mass/sets/since/greetedDay/flip gelten fuer beide Quellen gleich,
+         damit Anzeige, Tagesbericht und Begruessung nichts davon wissen
+         muessen, wer da neben einem trainiert. */
+      rival: { source: 'npc', id: '', name: '', icon: '', mass: 0, fit: 0,
+               sets: 0, since: 0, greetedDay: 0, flip: '', synced: 0 },
       stats: {
         totalSets: 0,
         totalReps: 0,
@@ -126,6 +142,9 @@
     });
     Object.keys(fresh.shakes).forEach(function (k) {
       if (typeof loaded.shakes[k] !== 'number') loaded.shakes[k] = fresh.shakes[k];
+    });
+    Object.keys(fresh.rival).forEach(function (k) {
+      if (loaded.rival[k] === undefined) loaded.rival[k] = fresh.rival[k];
     });
     Object.keys(fresh.settings).forEach(function (k) {
       if (loaded.settings[k] === undefined) loaded.settings[k] = fresh.settings[k];
