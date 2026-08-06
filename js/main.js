@@ -310,7 +310,50 @@
   /* Danach der Rivale — meist nur ein Toast, ein Fenster gibt es bloss beim
      ersten Treffen und beim Fuehrungswechsel. */
   function greetRival() {
-    MF.ui.rival.greet(greetTrainer);
+    MF.ui.rival.greet(announceContest);
+  }
+
+  /* Meisterschaft: am Tag selbst ein Fenster mit dem Weg auf die Buehne,
+     zwei Tage vorher nur ein Toast. Beides hoechstens einmal am Tag. */
+  function announceContest() {
+    var s = MF.game.state.get();
+    var c = MF.game.contest;
+    if (!s || !c.unlocked() || s.contest.announcedDay === s.day) { greetTrainer(); return; }
+
+    if (c.isToday()) {
+      s.contest.announcedDay = s.day;
+      MF.game.state.saveSoon();
+      MF.ui.modal.open({
+        title: '🏆 Heute ist Meisterschaft',
+        subtitle: 'Die Bühne steht, das Feld ist gemeldet.',
+        body: MF.core.util.el('p.card__desc', {
+          text: 'Drei Posen, eine Wertung aus Masse, Posenwahl, Symmetrie und '
+              + 'Ausführung. In der Natural-Klasse steht die Dopingkontrolle am '
+              + 'Eingang — wer je etwas genommen hat, tritt in der offenen Klasse an.'
+        }),
+        actions: [
+          {
+            label: 'Zur Bühne', tone: 'primary',
+            onTap: function () {
+              MF.ui.router.go('contest', { reset: true });
+              greetTrainer();
+            }
+          },
+          { label: 'Später', onTap: greetTrainer }
+        ]
+      });
+      return;
+    }
+
+    var days = c.daysUntil();
+    if (days > 0 && days <= 2) {
+      s.contest.announcedDay = s.day;
+      MF.game.state.saveSoon();
+      MF.ui.toast.show(days === 1
+        ? '🏆 Morgen ist Meisterschaft — heute noch einmal alles geben.'
+        : '🏆 In zwei Tagen ist Meisterschaft.', 'good');
+    }
+    greetTrainer();
   }
 
   /* Nach dem Zettel spricht der Trainer — aber nur, wer ihn bezahlt, hat

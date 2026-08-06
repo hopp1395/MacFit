@@ -73,6 +73,16 @@
         block.appendChild(line('Personal Trainer', '−' + util.formatMoney(report.abo.trainerCost), 'flat'));
       }
     }
+    /* Der Termin auf der Buehne gehoert in den Bericht: er ist das
+       einzige, worauf man ueber mehrere Tage hinarbeitet. */
+    if (MF.game.contest.unlocked()) {
+      var until = MF.game.contest.daysUntil();
+      if (until <= 3) {
+        block.appendChild(line('Meisterschaft',
+          until === 0 ? 'heute' : (until === 1 ? 'morgen' : 'in ' + until + ' Tagen'),
+          until <= 1 ? 'good' : 'flat'));
+      }
+    }
     /* Der Rivale hat auch trainiert — die Zeile steht bewusst neben den
        eigenen Zahlen, nicht in einem eigenen Block. */
     if (report.rival) {

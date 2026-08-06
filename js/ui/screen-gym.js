@@ -367,6 +367,30 @@
 
   /* ---------- Aufbau ------------------------------------------------------ */
 
+  /* Am Wettkampftag haengt das Plakat im Gym — die einzige Stelle, an der
+     man den Weg auf die Buehne findet, wenn man das Fenster am Eingang
+     weggetippt hat. */
+  function contestBanner() {
+    var c = MF.game.contest;
+    if (!c.unlocked()) return null;
+
+    var today = c.isToday();
+    var days = c.daysUntil();
+    if (!today && days > 2) return null;
+
+    var note = today ? 'Heute — Bühne frei'
+      : (days === 1 ? 'Morgen' : 'In ' + days + ' Tagen');
+    var bar = el('div.stagebar' + (today ? '.is-today' : ''), null, [
+      el('span.stagebar__icon', { text: '🏆' }),
+      el('span.stagebar__text', { text: 'Meisterschaft' }),
+      el('span.stagebar__note', { text: note })
+    ]);
+    if (today) {
+      util.onTap(bar, function () { MF.ui.router.go('contest', { reset: true }); });
+    }
+    return bar;
+  }
+
   function render(container) {
     util.clear(container);
     var s = state();
@@ -383,6 +407,9 @@
       container.appendChild(hall);
       MF.ui.scene.mountAmbient(hall);
     }
+
+    var stage = contestBanner();
+    if (stage) container.appendChild(stage);
 
     container.appendChild(muscleGrid());
 
