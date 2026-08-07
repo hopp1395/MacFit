@@ -14,7 +14,8 @@
      Wachstum    ein leichter Überschuss hilft beim Muskelaufbau
                  (die Massephase), zu wenig und zu viel bremsen
      Definition  geht in den Fitness-Index und auf die Wettkampfbühne
-     Aussehen    Bauchmuskeln und Taille im Avatar und in den Posen
+     Aussehen    Taille, Bauchmuskeln und Bauch — im Avatar, in den Posen und
+                 im Seitenriss der Trainingsfigur
 
    Zusammen ergibt das den Rhythmus, den es vorher nicht gab: vor der
    Meisterschaft runter, danach wieder aufbauen. */
@@ -34,6 +35,12 @@
 
   /* Ab hier ist nichts mehr zu sehen; darunter zeichnet sich der Bauch ab. */
   var DEF_FLOOR = 26, DEF_SPAN = 18;
+  /* Und ab hier faengt das Gegenteil an: die Kanten verschwinden nicht nur,
+     es kommt etwas dazu. Vorher endete oberhalb von DEF_FLOOR jede sichtbare
+     Wirkung — vierzig Prozent Fett sahen aus wie sechsundzwanzig. Die beiden
+     Baender ueberlappen sich zwischen 21 und 26, sonst gaebe es dazwischen
+     einen Bereich, in dem sich beim Zunehmen gar nichts tut. */
+  var SOFT_FLOOR = 21, SOFT_SPAN = 18;
 
   /* Wachstum je nach Fettstand: Stuetzstellen, dazwischen linear. Ein
      leichter Ueberschuss hilft wirklich, ein grosser bringt nichts mehr. */
@@ -66,6 +73,24 @@
   /* 0..1 — wie scharf die Figur gezeichnet ist. */
   function definition() {
     return util.clamp((DEF_FLOOR - percent()) / DEF_SPAN, 0, 1);
+  }
+
+  function softnessAt(p) {
+    return util.clamp((p - SOFT_FLOOR) / SOFT_SPAN, 0, 1);
+  }
+
+  /* 0..1 — wie weich die Figur gezeichnet ist: das Gegenstueck zu
+     definition(). Beides zusammen macht aus dem Fettstand eine Achse, die in
+     beide Richtungen sichtbar ist. */
+  function softness() {
+    return softnessAt(percent());
+  }
+
+  /* Fremde Koerper (der Rivale) bringen nur ihre definition mit. Aus ihr
+     laesst sich der Fettstand zurueckrechnen, den sie bedeutet — so braucht
+     data/rivals.js keine zweite Zahl. */
+  function softnessFor(def) {
+    return softnessAt(DEF_FLOOR - DEF_SPAN * util.clamp(def, 0, 1));
   }
 
   function label() {
@@ -146,6 +171,8 @@
     MAX: MAX,
     percent: percent,
     definition: definition,
+    softness: softness,
+    softnessFor: softnessFor,
     label: label,
     growthFactor: growthFactor,
     intakeToday: intakeToday,

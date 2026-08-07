@@ -42,16 +42,23 @@
       shoulder: 3.6 + f('schultern') * 1.8,
       thigh: 8.2 + f('beine') * 3.7,  /* 1,4  x arm   */
       calf: 5.7 + f('waden') * 2.9,   /* 0,72 x thigh */
-      head: 7
+      head: 7,
+      /* 0..1, keine Strichstaerke: der Bauch. Im Seitenriss ist er die
+         einzige Stelle, an der Koerperfett ueberhaupt sichtbar wird — von
+         vorn verschwindet er hinter der Breite. */
+      belly: MF.game.fat.softness()
     };
   }
 
-  /* Feste Werte für Hintergrundleute — die sollen nicht mitwachsen. */
+  /* Feste Werte für Hintergrundleute — die sollen nicht mitwachsen. Einer von
+     fünfen hat einen Bauch: ein echtes Studio besteht nicht nur aus
+     Athleten. */
   function npcThickness(seed) {
     var v = ((seed * 7) % 5) / 5;
     return {
       arm: 5 + v * 2.5, fore: 3.8 + v * 1.8, torso: 12 + v * 5,
-      shoulder: 4 + v * 1.2, thigh: 9 + v * 2.5, calf: 6.3 + v * 1.8, head: 7
+      shoulder: 4 + v * 1.2, thigh: 9 + v * 2.5, calf: 6.3 + v * 1.8, head: 7,
+      belly: v < 0.1 ? 0.6 : 0
     };
   }
 
@@ -133,11 +140,35 @@
     }
     var footW = th.calf * 0.8;
 
+    /* Der Bauchansatz sitzt auf der Rumpfachse statt auf festen Koordinaten:
+       so stimmt er auch in Rueckenlage, wo "vorn" nach oben zeigt, und bei
+       face -1, wo die Figur andersherum steht. Die Normale ist die um 90 Grad
+       in Blickrichtung gedrehte Rumpfachse. Ohne belly — Vorspann,
+       Hintergrundleute — bleibt alles wie bisher. */
+    var belly = null;
+    if (th.belly > 0) {
+      var ax = f.hip[0] - f.shoulder[0], ay = f.hip[1] - f.shoulder[1];
+      var an = Math.sqrt(ax * ax + ay * ay) || 1;
+      var bn = [ay / an * face, -ax / an * face];
+      var bc = between(f.shoulder, f.hip, 0.72);
+      /* Radius und Versatz an gerenderten Bildern abgenommen: mit 0,30 und
+         0,10 stand die Woelbung nur eineinhalb Punkte ueber den Rumpf hinaus
+         und war auf 91 Punkten Koerperhoehe schlicht nicht zu sehen. */
+      var bo = th.torso * (0.14 + th.belly * 0.22);
+      belly = {
+        x: bc[0] + bn[0] * bo,
+        y: bc[1] + bn[1] * bo,
+        r: th.torso * (0.34 + th.belly * 0.20),
+        n: bn
+      };
+    }
+
     /* 1. Kontur: erst hinten, dann vorne — ergibt eine saubere Silhouette. */
     strokeAll(ctx, L.far, 2, C.ink);
     px.capsule(ctx, offset(o.foot, [-4, 0]), farToe, footW + 2, C.ink);
     px.disc(ctx, f.head[0], f.head[1], hr + 1, C.ink);
     strokeAll(ctx, L.near, 2, C.ink);
+    if (belly) px.disc(ctx, belly.x, belly.y, belly.r + 2, C.ink);
     px.capsule(ctx, f.foot, toe, footW + 2, C.ink);
     px.disc(ctx, f.hand[0], f.hand[1], th.fore * 0.62 + 1.5, C.ink);
 
@@ -146,6 +177,10 @@
     px.capsule(ctx, offset(o.foot, [-4, 0]), farToe, footW, C.ink);
 
     px.capsule(ctx, f.shoulder, f.hip, th.torso, skin);
+    /* Vor Schenkel, Schulter und Arm: in fast jeder Geraeteszene liegt der
+       nahe Arm vor dem Rumpf, und ein spaeter gezeichneter Bauch wuerde ihn
+       zudecken. */
+    if (belly) px.disc(ctx, belly.x, belly.y, belly.r, skin);
     px.capsule(ctx, f.hip, f.knee, th.thigh, skin);
     px.capsule(ctx, f.knee, f.foot, th.calf, skin);
     px.disc(ctx, f.shoulder[0], f.shoulder[1], th.shoulder, skin);
@@ -156,8 +191,17 @@
        Boxhandschuh — und in den meisten Szenen liegt ohnehin ein Gerät darauf. */
     px.disc(ctx, f.hand[0], f.hand[1], th.fore * 0.62, skin);
 
-    /* Kleidung */
-    px.capsule(ctx, f.shoulder, between(f.shoulder, f.hip, 0.6), th.torso * 0.9, shirt);
+    /* Kleidung. Das Shirt endet ueber dem Bauch und spannt sich darueber: mit
+       einem Bauch rutscht der Saum hoch, und die Woelbung bekommt ihre eigene
+       Shirt-Scheibe. Ohne sie deckt die runde Kappe der Shirt-Kapsel den
+       halben Bauch zu und der Effekt verpufft. Die Shorts kommen danach und
+       ergeben von selbst "Bauch liegt auf dem Hosenbund". */
+    px.capsule(ctx, f.shoulder,
+      between(f.shoulder, f.hip, 0.6 - (th.belly || 0) * 0.07), th.torso * 0.9, shirt);
+    if (belly) {
+      px.disc(ctx, belly.x - belly.n[0] * belly.r * 0.3,
+        belly.y - belly.n[1] * belly.r * 0.3, belly.r * 0.78, shirt);
+    }
     px.capsule(ctx, f.hip, between(f.hip, f.knee, 0.48), th.thigh * 1.1, shorts);
     px.capsule(ctx, f.foot, toe, footW, shoe);
 
@@ -201,6 +245,12 @@
 
     px.capsule(ctx, offset(f.shoulder, LIGHT), offset(between(f.shoulder, f.hip, 0.55), LIGHT),
       th.torso * 0.30, shirtLit);
+    /* Auf der Mitte der Shirt-Scheibe, nicht auf der des Bauches: sonst faellt
+       der helle Fleck ueber deren Rand auf die blanke Haut darunter. */
+    if (belly) {
+      px.disc(ctx, belly.x - belly.n[0] * belly.r * 0.3 + LIGHT[0],
+        belly.y - belly.n[1] * belly.r * 0.3 + LIGHT[1], belly.r * 0.34, shirtLit);
+    }
     px.capsule(ctx, offset(f.shoulder, LIGHT), offset(f.elbow, LIGHT), th.arm * 0.34, skinLit);
     px.capsule(ctx, offset(between(f.hip, f.knee, 0.45), LIGHT), offset(f.knee, LIGHT),
       th.thigh * 0.30, skinLit);

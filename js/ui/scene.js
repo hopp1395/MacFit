@@ -207,7 +207,11 @@
       return {
         arm: th.arm * a, fore: th.fore * b, torso: th.torso * b,
         shoulder: th.shoulder * a, thigh: th.thigh * (1 + pump * 0.03),
-        calf: th.calf * (1 + pump * 0.03), head: th.head
+        calf: th.calf * (1 + pump * 0.03), head: th.head,
+        /* Ohne Pump-Faktor: Blut geht in den Muskel, nicht in den Bauch. Der
+           Wert muss aber mit — die Liste hier ist abschliessend, und ohne ihn
+           verschwaende der Bauch waehrend jedes Satzes. */
+        belly: th.belly
       };
     }
 

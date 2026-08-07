@@ -179,22 +179,29 @@
   function widths(pose, muscles, definition) {
     var m = muscles || MF.game.state.get().muscles;
     var lean = definition === undefined ? MF.game.fat.definition() : definition;
+    var soft = definition === undefined
+      ? MF.game.fat.softness() : MF.game.fat.softnessFor(definition);
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
-    var k = 1.35;
+    /* Die Rumpfmasse kommen aus ui/shape.js — dieselbe Rechnung wie im
+       Koerper-Bildschirm, nur mit dem groesseren Faktor. Arme, Beine und
+       Brust stehen weiter hier: das sind keine Rumpfmasse. */
+    var sh = MF.ui.shape.of(m, lean, soft);
+    var k = MF.ui.shape.K.poses;
 
     var thighW = (8.6 + f('beine') * 3.9) * k;
-    var latHalf = (11.5 + f('ruecken') * 13) * k * 0.5 * (pose.lat || 1);
+    var latHalf = sh.latHalf * k * (pose.lat || 1);
     var chestR = (4.0 + f('brust') * 3.0) * k;
 
     return {
       /* Außenkante der Schulter = shoulderSpan * 1,44. Ergibt 34 bis 50 Punkte
          Schulterbreite auf 129,5 Punkte Höhe; vorher waren es bis zu 62. */
-      shoulderSpan: (8.7 + f('schultern') * 4.2) * k,
+      shoulderSpan: sh.shoulderHalf * k,
       latHalf: latHalf,
-      /* Definition zieht die Taille zusammen; Fett ist der Normalfall.
-         Bewusst nur nach unten: eine Taille, die breiter waere als der
-         Latissimus, kippt die Silhouette. */
-      waistHalf: (11 + f('bauch') * 4.7) * k * 0.5 * (1 - lean * 0.18),
+      waistHalf: sh.waistHalf * k,
+      /* Die breiteste Stelle knapp über dem Hosenbund — ohne Fett die Kerbe
+         über dem Hüftknochen, mit Fett der Bauch. */
+      bulgeHalf: sh.bulgeHalf * k,
+      belly: sh.belly,
       /* Die Schenkel sitzen unter dem Rumpf, nicht daneben. */
       hipHalf: thighW * 0.37,
       chestR: chestR,
@@ -296,28 +303,34 @@
 
   /* ---------- Rumpf -------------------------------------------------------- */
 
-  /* Halbe Rumpfbreite auf Höhe u (0 = Achselhöhe, 1 = Taille).
-
-     Der Latissimus setzt direkt unter der Achsel an, ist dort am breitesten
-     und läuft keilförmig zur Taille aus. Eine gleichmäßig breite Kapsel ergibt
-     dagegen eine Tonne mit runden Enden. */
+  /* Halbe Rumpfbreite auf Höhe u (0 = Achselhöhe, 1 = Taille). Die Kurve
+     selbst steht in ui/shape.js — der Körper-Bildschirm zeichnet denselben
+     Rumpf, nur kleiner, und beide müssen ihn gleich verjüngen. */
   function torsoW(w, u) {
-    /* Die Achselhöhle: direkt unter dem Deltamuskel zieht sich der Rumpf kurz
-       ein, bevor der Latissimus ausfächert. Diese Einbuchtung ist der Grund für
-       den Polygonzug — ein Stapel Kapseln kann sie nicht abbilden, weil die
-       Vereinigung konvexer Formen immer konvex bleibt. */
-    if (u < 0.08) return lerp(w.latHalf * 0.92, w.latHalf * 0.78, u / 0.08);
-    if (u < 0.30) return lerp(w.latHalf * 0.78, w.latHalf, (u - 0.08) / 0.22);
-    /* Von der breitesten Stelle keilförmig zur Taille, zum Schluss etwas
-       schneller — das gibt die Kerbe über dem Hüftknochen. */
-    if (u < 0.86) return lerp(w.latHalf, w.waistHalf * 1.06, (u - 0.30) / 0.56);
-    return lerp(w.waistHalf * 1.06, w.waistHalf, (u - 0.86) / 0.14);
+    return MF.ui.shape.torsoW(w, u);
+  }
+
+  /* Ober- und Unterkante des Rumpfumrisses. Als eigene Funktion, damit die
+     Details auf dem Rumpf dieselbe Höhenskala benutzen wie der Umriss selbst
+     — sonst verschiebt sich alles, sobald eine Pose die Schultern hochzieht
+     (pose.shrug). */
+  function torsoSpan(sy) { return [sy - 2, HIP + 2]; }
+
+  /* Halbe Rumpfbreite auf einer Bildhöhe y — dieselbe Kurve wie torsoW(), nur
+     über y statt über u angesprochen. Kanten, die auf dem Rumpf liegen, holen
+     sich hier ihre Endpunkte, statt sie aus den Rohmaßen zu raten: mit latHalf
+     als Startwert stand die Latissimus-Kante bis zu zwei Punkte AUSSERHALB der
+     Silhouette, weil der Umriss seine volle Breite erst weiter unten
+     erreicht. */
+  function torsoAt(w, sy, y) {
+    var sp = torsoSpan(sy);
+    return torsoW(w, util.clamp((y - sp[0]) / (sp[1] - sp[0]), 0, 1));
   }
 
   /* Der Rumpf als ein geschlossener Umriss statt als Stapel waagerechter
      Kapseln. Links von oben nach unten, rechts zurück. */
   function torsoOutline(sy, w) {
-    var y0 = sy - 2, y1 = HIP + 2;
+    var sp = torsoSpan(sy), y0 = sp[0], y1 = sp[1];
     var N = 15, i, u, hw;
     var left = [], right = [];
     for (i = 0; i < N; i++) {
@@ -518,13 +531,18 @@
     }
 
     /* Die Latissimus-Kante: von der Achsel schräg zur Taille. Sie macht den
-       Keil sichtbar, den die Silhouette allein nur andeutet. */
-    for (i = 0; i < 2; i++) {
-      s = i ? 1 : -1;
-      px.capsule(ctx,
-        [CX + s * (w.latHalf - 1.5), sy + 4],
-        [CX + s * (w.waistHalf - 0.5), HIP - 9],
-        2, col.edge);
+       Keil sichtbar, den die Silhouette allein nur andeutet — und wo kein Keil
+       ist, wird auch keiner gezeichnet: auf einem weichen Körper wäre sie eine
+       Behauptung, und bei breiter Taille liefe sie sogar nach außen
+       auseinander. */
+    if (w.latHalf > w.waistHalf * 1.08) {
+      for (i = 0; i < 2; i++) {
+        s = i ? 1 : -1;
+        px.capsule(ctx,
+          [CX + s * (torsoAt(w, sy, sy + 4) - 1.5), sy + 4],
+          [CX + s * (torsoAt(w, sy, HIP - 9) - 1.5), HIP - 9],
+          2, col.edge);
+      }
     }
 
     /* Brust wird nur über ihre Kanten sichtbar: die Fläche hat denselben
@@ -551,6 +569,19 @@
       for (var r = 0; r < rows; r++) {
         px.rect(ctx, CX - 6, HIP - 22 + r * 6, 4, 2, col.edge);
         px.rect(ctx, CX + 2, HIP - 22 + r * 6, 4, 2, col.edge);
+      }
+    }
+
+    /* Und wo keine Kerben mehr sind, liegt der Speck: eine kurze Falte über
+       dem Hosenbund, links und rechts. Das Gegenstück zu den Bauchmuskeln —
+       an derselben Stelle, aus demselben Grund. */
+    if (w.belly > 0.3) {
+      for (i = 0; i < 2; i++) {
+        s = i ? 1 : -1;
+        px.capsule(ctx,
+          [CX + s * (torsoAt(w, sy, HIP - 12) - 3), HIP - 12],
+          [CX + s * (torsoAt(w, sy, HIP - 6) - 2), HIP - 6],
+          2, col.soft);
       }
     }
 
@@ -582,22 +613,35 @@
     }
 
     /* Latissimus: die Außenkante von der Achsel zur Taille, kräftiger als
-       vorn — von hinten ist das die Hauptform. */
-    for (i = 0; i < 2; i++) {
-      s = i ? 1 : -1;
-      px.capsule(ctx,
-        [CX + s * (w.latHalf - 1.5), sy + 5],
-        [CX + s * (w.waistHalf - 0.5), HIP - 11],
-        2.5, col.deep);
-      /* Licht auf der Fläche dazwischen macht den Keil plastisch. */
-      px.capsule(ctx,
-        [CX + s * w.latHalf * 0.55, sy + 9],
-        [CX + s * w.waistHalf * 0.7, HIP - 16],
-        3, col.skinLit);
+       vorn — von hinten ist das die Hauptform. Wie vorn nur dort, wo es
+       wirklich einen Keil gibt. */
+    if (w.latHalf > w.waistHalf * 1.08) {
+      for (i = 0; i < 2; i++) {
+        s = i ? 1 : -1;
+        px.capsule(ctx,
+          [CX + s * (torsoAt(w, sy, sy + 5) - 1.5), sy + 5],
+          [CX + s * (torsoAt(w, sy, HIP - 11) - 1.5), HIP - 11],
+          2.5, col.deep);
+        /* Licht auf der Fläche dazwischen macht den Keil plastisch. */
+        px.capsule(ctx,
+          [CX + s * w.latHalf * 0.55, sy + 9],
+          [CX + s * w.waistHalf * 0.7, HIP - 16],
+          3, col.skinLit);
+      }
     }
 
-    /* Untere Rückenpartie: zwei Grübchen über dem Hosenbund. */
-    if (w.back > 0.3) {
+    /* Untere Rückenpartie: zwei Grübchen über dem Hosenbund — die hat nur ein
+       trockener Rücken. Liegt Fett darüber, wird daraus die Rolle über dem
+       Hosenbund. */
+    if (w.belly > 0.3) {
+      for (i = 0; i < 2; i++) {
+        s = i ? 1 : -1;
+        px.capsule(ctx,
+          [CX + s * (torsoAt(w, sy, HIP - 12) - 3), HIP - 12],
+          [CX + s * (torsoAt(w, sy, HIP - 6) - 2), HIP - 6],
+          2, col.deep);
+      }
+    } else if (w.back > 0.3) {
       px.rect(ctx, CX - 7, HIP - 12, 2, 2, col.deep);
       px.rect(ctx, CX + 5, HIP - 12, 2, 2, col.deep);
     }
@@ -625,12 +669,19 @@
   function profileTorso(ctx, d, backX, color, extra) {
     var y0 = SHOULDER - 3, y1 = HIP + 2;
     var N = 12, h = (y1 - y0) / N, i, u, depth, e, y, bx, nape, blade;
+    /* Wie in der Vorderansicht wandert die engste Stelle mit dem Fett nach
+       oben, und darunter geht es wieder heraus — nur ist die Wölbung hier die
+       Tiefe. Ohne Fett ist uW gleich 1, der dritte Abschnitt läuft leer und
+       die Kurve ist die alte. */
+    var uW = d.bellyAt > 0 ? 1 - d.bellyAt * 0.28 : 1;
     for (i = 0; i < N; i++) {
       u = i / (N - 1);
       /* Oben die Brust, darunter die Verjüngung zur Taille. */
       depth = u < 0.3
         ? lerp(d.chest * 0.9, d.chest, u / 0.3)
-        : lerp(d.chest, d.waist, (u - 0.3) / 0.7);
+        : u <= uW
+          ? lerp(d.chest, d.waist, (u - 0.3) / (uW - 0.3))
+          : lerp(d.waist, d.belly, (u - uW) / (1 - uW));
       /* Die Rückenlinie zieht oben zur Halslinie ein und ist erst am
          Schulterblatt am tiefsten. Vorher stand die OBERSTE Reihe am
          weitesten hinten — die Silhouette sprang direkt unter dem
@@ -649,7 +700,12 @@
     var s = pose.side;
     var d = {
       chest: w.latHalf * 1.55 * (pose.depth || 1),
-      waist: w.waistHalf * 1.9
+      waist: w.waistHalf * 1.9,
+      /* Im Profil geht der Bauch nur nach VORN — hinten bleibt die
+         Rückenlinie stehen. Deshalb steckt die ganze Wölbung in der Tiefe,
+         und backX rechnet weiter aus der Taille. */
+      belly: w.bulgeHalf * 1.9,
+      bellyAt: w.belly
     };
     var backX = CX - d.waist * 0.5 - 2;
 
@@ -800,6 +856,16 @@
       for (var r = 0; r < 2; r++) {
         px.rect(ctx, backX + d.waist * 0.62, HIP - 20 + r * 7, 3, 2, col.edge);
       }
+    }
+
+    /* Statt der Kerben die Falte, mit der der Bauch auf dem Hosenbund
+       aufliegt. Sie sitzt an der Vorderkante, wo die Wölbung wieder
+       hereinläuft — ohne sie ist der Bauch nur eine dicke Stelle. */
+    if (d.bellyAt > 0.3) {
+      px.capsule(ctx,
+        [backX + d.belly * 0.52, HIP - 9],
+        [backX + d.belly * 0.95, HIP - 7],
+        2, col.soft);
     }
   }
 

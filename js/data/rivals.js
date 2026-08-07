@@ -8,8 +8,11 @@
    restDay  an diesem Wochentag seines Zyklus laesst er es aus
    outfit   Hosenfarbe fuers Posenbild (data/outfits.js)
    health   sein Gesundheitsstand — faerbt die Haut im Posenbild
-   definition  wie durchtrainiert er aussieht (0..1): Taille und Bauchkerben
-            im Posenbild. Kevin ist weicher als Sonja.
+   definition  wie durchtrainiert er aussieht (0..1): Taille, Bauchkerben und
+            Bauch im Posenbild. Kevin ist weicher als Sonja. Unter 0,28 wird
+            die Mitte nicht nur weniger scharf, sondern sichtbar runder —
+            game/fat.js rechnet aus dem Wert den Fettstand zurueck, den er
+            bedeutet.
    shape    Verhaeltnis der Partien zueinander: die Gesamtmasse bleibt, nur
             verteilt sie sich anders. Kevin hat Brust und Arme, keine Beine.
    lines    was er am Eingang sagt, nach Lage sortiert */
@@ -21,7 +24,7 @@
       id: 'kevin', name: 'Kevin Brandt', icon: '💪', short: 'Kevin',
       trait: 'Redet laut, trainiert Brust und Bizeps und sonst wenig.',
       pace: 1.00, catchUp: 1.00, quality: 0.86, restDay: 6,
-      outfit: 'rot', health: 78, definition: 0.35,
+      outfit: 'rot', health: 78, definition: 0.12,
       /* Brust und Arme jeden Montag, Beine irgendwann mal. */
       shape: { brust: 1.35, ruecken: 0.85, schultern: 1.15, bizeps: 1.35,
                trizeps: 1.10, bauch: 0.85, beine: 0.60, waden: 0.55 },

@@ -47,21 +47,26 @@
     px.disc(ctx, CX, 108, 13, C.wall);
 
     /* --- Maße aus den Muskelwerten ------------------------------------- */
-    /* Dieselben Verhältnisse wie im Posenbild, nur um 0,77 kleiner gerechnet —
-       die Figur dort ist 129,5 Punkte hoch, diese 99,5. Sonst hätte der
-       Spieler im Körper-Bildschirm eine andere Figur als auf dem Teilen-Bild. */
-    var shoulderW = 9.0 + f('schultern') * 4.4;
-    var chestW = 4.0 + f('brust') * 2.7;
-    /* Das Koerperfett sitzt in der Taille: definiert wird sie schmaler,
-       weich baucht sie aus. Der Rest der Figur bleibt, wie er ist — Fett
-       macht nicht den Arm dick, sondern die Mitte. */
+    /* Die Rumpfmaße kommen aus ui/shape.js — dieselbe Rechnung wie im
+       Posenbild, nur mit dem kleineren Faktor: die Figur dort ist 129,5 Punkte
+       hoch, diese 99,5. Sonst hätte der Spieler im Körper-Bildschirm eine
+       andere Figur als auf dem Teilen-Bild.
+
+       Das Koerperfett sitzt in der Mitte: definiert wird sie schmaler, weich
+       baucht sie aus. Der Rest der Figur bleibt, wie er ist — Fett macht nicht
+       den Arm dick. */
     var definition = MF.game.fat.definition();
-    var waistW = (11.4 + f('bauch') * 4.9) * (1 - definition * 0.18);
+    var sh = MF.ui.shape.own();
+    var k = MF.ui.shape.K.avatar;
+    var shoulderW = sh.shoulderHalf * k;
+    var chestW = 4.0 + f('brust') * 2.7;
+    var waistW = sh.waistHalf * 2 * k;
+    var bulgeW = sh.bulgeHalf * 2 * k;
     var armW = 4.7 + f('bizeps') * 3.9;
     var foreW = 3.7 + f('trizeps') * 2.7;      /* 0,75 x armW  */
     var thighW = 8.9 + f('beine') * 4.0;       /* 1,4  x armW  */
     var calfW = 6.2 + f('waden') * 3.2;        /* 0,72 x thighW */
-    var backW = 12 + f('ruecken') * 13.5;
+    var backW = sh.latHalf * 2 * k;
 
     /* Schulter 0,81 · Hüfte 0,53 · Knie 0,27 der Körperhöhe über dem Boden.
        Vorher lag die Hüfte bei 64 — die Beine machten nur 40 % der Höhe aus. */
@@ -91,6 +96,37 @@
         [CX + side * (shoulderW + 4.5), handY], foreW + e, color);
     }
 
+    /* Der Rumpf verjüngt sich zur Taille — entlang derselben Kurve wie im
+       Posenbild, die in ui/shape.js steht.
+
+       Vorher war er ein Rohr gleicher Breite von der Schulter bis zur Hüfte,
+       mit einer schmaleren Taillenkapsel darin. Die lag damit unsichtbar im
+       Rumpf: die V-Form kam im Körper-Bildschirm nie an, egal wie trainiert
+       die Figur war.
+
+       Ein Polygon wie im Posenbild geht hier nicht — Rücken und Bauch werden
+       getrennt eingefärbt (die Ermüdung je Partie), und poly() füllt nur eine
+       Fläche. Also ein Stapel waagerechter Kapseln, wie im Profil dort. */
+    var TORSO_TOP = shoulderY - 1, TORSO_BOT = hipY - 1;
+    var torsoDims = {
+      latHalf: backW * 0.5,
+      waistHalf: waistW * 0.5,
+      bulgeHalf: bulgeW * 0.5,
+      belly: sh.belly
+    };
+
+    function torso(upper, lower, extra) {
+      var e = extra || 0;
+      var N = 12, span = TORSO_BOT - TORSO_TOP, h = span / (N - 1);
+      for (var i = 0; i < N; i++) {
+        var u = i / (N - 1);
+        var hw = MF.ui.shape.torsoW(torsoDims, u) + e;
+        var y = TORSO_TOP + u * span;
+        px.capsule(ctx, [CX - hw, y], [CX + hw, y], h + 1.6 + e * 2,
+          u < 0.62 ? upper : lower);
+      }
+    }
+
     /* Trapezmuskel: die Schräge vom Hals zur Schulter. Ohne sie stehen die
        Schulterkugeln frei neben dem Kopf und sehen aus wie Ohren. */
     function trapz(color, extra) {
@@ -102,7 +138,7 @@
     /* --- Kontur --------------------------------------------------------- */
     leg(-1, C.ink, 2);
     leg(1, C.ink, 2);
-    px.capsule(ctx, [CX, shoulderY], [CX, hipY - 2], backW + 2, C.ink);
+    torso(C.ink, C.ink, 2);
     arm(-1, C.ink, 2);
     arm(1, C.ink, 2);
     px.disc(ctx, CX - shoulderW, shoulderY, (shoulderW * 0.42) + 2, C.ink);
@@ -117,9 +153,10 @@
 
     /* Hals vor dem Rumpf, sonst steht sein unteres Ende als Fleck auf der Brust. */
     px.capsule(ctx, [CX, 18], [CX, shoulderY - 1], 7, r(-2));
-    px.capsule(ctx, [CX, shoulderY], [CX, hipY - 2], backW, tone('ruecken'));
-    /* Taille schmaler als der Brustkorb — das macht die V-Form. */
-    px.capsule(ctx, [CX, hipY - 10], [CX, hipY - 2], waistW, tone('bauch'));
+    /* Oben der Rücken, unten der Bauch — die Kurve dazwischen macht die
+       V-Form, und mit Fett kehrt sie sich um: dann ist die Mitte die
+       breiteste Stelle. */
+    torso(tone('ruecken'), tone('bauch'), 0);
     trapz(tone('schultern'), 0);
 
     arm(-1, tone('bizeps'), 0);
@@ -173,6 +210,18 @@
         px.rect(ctx, CX - 4, hipY - 13 + row * 4, 3, 2, r(-3));
         px.rect(ctx, CX + 1, hipY - 13 + row * 4, 3, 2, r(-3));
       }
+    }
+
+    /* Und wo keine Kerben mehr sind, die Wölbung: ein Lichtfleck auf dem Bauch
+       und darunter die Falte, mit der er auf dem Hosenbund aufliegt. Ohne die
+       Falte ist die breite Mitte nur ein dicker Rumpf, kein Bauch.
+
+       Beides muss über dem Bund bleiben: der wird weiter oben gezeichnet,
+       dieser Durchgang läuft danach und würde ihn übermalen. */
+    if (sh.belly > 0.3) {
+      px.disc(ctx, CX - 3, hipY - 10, bulgeW * 0.16, skinLit);
+      px.capsule(ctx, [CX - bulgeW * 0.34, hipY - 6], [CX + bulgeW * 0.34, hipY - 7],
+        1.5, r(-3));
     }
 
     surface.present();
