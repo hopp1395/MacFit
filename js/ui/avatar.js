@@ -81,10 +81,7 @@
       var e = extra || 0;
       var hip = [CX + side * hipX, hipY];
       var knee = [CX + side * (hipX + 2), kneeY];
-      /* Die Fuesse stehen weiter auseinander als frueher: seit die Schenkel
-         schmaler sind, wuerden die Schuhe sonst in der Mitte aneinander
-         stossen und wieder als ein Klotz lesen. */
-      var foot = [CX + side * (hipX + 4.5), footY];
+      var foot = [CX + side * (hipX + 3.5), footY];
       px.capsule(ctx, knee, foot, calfW * 0.6 + e, color);
       px.capsule(ctx, hip, knee, thighW * 0.8 + e, color);
       px.capsule(ctx, knee, [(knee[0] + foot[0]) / 2, (kneeY + footY) / 2], calfW + e, color);
@@ -181,8 +178,8 @@
     /* Schuhe, ebenfalls als Raster — ihre Kontur steckt darin, deshalb kommen
        sie nicht in den Konturdurchgang. Ohne sie hörten die Beine als zwei
        runde Kapselenden über dem Bodenschatten auf. */
-    px.stamp(ctx, MF.ui.sprites.shoeSmall, CX - hipX - 4.5 - 6, footY - 4, r);
-    px.stamp(ctx, MF.ui.sprites.shoeSmall, CX + hipX + 4.5 - 6, footY - 4, r);
+    px.stamp(ctx, MF.ui.sprites.shoeSmall, CX - hipX - 3.5 - 4, footY - 4, r);
+    px.stamp(ctx, MF.ui.sprites.shoeSmall, CX + hipX + 3.5 - 4, footY - 4, r);
 
     /* Shorts in der gewählten Farbe: Bund über der Hüfte plus zwei
        Hosenbeine, die den Oberschenkel wirklich umschließen. Der flache

@@ -384,7 +384,7 @@
       px.stamp(ctx, SP.shoeBall, l.foot[0] - 4, FOOT - 4, ramp);
       return;
     }
-    px.stamp(ctx, SP.shoeFront, l.foot[0] - 8, FOOT - 5, ramp);
+    px.stamp(ctx, SP.shoeFront, l.foot[0] - 6, FOOT - 5, ramp);
   }
 
   /* Beide Ansichten teilen sich Skelett, Silhouette und Flächen. Unterschiedlich

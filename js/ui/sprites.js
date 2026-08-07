@@ -137,16 +137,21 @@
   ]);
 
   /* Von vorn sieht man Spann und Sohle. Ohne die beiden Zeilen Spann sass der
-     Schuh als flache Platte unter dem Bein statt am Knoechel. */
+     Schuh als flache Platte unter dem Bein statt am Knoechel.
+
+     Zwoelf Punkte breit, gut neun Prozent der Koerperhoehe. Vorher waren es
+     siebzehn und damit dreizehn Prozent — abgestimmt auf Beine, die ein
+     Sechstel staerker waren als heute. Neben dem schmaleren Schenkel stand
+     der Schuh dann als Klotz da, fast das Vierfache des Knoechels. */
   var SHOE_FRONT = sprite([
-    '.....kkkkkkk.....',
-    '...kkKKKKKKKkk...',
-    '.kkKKKKKKKKKKKkk.',
-    'kKKKKKKKKKKKKKKKk',
-    'kKKKKKKKKKKKKKKKk',
-    'kKKKKKKKKKKKKKKKk',
-    'ksssssssssssssssk',
-    '.kkkkkkkkkkkkkkk.'
+    '...kkkkkk...',
+    '..kKKKKKKk..',
+    '.kKKKKKKKKk.',
+    'kKKKKKKKKKKk',
+    'kKKKKKKKKKKk',
+    'kKKKKKKKKKKk',
+    'kssssssssssk',
+    '.kkkkkkkkkk.'
   ]);
 
   /* Derselbe Schuh fuer den Koerper-Bildschirm, um 0,77 kleiner — wie beim
@@ -154,12 +159,12 @@
      Pixeln Hoehe entscheidet jede Zeile ueber die Form. Ohne ihn endeten die
      Beine dort einfach als zwei runde Kapselenden. */
   var SHOE_SMALL = sprite([
-    '...kkkkkkk...',
-    '.kkKKKKKKKkk.',
-    'kKKKKKKKKKKKk',
-    'kKKKKKKKKKKKk',
-    'ksssssssssssk',
-    '.kkkkkkkkkkk.'
+    '..kkkkk..',
+    '.kKKKKKk.',
+    'kKKKKKKKk',
+    'kKKKKKKKk',
+    'ksssssssk',
+    '.kkkkkkk.'
   ]);
 
   /* Im Profil zeigt der Fuß nach rechts; für die andere Richtung wird beim
