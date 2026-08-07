@@ -64,15 +64,15 @@
     var bulgeW = sh.bulgeHalf * 2 * k;
     var armW = 4.7 + f('bizeps') * 3.9;
     var foreW = 3.7 + f('trizeps') * 2.7;      /* 0,75 x armW  */
-    var thighW = 8.9 + f('beine') * 4.0;       /* 1,4  x armW  */
-    var calfW = 6.2 + f('waden') * 3.2;        /* 0,72 x thighW */
+    var thighW = sh.thighW * k;
+    var calfW = sh.calfW * k;                  /* 0,72 x thighW */
     var backW = sh.latHalf * 2 * k;
 
     /* Schulter 0,81 · Hüfte 0,53 · Knie 0,27 der Körperhöhe über dem Boden.
        Vorher lag die Hüfte bei 64 — die Beine machten nur 40 % der Höhe aus. */
     var shoulderY = 23, hipY = 51, kneeY = 77, footY = 104;
     var elbowY = 41, handY = 56;
-    var hipX = thighW * 0.37;
+    var hipX = sh.hipHalf * k;
 
     /* Verjüngte Beine statt zweier gleich dicker Rohre. Die Füße stehen
        deutlich weiter auseinander als die Hüftgelenke — senkrecht untereinander
@@ -81,7 +81,10 @@
       var e = extra || 0;
       var hip = [CX + side * hipX, hipY];
       var knee = [CX + side * (hipX + 2), kneeY];
-      var foot = [CX + side * (hipX + 3.5), footY];
+      /* Die Fuesse stehen weiter auseinander als frueher: seit die Schenkel
+         schmaler sind, wuerden die Schuhe sonst in der Mitte aneinander
+         stossen und wieder als ein Klotz lesen. */
+      var foot = [CX + side * (hipX + 4.5), footY];
       px.capsule(ctx, knee, foot, calfW * 0.6 + e, color);
       px.capsule(ctx, hip, knee, thighW * 0.8 + e, color);
       px.capsule(ctx, knee, [(knee[0] + foot[0]) / 2, (kneeY + footY) / 2], calfW + e, color);
@@ -175,12 +178,22 @@
        nur 15 x 15 statt 19 x 19. */
     px.stamp(ctx, MF.ui.sprites.headSmall, CX - 7, 5, r);
 
+    /* Schuhe, ebenfalls als Raster — ihre Kontur steckt darin, deshalb kommen
+       sie nicht in den Konturdurchgang. Ohne sie hörten die Beine als zwei
+       runde Kapselenden über dem Bodenschatten auf. */
+    px.stamp(ctx, MF.ui.sprites.shoeSmall, CX - hipX - 4.5 - 6, footY - 4, r);
+    px.stamp(ctx, MF.ui.sprites.shoeSmall, CX + hipX + 4.5 - 6, footY - 4, r);
+
     /* Shorts in der gewählten Farbe: Bund über der Hüfte plus zwei
        Hosenbeine, die den Oberschenkel wirklich umschließen. Der flache
        Kasten von vorher war schmaler als die Schenkelwölbung — die Beine
        quollen seitlich heraus und verschmolzen darunter zu einem Block. */
     var outfit = MF.data.outfits.get(s.player ? s.player.outfit : 'blau');
-    var bw = Math.max(backW * 0.5, hipX + thighW * 0.5) + 1;
+    /* Der Bund sitzt auf der Hüfte und richtet sich nach den Schenkeln —
+       vorher stand hier ein Math.max gegen backW, also gegen die BRUSTbreite.
+       Beim austrainierten Körper war die Hose damit 27 Punkte breit bei einer
+       Taille von 11: ein Brett, das dem Körper nicht gehörte. */
+    var bw = hipX + thighW * 0.5 + 1;
     function shortLeg(side, color, e) {
       px.capsule(ctx, [CX + side * hipX, hipY + 3],
         [CX + side * (hipX + 1), hipY + 10], thighW + (e || 0), color);

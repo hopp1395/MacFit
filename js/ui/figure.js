@@ -34,19 +34,23 @@
     function f(id) { return util.clamp(m[id].size / 100, 0, 1); }
     var arm = (f('bizeps') + f('trizeps')) / 2;
     var torso = (f('brust') + f('ruecken')) / 2;
+    /* Beine aus ui/shape.js: sie sind von vorn und von der Seite dieselben,
+       und nur dort stehen sie einmal. */
+    var sh = MF.ui.shape.own();
+    var k = MF.ui.shape.K.figure;
 
     return {
       arm: 4.3 + arm * 3.6,
       fore: 3.4 + arm * 2.5,          /* 0,75 x arm   */
       torso: 10 + torso * 8,
       shoulder: 3.6 + f('schultern') * 1.8,
-      thigh: 8.2 + f('beine') * 3.7,  /* 1,4  x arm   */
-      calf: 5.7 + f('waden') * 2.9,   /* 0,72 x thigh */
+      thigh: sh.thighW * k,
+      calf: sh.calfW * k,             /* 0,72 x thigh */
       head: 7,
       /* 0..1, keine Strichstaerke: der Bauch. Im Seitenriss ist er die
          einzige Stelle, an der Koerperfett ueberhaupt sichtbar wird — von
          vorn verschwindet er hinter der Breite. */
-      belly: MF.game.fat.softness()
+      belly: sh.belly
     };
   }
 

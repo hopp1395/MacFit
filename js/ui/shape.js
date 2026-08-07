@@ -7,18 +7,22 @@
    an drei Stellen nachgezogen werden, und figure.js kannte das Koerperfett
    ueberhaupt nicht.
 
-   Hier stehen die Rohmasse als HALBE Breiten ab der Mittelachse, in
-   POSEN-EINHEITEN, also VOR dem Groessenfaktor des Renderers:
+   Hier stehen die Rohmasse in POSEN-EINHEITEN, also VOR dem Groessenfaktor
+   des Renderers:
      poses.js   k = 1,35
      avatar.js  k = 1,04   (= 1,35 x 0,77)
-   figure.js zeichnet den Seitenriss und braucht von hier nur belly — im
-   Profil ist Breite unsichtbar, Fett zeigt sich dort als Tiefe. */
+     figure.js  k = 0,945  (= 1,35 x 0,70) — im Seitenriss sind die Rumpfmasse
+                unsichtbar, die Gliedmassen aber dieselben.
+
+   Die Namen sagen, welches Mass gemeint ist:
+     *Half   halbe Breite ab der Mittelachse (Rumpf)
+     *W      volle Strichstaerke (Gliedmassen) */
 (function (MF) {
   'use strict';
 
   var util = MF.core.util;
 
-  var K = { poses: 1.35, avatar: 1.04 };
+  var K = { poses: 1.35, avatar: 1.04, figure: 0.945 };
 
   /* lean und soft kommen von aussen herein statt aus game/fat.js: beim
      Rivalen posiert ein fremder Koerper, dessen Fettstand nicht der eigene
@@ -60,11 +64,22 @@
     var bulgeHalf = Math.min(waistHalf * (1.06 + soft * 0.30),
       shoulderOuter * 0.86);
 
+    /* Beine und Huefte. Sie standen frueher in jedem Renderer einzeln und
+       waren rund ein Sechstel staerker: der Schenkel allein war so breit wie
+       die halbe Taille, und weil beide Schenkel unter einem Rumpf stehen,
+       verschmolzen sie zu einem Block, der breiter war als die Schultern.
+       Seit sich die Taille verjuengt, fiel das erst richtig auf. */
+    var thighW = 7.3 + f('beine') * 3.2;
+
     return {
       latHalf: latHalf,
       shoulderHalf: shoulderHalf,
       waistHalf: waistHalf,
       bulgeHalf: bulgeHalf,
+      thighW: thighW,
+      calfW: 5.2 + f('waden') * 2.6,             /* 0,72 x thighW */
+      /* Die Schenkel sitzen unter dem Rumpf, nicht daneben. */
+      hipHalf: thighW * 0.33,
       belly: soft,
       lean: lean,
       top: top

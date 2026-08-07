@@ -149,6 +149,19 @@
     '.kkkkkkkkkkkkkkk.'
   ]);
 
+  /* Derselbe Schuh fuer den Koerper-Bildschirm, um 0,77 kleiner — wie beim
+     Kopf gibt es dafuer ein eigenes Raster statt einer Skalierung: bei sechs
+     Pixeln Hoehe entscheidet jede Zeile ueber die Form. Ohne ihn endeten die
+     Beine dort einfach als zwei runde Kapselenden. */
+  var SHOE_SMALL = sprite([
+    '...kkkkkkk...',
+    '.kkKKKKKKKkk.',
+    'kKKKKKKKKKKKk',
+    'kKKKKKKKKKKKk',
+    'ksssssssssssk',
+    '.kkkkkkkkkkk.'
+  ]);
+
   /* Im Profil zeigt der Fuß nach rechts; für die andere Richtung wird beim
      Zeichnen gespiegelt. */
   var SHOE_SIDE = sprite([
@@ -176,6 +189,7 @@
     headSmall: HEAD_SMALL,
     fist: FIST,
     shoeFront: SHOE_FRONT,
+    shoeSmall: SHOE_SMALL,
     shoeSide: SHOE_SIDE,
     shoeBall: SHOE_BALL
   };

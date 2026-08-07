@@ -188,7 +188,7 @@
     var sh = MF.ui.shape.of(m, lean, soft);
     var k = MF.ui.shape.K.poses;
 
-    var thighW = (8.6 + f('beine') * 3.9) * k;
+    var thighW = sh.thighW * k;
     var latHalf = sh.latHalf * k * (pose.lat || 1);
     var chestR = (4.0 + f('brust') * 3.0) * k;
 
@@ -202,16 +202,15 @@
          über dem Hüftknochen, mit Fett der Bauch. */
       bulgeHalf: sh.bulgeHalf * k,
       belly: sh.belly,
-      /* Die Schenkel sitzen unter dem Rumpf, nicht daneben. */
-      hipHalf: thighW * 0.37,
+      hipHalf: sh.hipHalf * k,
       chestR: chestR,
       /* Die Brustkanten dürfen nie außerhalb des Brustkorbs landen — vorher
          lagen sie bei chestR * 1.45 auf Schulter und Arm. */
       pecHalf: Math.min(chestR * 1.45, latHalf * 0.86),
       armW: (4.5 + f('bizeps') * 3.8) * k,
       foreW: (3.6 + f('trizeps') * 2.6) * k,     /* 0,75 x armW */
-      thighW: thighW,                            /* 1,4 x armW  */
-      calfW: (6.0 + f('waden') * 3.1) * k,       /* 0,72 x thighW */
+      thighW: thighW,
+      calfW: sh.calfW * k,                       /* 0,72 x thighW */
       /* Angespannt wölbt sich der Muskelbauch, nicht der ganze Arm: flex geht
          nicht mehr auf armW, sondern nur auf den Bizepsberg in der Mitte. */
       flex: util.clamp(pose.flex || 1, 1, 1.15),
