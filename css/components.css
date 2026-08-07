@@ -1230,6 +1230,105 @@
   color: var(--text-faint);
 }
 
+/* ---------- Levelleiter --------------------------------------------------
+   Das Fenster hinter der Levelzahl (js/ui/levels.js). Erreichte Stufen
+   stehen blass da, die aktuelle traegt den Akzentrahmen, die naechsten zwei
+   sind ausgeschrieben. Alles weiter vorn ist nur noch Nummer plus Schloss —
+   deshalb gibt es fuer .is-locked eine eigene, sehr schmale Zeile. */
+
+.lvl {
+  display: grid;
+  gap: 6px;
+}
+
+.lvl-row {
+  background: var(--bg-card-hi);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+}
+
+.lvl-row.is-done { opacity: 0.55; }
+
+.lvl-row.is-now {
+  border-color: var(--accent);
+  background: rgba(255, 122, 41, .10);
+}
+
+.lvl-row.is-locked {
+  opacity: 0.4;
+  padding: 5px 10px;
+  border-style: dashed;
+  background: transparent;
+}
+
+.lvl-row__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.lvl-row__no {
+  flex: 0 0 auto;
+  min-width: 38px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.lvl-row.is-now .lvl-row__no { color: var(--accent); }
+
+.lvl-row__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lvl-row__badge {
+  margin-left: auto;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #1a0e04;
+}
+
+.lvl-row__xp {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--warn);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.lvl-row__lock {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.lvl-row__meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.lvl-row__unlock {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--info);
+  line-height: 1.35;
+}
+
+/* Die Levelzeile im Koerper-Bildschirm fuehrt in dieselbe Leiter. */
+.body-info__title.is-tap { cursor: pointer; }
+.body-info__title.is-tap:active { opacity: 0.7; }
+
 /* ---------- Toast --------------------------------------------------------- */
 
 .toast {

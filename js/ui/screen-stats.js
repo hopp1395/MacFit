@@ -155,7 +155,13 @@
     var info = el('div.body-info');
     info.appendChild(el('div.body-info__mass', { text: util.formatKg(MF.game.stats.muscleMass()) }));
     info.appendChild(el('div.body-info__label', { text: 'Muskelmasse' }));
-    info.appendChild(el('div.body-info__title', { text: MF.game.progression.currentTitle() }));
+    /* Levelzahl samt Titel — antippen zeigt die Leiter, genau wie der
+       Lv-Chip in der Kopfleiste. */
+    var title = el('div.body-info__title.is-tap', {
+      text: 'Lv ' + s.level + ' · ' + MF.game.progression.currentTitle()
+    });
+    util.onTap(title, function () { MF.ui.levels.show(); });
+    info.appendChild(title);
 
     /* Der zweite Wert neben der Masse: er entscheidet, wie viel davon man
        sieht — und ob gerade Massephase oder Definitionsphase ist. */

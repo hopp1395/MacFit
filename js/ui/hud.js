@@ -51,7 +51,12 @@
     top.appendChild(money);
 
     var levelRow = el('div.hud__row');
+    /* Wie der FIT-Wert daneben ist auch die Levelzahl antippbar: sie zeigt
+       die Leiter mit den naechsten zwei Stufen. */
     var levelChip = el('div.hud__level', { id: 'hud-level', text: 'Lv 1' });
+    util.onTap(levelChip, function () {
+      if (MF.game.state.get() && MF.ui.levels) MF.ui.levels.show();
+    });
     var xpTrack = el('div.bar.bar--xp', null, [
       el('div.bar__fill', { id: 'hud-xp-fill' }),
       el('span.bar__label', { id: 'hud-xp-label', text: '' })
