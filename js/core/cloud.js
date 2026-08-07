@@ -172,6 +172,12 @@
 
   function user() { return authUser; }
 
+  /* Der rohe Supabase-Client. Gebraucht von js/core/friends.js: Freunde sind
+     dieselbe Verbindung, aber andere Tabellen — sie hier mit einzubauen
+     wuerde diese Datei zum Sammelbecken machen. Ausser dem Spielstand
+     laeuft nichts darueber. */
+  function client_() { return client; }
+
   function getSession(done) {
     client.auth.getSession().then(function (res) {
       var sess = (res && res.data) ? res.data.session : null;
@@ -342,6 +348,8 @@
     isSupported: isSupported,
     getSession: getSession,
     user: user,
+    client: client_,
+    errorText: mapError,
     signIn: signIn,
     signUp: signUp,
     signOut: signOut,

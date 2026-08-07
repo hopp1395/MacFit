@@ -187,6 +187,26 @@
 
     box.appendChild(el('p.rival__quote', { text: saysNow() }));
     box.appendChild(compare());
+
+    /* Ein Freund wächst nicht über Nacht in diesem Spielstand — seine Zahlen
+       stehen so lange still, bis sie aus seinem Konto nachgereicht werden.
+       Der Abgleich läuft zwar beim Start und beim Öffnen der Freunde-Kachel
+       von selbst, aber wer hier gerade auf den Balken schaut, will ihn jetzt. */
+    if (MF.game.rival.isFriend()) {
+      var sync = el('button.btn.btn--ghost.btn--slim', {
+        type: 'button', text: 'Zahlen holen'
+      });
+      util.onTap(sync, function () {
+        sync.disabled = true;
+        MF.game.friends.refresh(function (err) {
+          sync.disabled = false;
+          MF.ui.toast.show(err ? err : 'Zahlen von ' + v.short + ' sind aktuell.',
+            err ? 'bad' : 'good');
+        });
+      });
+      box.appendChild(sync);
+    }
+
     box.appendChild(el('p.hint', { text: standingText() }));
     return box;
   }

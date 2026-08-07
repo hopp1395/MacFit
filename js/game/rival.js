@@ -1,16 +1,15 @@
-/* Der Rivale: wer neben dir trainiert. Heute ist das immer ein NPC aus
-   data/rivals.js — spaeter soll an derselben Stelle ein Freund stehen
-   koennen, mit seinen echten Zahlen aus der Cloud.
+/* Der Rivale: wer neben dir trainiert. Das ist entweder ein Stammgast aus
+   data/rivals.js oder ein echter Freund mit seinen Zahlen aus der Cloud.
 
-   Deshalb liegt zwischen Spielstand und Oberflaeche genau eine Funktion:
-   view(). Sie liefert Name, Symbol, Masse, Fitness-Index und Saetze, egal
-   woher sie kommen. Alles darueber (Begruessung, Vergleich, Tagesbericht)
-   fragt nur view() und weiss nicht, ob da ein NPC oder ein Mensch steht.
+   Zwischen Spielstand und Oberflaeche liegt genau eine Funktion: view().
+   Sie liefert Name, Symbol, Masse, Fitness-Index und Saetze, egal woher sie
+   kommen. Alles darueber (Begruessung, Vergleich, Tagesbericht) fragt nur
+   view() und weiss nicht, ob da ein NPC oder ein Mensch steht.
 
    Der Unterschied liegt allein im Nachschub:
      NPC     tickNight() rechnet seine Nacht aus (Tempo, Gummiband, Ruhetag)
-     Freund  tickNight() rechnet nichts — die Zahlen kommen per setFriend()
-             aus dem Konto des Freundes, der Abgleich steht noch aus
+     Freund  tickNight() rechnet nichts — seine Zahlen kommen aus seinem
+             eigenen Spiel und werden von game/friends.js nachgereicht
 
    Der Zuwachs des NPC hat drei Faktoren:
      Grundtempo   pace der Figur, gedaempft an seiner eigenen Decke
@@ -80,10 +79,15 @@
         short: (r.name || 'Freund').split(' ')[0],
         icon: r.icon || '🤝',
         trait: 'Trainiert in einem anderen Studio — die Zahlen kommen aus '
-             + 'dem Konto.',
+             + 'seinem Konto.',
         mass: r.mass, fit: r.fit, sets: r.sets, since: r.since,
         synced: r.synced,
-        outfit: r.outfit || 'schwarz', health: 80, shape: null, definition: 0.6
+        /* Sein Aussehen kommt mit seinem Profil: Hosenfarbe, Definition,
+           Gesundheit und die Verhaeltnisse seiner acht Partien. Fehlt eins
+           davon (Profil aus einer aelteren Fassung), steht ein neutraler
+           Koerper da statt gar keiner. */
+        outfit: r.outfit || 'schwarz', health: r.health || 80,
+        shape: r.shape || null, definition: r.def || 0.6
       };
     }
 
@@ -149,8 +153,10 @@
     return group[(state().day + seed(d)) % group.length];
   }
 
-  /* Einen Freund an die Stelle des NPC setzen. Die Cloud-Anbindung fehlt
-     noch — was sie spaeter liefert, steht hier schon vollstaendig drin. */
+  /* Einen Freund an die Stelle des NPC setzen. info ist eine Freundesansicht
+     aus game/friends.js — dieselbe Form, die auch updateFriend() erwartet.
+     since bleibt der heutige Tag: gemeint ist, seit wann ihr nebeneinander
+     trainiert, nicht seit wann ihr befreundet seid. */
   function setFriend(info) {
     if (!info || !info.id) return false;
     var s = state();
@@ -158,19 +164,25 @@
     r.source = 'freund';
     r.id = String(info.id);
     r.name = info.name || '';
-    r.icon = info.icon || '';
+    r.icon = info.icon || '🤝';
     r.mass = Number(info.mass) || 0;
     r.fit = Math.round(Number(info.fit) || 0);
     r.sets = Math.round(Number(info.sets) || 0);
-    r.since = info.since || s.day;
+    r.since = s.day;
     r.synced = s.day;
     r.greetedDay = 0;
     r.flip = '';
+    r.outfit = info.outfit || 'schwarz';
+    r.def = Number(info.def) || 0.5;
+    r.health = Math.round(Number(info.health) || 80);
+    r.shape = info.shape || null;
     MF.game.state.saveNow();
     return true;
   }
 
-  /* Frische Zahlen zu einem bereits eingetragenen Freund. */
+  /* Frische Zahlen zu einem bereits eingetragenen Freund. Angefasst wird nur,
+     was mitgeliefert wird — ein halbes Profil soll die vorhandenen Werte
+     nicht auf null setzen. */
   function updateFriend(info) {
     if (!isFriend() || !info) return false;
     var s = state();
@@ -179,6 +191,10 @@
     if (info.fit !== undefined) r.fit = Math.round(Number(info.fit) || 0);
     if (info.sets !== undefined) r.sets = Math.round(Number(info.sets) || 0);
     if (info.name) r.name = info.name;
+    if (info.outfit) r.outfit = info.outfit;
+    if (info.def !== undefined) r.def = Number(info.def) || 0.5;
+    if (info.health !== undefined) r.health = Math.round(Number(info.health) || 80);
+    if (info.shape) r.shape = info.shape;
     r.synced = s.day;
     MF.game.state.saveSoon();
     return true;
@@ -194,6 +210,10 @@
     s.rival.fit = 0;
     s.rival.synced = 0;
     s.rival.greetedDay = 0;
+    s.rival.outfit = '';
+    s.rival.def = 0;
+    s.rival.health = 0;
+    s.rival.shape = null;
     return ensure();
   }
 

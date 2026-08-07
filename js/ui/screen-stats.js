@@ -818,9 +818,13 @@
      untereinander. Am Handy scrollt man daran vorbei, statt etwas zu finden.
 
      Jetzt sitzt oben dasselbe Kachelraster wie im Gym und im Shop, darunter
-     steht nur der gewaehlte Bereich. Sechs Kacheln gehen glatt in die drei
-     Spalten des Rasters auf. Die Wahl haengt am Spielstand, damit man nach
-     einem Blick ins Gym wieder dort landet, wo man war. */
+     steht nur der gewaehlte Bereich. Die Wahl haengt am Spielstand, damit man
+     nach einem Blick ins Gym wieder dort landet, wo man war.
+
+     Seit den Freunden sind es sieben Kacheln — die letzte steht allein in
+     der dritten Reihe. Das ist Absicht: eine wartende Einladung faellt dort
+     eher auf als in einer vollen Reihe, und der Bereich haette als
+     Unterpunkt der Trainer-Kachel keinen Platz. */
   var TABS = [
     {
       key: 'figur', name: 'Figur',
@@ -859,6 +863,10 @@
     {
       key: 'system', name: 'Einstellungen',
       sub: function () { return 'v' + MF.version; }
+    },
+    {
+      key: 'freunde', name: 'Freunde',
+      sub: function () { return MF.ui.friends.tileSub(); }
     }
   ];
 
@@ -935,6 +943,15 @@
               + 'engagierst du im Shop.'
         }));
       }
+      return;
+    }
+
+    if (tab === 'freunde') {
+      /* Beim Hinsehen nachfragen, ob drüben etwas passiert ist — gedrosselt,
+         damit das Hin- und Herspringen zwischen Kacheln keine Abfragekette
+         auslöst. Die Antwort zeichnet über 'friends:changed' neu. */
+      MF.game.friends.refreshSoon();
+      container.appendChild(MF.ui.friends.panel());
       return;
     }
 

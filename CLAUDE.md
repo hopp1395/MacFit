@@ -75,6 +75,14 @@ Schichtregeln (strikt eingehalten):
   Tages-Dialogkette) steht in `js/main.js`.
 - Ein Sync-Marker im localStorage merkt sich Konto und letzten Abgleich; verlorene
   Uploads werden beim nächsten Start nachgeschoben.
+- **Freunde** liegen in zwei eigenen Tabellen (`profiles`, `friend_links`, Schema in
+  `sql/freunde.sql` — im Supabase-Dashboard auszuführen). Der Zugriff steht in
+  `js/core/friends.js` (nur Datenverkehr), die Bedeutung in `js/game/friends.js`.
+  `profiles` ist für jedes angemeldete Konto lesbar — anders ist eine Suche über
+  den Freundescode nicht möglich. Deshalb steht dort **nur die Visitenkarte**
+  (Name, Code, Level, Masse, Index, Sätze, Figur), nie E-Mail, Foto oder
+  Spielstand, und die Zeile entsteht erst, wenn der Spieler die Funktion selbst
+  freischaltet.
 - `.github/workflows/supabase-keepalive.yml` pingt Supabase zweimal pro Woche an,
   damit das Free-Tier-Projekt nicht pausiert wird (sonst startet das Spiel nicht mehr).
 
@@ -85,6 +93,10 @@ Schichtregeln (strikt eingehalten):
   Geld gibt es dann.
 - **Satz-Timing-Spiel:** `js/game/training.js` (Logik) + `js/ui/screen-session.js`
   (Leiste/Marker). `beginSet` → Treffer-Liste (`'perfect'|'ok'|'miss'`) → `finishSet`.
+- **Rivalenplatz:** `s.rival` hält entweder einen Stammgast aus `js/data/rivals.js`
+  oder einen echten Freund. Die Oberfläche fragt nur `MF.game.rival.view()` und
+  weiß nicht, welches von beiden — der Unterschied liegt allein im Nachschub
+  (NPC rechnet nachts selbst, Freund bekommt seine Zahlen von `game/friends.js`).
 - **Level** wird beim Boot immer aus den XP neu abgeleitet (`levels.levelForXp`),
   damit geänderte Schwellen Bestandsspieler nicht brechen. Profil-Importe aus
   neueren Spielversionen werden abgelehnt statt halb geladen.
