@@ -20,7 +20,7 @@
       body: MF.ui.stats.fitnessPanel(),
       actions: [
         { label: 'Alles klar', tone: 'primary' },
-        { label: 'Zum Körper', onTap: function () { MF.ui.router.go('stats'); } }
+        { label: 'Zum Körper', onTap: function () { MF.ui.stats.go('werte'); } }
       ]
     });
   }

@@ -234,7 +234,7 @@
       body: body,
       actions: [
         { label: 'Na dann', tone: 'primary', onTap: go },
-        { label: 'Vergleich ansehen', onTap: function () { MF.ui.router.go('stats'); go(); } }
+        { label: 'Vergleich ansehen', onTap: function () { MF.ui.stats.go('trainer'); go(); } }
       ]
     });
     return true;

@@ -105,7 +105,7 @@
       body: body,
       actions: [
         { label: 'Alles klar', tone: 'primary', onTap: go },
-        { label: 'Ganze Analyse', onTap: function () { MF.ui.router.go('stats'); go(); } }
+        { label: 'Ganze Analyse', onTap: function () { MF.ui.stats.go('trainer'); go(); } }
       ]
     });
     return true;
