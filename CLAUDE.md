@@ -46,9 +46,23 @@ Schichtregeln (strikt eingehalten):
   Event → UI-Reaktion steht zentral in `wireEvents()` in `js/main.js`.
 - Balancing-Werte (Übungen, Level, Substanzen, Rivalen, Wettkampf …) stehen
   **ausschließlich** in `js/data/` — reine Datenobjekte ohne Logik.
-- Pixel-Grafik: `js/ui/pixel.js` (Palette/Primitive) → `figure.js` (Figuren-Rig) →
-  `scene.js`/`poses.js`/`avatar.js`. Avatar, Gerätefiguren und Posen-Teilen-Bild
-  rechnen mit denselben Körperproportionen — Änderungen daran betreffen alle drei.
+- Pixel-Grafik: `js/ui/pixel.js` (Palette/Primitive) und `sprites.js` (handgezeichnete
+  Raster für Kopf, Faust, Schuh) → `shape.js` (Körperbau) → `figure.js` (Rig für den
+  Seitenriss) → `scene.js`/`poses.js`/`avatar.js`.
+
+  **Alle Körpermaße stehen in `js/ui/shape.js`** — Latissimus, Schulter, Taille, Bauch,
+  Schenkel, Wade, Hüfte und die Rumpfkurve `torsoW()`. Die Werte sind Rohmaße in
+  Posen-Einheiten; jeder Renderer multipliziert mit seinem eigenen Faktor aus `shape.K`
+  (poses 1,35 · avatar 1,04 · figure 0,945). Wer eine Proportion ändert, ändert sie
+  dort einmal für alle drei. Der Vorspann (`intro.js`) hat bewusst ein eigenes Rig.
+
+  Zwei Dinge, die man beim Zeichnen leicht falsch macht:
+  - Ein Teil, das **vor** dem Rumpf liegt, braucht seine Kontur unmittelbar vor seiner
+    Fläche. Im gemeinsamen Konturdurchgang geht sie verloren, sobald die Rumpffläche
+    danach darüberliegt — außen bleibt die Silhouette sauber, innen fehlt jede Trennung.
+  - Raster aus `sprites.js` bringen ihre Kontur selbst mit und gehören deshalb **nicht**
+    in den Konturdurchgang. `sprite()` nimmt die Länge der ersten Zeile als Breite —
+    eine abweichende Zeile weiter unten zeichnet still daneben.
 
 ## Spielstand und Cloud
 
