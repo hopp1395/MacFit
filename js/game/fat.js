@@ -7,7 +7,7 @@
      Zufuhr     eine Grundzufuhr, die auch an Ruhetagen läuft, plus alles,
                 was an der Theke getrunken wurde (der Mass-Gainer schlägt
                 deutlich zu Buche)
-     Verbrauch  jeder Satz zählt, Konditionssätze dreifach; dazu Kuren mit
+     Verbrauch  jeder Satz zählt, Konditionssätze fünffach; dazu Kuren mit
                 burn-Wert (Thermo-Zeug)
 
    Der Wert wirkt an drei Stellen:
@@ -31,7 +31,7 @@
      gerechnet war ein fleissiger Spieler nach zwei Wochen am Boden des
      Fettbereichs und kam da nie wieder weg. */
   var BURN_K = 0.09;
-  var KONDITION_WEIGHT = 2;  /* ein Konditionssatz zaehlt wie drei normale */
+  var KONDITION_WEIGHT = 4;  /* ein Konditionssatz zaehlt wie fuenf normale */
 
   /* Ab hier ist nichts mehr zu sehen; darunter zeichnet sich der Bauch ab. */
   var DEF_FLOOR = 26, DEF_SPAN = 18;
