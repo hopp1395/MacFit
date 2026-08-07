@@ -71,8 +71,21 @@
     /* Schulter 0,81 · Hüfte 0,53 · Knie 0,27 der Körperhöhe über dem Boden.
        Vorher lag die Hüfte bei 64 — die Beine machten nur 40 % der Höhe aus. */
     var shoulderY = 23, hipY = 51, kneeY = 77, footY = 104;
-    var elbowY = 41, handY = 56;
+    /* Ellenbogen auf 0,62 · Handgelenk auf 0,46 der Körperhöhe über dem
+       Boden — die üblichen anthropometrischen Bruchteile. */
+    var elbowY = 41, handY = 58;
     var hipX = sh.hipHalf * k;
+
+    /* Wie weit der Ellenbogen aussen steht. Der Arm hängt an der Schulter,
+       aber der Latissimus schiebt ihn nach außen — genau das ist die Haltung,
+       in der ein breiter Rücken die Arme nicht mehr anlegen lässt.
+
+       Ohne diesen Anteil verschwand der Arm im Rumpf: der Latissimus wächst
+       fast doppelt so stark wie die Schulter (Faktor 1,95 gegen 1,36), also
+       überholt die Rumpfkante ihn irgendwann. Bei der austrainierten Figur lag
+       die Innenkante des Arms fast drei Punkte INNERHALB der Silhouette, und
+       beide verschmolzen zu einer Fläche. */
+    var armX = Math.max(shoulderW + 3, backW * 0.5 + armW * 0.42);
 
     /* Verjüngte Beine statt zweier gleich dicker Rohre. Die Füße stehen
        deutlich weiter auseinander als die Hüftgelenke — senkrecht untereinander
@@ -91,9 +104,18 @@
     function arm(side, color, extra) {
       var e = extra || 0;
       px.capsule(ctx, [CX + side * shoulderW, shoulderY],
-        [CX + side * (shoulderW + 3), elbowY], armW + e, color);
-      px.capsule(ctx, [CX + side * (shoulderW + 3), elbowY],
-        [CX + side * (shoulderW + 4.5), handY], foreW + e, color);
+        [CX + side * armX, elbowY], armW + e, color);
+      px.capsule(ctx, [CX + side * armX, elbowY],
+        [CX + side * (armX + 1.5), handY], foreW + e, color);
+    }
+
+    /* Die Faust als Raster, wie im Seitenriss und im Posenbild — ihre Kontur
+       steckt darin, deshalb kommt sie nicht in den Konturdurchgang. Ohne sie
+       hörte der Unterarm als rundes Rohrende auf; solange er im Rumpf lag,
+       fiel das nicht auf. */
+    function fist(side) {
+      px.stamp(ctx, MF.ui.sprites.fistSmall,
+        CX + side * (armX + 1.5) - 3, handY - 2, r);
     }
 
     /* Der Rumpf verjüngt sich zur Taille — entlang derselben Kurve wie im
@@ -139,8 +161,6 @@
     leg(-1, C.ink, 2);
     leg(1, C.ink, 2);
     torso(C.ink, C.ink, 2);
-    arm(-1, C.ink, 2);
-    arm(1, C.ink, 2);
     px.disc(ctx, CX - shoulderW, shoulderY, (shoulderW * 0.42) + 2, C.ink);
     px.disc(ctx, CX + shoulderW, shoulderY, (shoulderW * 0.42) + 2, C.ink);
     trapz(C.ink, 2);
@@ -159,16 +179,25 @@
     torso(tone('ruecken'), tone('bauch'), 0);
     trapz(tone('schultern'), 0);
 
-    arm(-1, tone('bizeps'), 0);
-    arm(1, tone('bizeps'), 0);
-
-    px.disc(ctx, CX - shoulderW, shoulderY, shoulderW * 0.42, tone('schultern'));
-    px.disc(ctx, CX + shoulderW, shoulderY, shoulderW * 0.42, tone('schultern'));
-
-    /* Brust. Der Radius ist so bemessen, dass die Scheiben innerhalb des
-       Brustkorbs bleiben — vorher standen sie darüber hinaus auf den Armen. */
+    /* Brust vor dem Arm: sie liegt innen, er außen davor. Andersherum malte
+       die Brustscheibe die Innenkante des Arms wieder zu. */
     px.disc(ctx, CX - chestW * 0.85, 31, chestW, tone('brust'));
     px.disc(ctx, CX + chestW * 0.85, 31, chestW, tone('brust'));
+
+    /* Jeder Arm zieht seine eigene Kontur unmittelbar vor der Fläche — im
+       Konturdurchgang oben ginge sie verloren, weil die Rumpffläche danach
+       darüber liegt. Genau daran verschmolzen Arm und Rumpf: außen war die
+       Silhouette sauber, innen fehlte jede Trennung. */
+    arm(-1, C.ink, 2);
+    arm(-1, tone('bizeps'), 0);
+    arm(1, C.ink, 2);
+    arm(1, tone('bizeps'), 0);
+    fist(-1);
+    fist(1);
+
+    /* Der Deltamuskel deckt den Ansatz ab und sitzt deshalb über dem Arm. */
+    px.disc(ctx, CX - shoulderW, shoulderY, shoulderW * 0.42, tone('schultern'));
+    px.disc(ctx, CX + shoulderW, shoulderY, shoulderW * 0.42, tone('schultern'));
 
     /* Kopf */
     /* Kopf als handgezeichnetes Raster, dieselbe Machart wie im Posenbild,

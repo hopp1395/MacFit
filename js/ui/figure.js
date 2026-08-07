@@ -174,7 +174,6 @@
     strokeAll(ctx, L.near, 2, C.ink);
     if (belly) px.disc(ctx, belly.x, belly.y, belly.r + 2, C.ink);
     px.capsule(ctx, f.foot, toe, footW + 2, C.ink);
-    px.disc(ctx, f.hand[0], f.hand[1], th.fore * 0.62 + 1.5, C.ink);
 
     /* 2. Fläche */
     strokeAll(ctx, L.far, 0, skinDark);
@@ -190,10 +189,13 @@
     px.disc(ctx, f.shoulder[0], f.shoulder[1], th.shoulder, skin);
     px.capsule(ctx, f.shoulder, f.elbow, th.arm, skin);
     px.capsule(ctx, f.elbow, f.hand, th.fore, skin);
-    /* Hand als Scheibe, nicht als Raster: die Szenenfigur ist nur 91 Punkte
-       hoch, das 9 x 9 grosse Faustraster aus sprites.js säße hier wie ein
-       Boxhandschuh — und in den meisten Szenen liegt ohnehin ein Gerät darauf. */
-    px.disc(ctx, f.hand[0], f.hand[1], th.fore * 0.62, skin);
+    /* Die Hand als Raster. Vorher war sie eine blanke Scheibe — als Kreis ist
+       eine Hand nicht zu erkennen, und in den Szenen ohne Gerät (Herumstehen,
+       Handy, Laufband) sah man genau das. Das grosse Faustraster aus
+       sprites.js säße bei 91 Punkten Körperhöhe wie ein Boxhandschuh, deshalb
+       das kleine mit sechs Punkten. Die Kontur steckt darin, also wird sie
+       nicht mehr im Konturdurchgang gezogen. */
+    px.stamp(ctx, MF.ui.sprites.fistSmall, f.hand[0] - 3, f.hand[1] - 3, r);
 
     /* Kleidung. Das Shirt endet ueber dem Bauch und spannt sich darueber: mit
        einem Bauch rutscht der Saum hoch, und die Woelbung bekommt ihre eigene

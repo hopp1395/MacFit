@@ -136,6 +136,21 @@
     '..kkkkk..'
   ]);
 
+  /* Dieselbe Faust fuer die kleineren Figuren: den Seitenriss der Szene (91
+     Punkte hoch) und den Koerper-Bildschirm (99,5). Dort stand bisher eine
+     blanke Scheibe — als Kreis ist eine Hand nicht zu erkennen, und das
+     9 x 9 grosse Raster oben saesse bei der Groesse wie ein Boxhandschuh.
+     Sechs Punkte sind rund 6,5 Prozent der Koerperhoehe, dasselbe Verhaeltnis
+     wie beim grossen Raster im Posenbild. */
+  var FIST_SMALL = sprite([
+    '.kkkk.',
+    'kdedek',
+    'kddddk',
+    'kdcdck',
+    'kbddbk',
+    '.kkkk.'
+  ]);
+
   /* Von vorn sieht man Spann und Sohle. Ohne die beiden Zeilen Spann sass der
      Schuh als flache Platte unter dem Bein statt am Knoechel.
 
@@ -193,6 +208,7 @@
     headSide: HEAD_SIDE,
     headSmall: HEAD_SMALL,
     fist: FIST,
+    fistSmall: FIST_SMALL,
     shoeFront: SHOE_FRONT,
     shoeSmall: SHOE_SMALL,
     shoeSide: SHOE_SIDE,
