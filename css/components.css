@@ -1325,6 +1325,16 @@
   line-height: 1.35;
 }
 
+/* Der Schlusshinweis braucht Abstand: .hint zieht sich mit seinem negativen
+   Rand sonst in die letzte Stufe hinein und wird von ihr ueberdeckt. Die
+   Trennlinie setzt ihn zusaetzlich sichtbar ab — er gehoert nicht mehr zur
+   Leiter, sondern erklaert sie. */
+.lvl + .hint {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
 /* Die Levelzeile im Koerper-Bildschirm fuehrt in dieselbe Leiter. */
 .body-info__title.is-tap { cursor: pointer; }
 .body-info__title.is-tap:active { opacity: 0.7; }
