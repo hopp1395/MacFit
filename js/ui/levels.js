@@ -58,18 +58,20 @@
     var cls = '.lvl-row' + (now ? '.is-now' : (reached ? '.is-done' : '.is-next'));
     var r = el('div' + cls, null, [el('div.lvl-row__head', null, head)]);
 
-    /* Erledigte Stufen bleiben eine einzige Zeile. Ihre Geraete stehen im
-       Gym und ihre Ware im Shop — sie hier noch einmal aufzuzaehlen macht
-       die Leiter nur so lang, dass man an dem vorbeiscrollt, worum es
-       geht: der eigenen Stufe und den beiden naechsten. */
-    if (reached) return r;
-
+    /* Die drei Zahlen jeder Stufe, auch bei den laengst erledigten: was sie
+       an Erfahrung kostet, wie viel Energie der Tag danach hat und was er
+       einbringt. Stufe 1 kostet nichts — dort steht deshalb "Start". */
     r.appendChild(el('span.lvl-row__meta', {
-      text: def.energy + ' Energie · ' + util.formatMoney(def.income) + ' pro Tag'
+      text: (def.xp ? 'ab ' + util.formatNum(def.xp) + ' XP' : 'Start')
+          + ' · ' + def.energy + ' Energie · '
+          + util.formatMoney(def.income) + ' pro Tag'
     }));
 
-    /* Nur was noch kommt — was die aktuelle Stufe gebracht hat, ist da. */
-    if (!now) {
+    /* Die Freischaltungen bleiben dem vorbehalten, was noch kommt. Bei den
+       erledigten Stufen machten sie die Leiter so lang, dass man an der
+       eigenen Stufe vorbeigescrollt waere — und ihre Geraete stehen
+       ohnehin im Gym, ihre Ware im Shop. */
+    if (ahead > 0) {
       var un = unlockText(def.level);
       if (un) r.appendChild(el('span.lvl-row__unlock', { text: un }));
     }
