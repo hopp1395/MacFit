@@ -225,6 +225,12 @@
        Cloud-Stand waere sonst bis zum ersten Speicherpunkt nur im Speicher. */
     MF.game.state.saveNow();
 
+    /* Freunde nebenher: eigene Zahlen hochschieben, fremde holen. Laeuft
+       ohne Rueckruf weiter — scheitert es, steht in der Kachel eben der
+       Stand von gestern, und der naechste Blick dorthin probiert es neu. */
+    MF.game.friends.push();
+    MF.game.friends.refresh();
+
     /* Vorspann zuerst — Dialoge kämen sonst hinter dem Film zu liegen und
        wären beim Wegtippen schon quittiert. */
     MF.ui.intro.play(afterIntro);
@@ -434,6 +440,21 @@
     on('day:ended', function () {
       MF.ui.hud.render();
       MF.ui.router.refresh();
+      /* Nach der Nacht stehen die neuen Zahlen fest — jetzt sollen die
+         Freunde sie sehen. */
+      MF.game.friends.push();
+    });
+
+    /* Freundesliste hat sich geaendert (Einladung, Annahme, Abgleich). */
+    on('friends:changed', function () {
+      MF.ui.router.refresh('stats');
+    });
+
+    /* Der Freund im Rivalenplatz ist keiner mehr — game/friends.js hat schon
+       einen Stammgast nachrucken lassen, gesagt werden muss es trotzdem. */
+    on('friends:rivalgone', function () {
+      MF.ui.toast.show('Der Freund ist nicht mehr in deiner Liste — es trainiert '
+        + 'wieder ein Stammgast neben dir.', 'warn');
     });
 
     on('money:changed', function () {

@@ -52,9 +52,8 @@
       /* Shakes von der Theke: gelten nur fuer den Tag in day (siehe
          game/shakes.js). bonus ist die heute dazugekaufte Energie. */
       shakes: { day: 0, count: 0, bonus: 0 },
-      /* Der Rivale (game/rival.js). Heute ist es immer ein NPC, spaeter soll
-         an derselben Stelle ein Freund stehen koennen — deshalb steht hier
-         nicht die Figur, sondern ein Platz mit Quelle:
+      /* Der Rivale (game/rival.js): ein Platz, in dem entweder ein Stammgast
+         aus data/rivals.js oder ein echter Freund steht.
 
            source  'npc' = Figur aus data/rivals.js, 'freund' = echtes Konto
            id      NPC-Kennung oder Konto-Kennung des Freundes
@@ -62,12 +61,27 @@
            mass    seine Muskelmasse — beim NPC gerechnet, beim Freund kopiert
            fit     nur bei Freunden (beim NPC faellt er aus der Masse ab)
            synced  Spieltag des letzten Abgleichs (nur bei Freunden)
+           outfit/def/health/shape  nur bei Freunden: sein Aussehen fuers
+                   Posenbild. Beim NPC steht dasselbe in seiner Figur.
 
          mass/sets/since/greetedDay/flip gelten fuer beide Quellen gleich,
          damit Anzeige, Tagesbericht und Begruessung nichts davon wissen
          muessen, wer da neben einem trainiert. */
       rival: { source: 'npc', id: '', name: '', icon: '', mass: 0, fit: 0,
-               sets: 0, since: 0, greetedDay: 0, flip: '', synced: 0 },
+               sets: 0, since: 0, greetedDay: 0, flip: '', synced: 0,
+               outfit: '', def: 0, health: 0, shape: null },
+      /* Freunde (game/friends.js). Nichts davon existiert, solange der
+         Spieler die Funktion nicht selbst freischaltet:
+
+           on       freigeschaltet — es liegt ein Profil in der Cloud
+           code     der eigene Freundescode, mit dem andere einen finden
+           list     angenommene Freundschaften
+           invites  Einladungen an mich, sent  Einladungen von mir
+
+         Die drei Listen sind nur ein Zwischenspeicher fuer die Anzeige
+         (damit die Kachel ohne Netzabfrage "1 Einladung" sagen kann) —
+         massgeblich ist immer die Datenbank. */
+      friends: { on: false, code: '', list: [], invites: [], sent: [] },
       /* Meisterschaften (game/contest.js): lastDay verhindert den zweiten
          Antritt am selben Tag, announcedDay die zweite Ankuendigung.
          history: [{ day, klasse, rank, total, starters, money }] */
@@ -153,6 +167,9 @@
     });
     Object.keys(fresh.rival).forEach(function (k) {
       if (loaded.rival[k] === undefined) loaded.rival[k] = fresh.rival[k];
+    });
+    Object.keys(fresh.friends).forEach(function (k) {
+      if (loaded.friends[k] === undefined) loaded.friends[k] = fresh.friends[k];
     });
     Object.keys(fresh.contest).forEach(function (k) {
       if (loaded.contest[k] === undefined) loaded.contest[k] = fresh.contest[k];
